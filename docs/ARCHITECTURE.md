@@ -47,6 +47,9 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D11 | Payments | **Cash / direct mobile money. App records the amount only.** | No wallet, no escrow, no aggregator licensing. Revisit when the weekly driver fee launches. See §11. |
 | D12 | Admin | Supabase Studio + SQL views → Flutter Web admin at C16 | Do not build a dashboard before there is data to put in it. |
 | D13 | Error tracking | **Sentry** | Better Flutter stack traces than Crashlytics; generous free tier. |
+| D14 | Source of visual truth | **The Claude Design project (`Njiani Apps.dc.html`)**, not the pitch deck | The pitch deck was a prototype, not a design. C1's first pass was built from its CSS and did not land. The design project supersedes it for every visual decision from here. |
+| D15 | Build unit after C1 | **One screen at a time**, not one component at a time | The redesign is organised as screens. Shared components are extracted into `njiani_core` as part of the revised C1, then screens are built on top, one per sign-off. |
+| D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
 ### Deferred deliberately
 
@@ -322,7 +325,7 @@ changes and test steps, and each waits for your local sign-off before the next b
 | # | Component | Signed off when you can |
 | --- | --- | --- |
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
-| C1 | Design system — pitch CSS tokens → Flutter theme, light + dark, core widgets | ✅ Component gallery renders; dark mode toggles |
+| C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | i18n (EN/SW), `go_router` shells, splash | Flip language; every string translates |
 | C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | Migrations run; stages visible in Studio |
 | C4 | Phone + OTP auth (dev mode prints the code) | Log in on your own phone |
@@ -343,6 +346,16 @@ changes and test steps, and each waits for your local sign-off before the next b
 
 **C9 and C10 are the product.** C0–C8 is plumbing to reach them; C11–C18 is polish around them.
 If you want to reach them sooner, say so and we can stub auth and come back to it.
+
+### Revised shape from C2 onward (D15, D16)
+
+The redesign is organised as screens, so the build unit changes to match. C2 onward becomes one
+screen per sign-off, each built against realistic mock data, in the order the design presents
+them. The backend components (C3, C9, C10) keep their place in the plan — screens are wired to
+Supabase after the flow has been judged on a real device. The numbered list above stays the
+commitment; what changes is that a "component" is now usually a screen.
+
+The exact screen list is set once the design project has been read.
 
 ---
 
