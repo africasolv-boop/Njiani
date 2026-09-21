@@ -49,6 +49,8 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D13 | Error tracking | **Sentry** | Better Flutter stack traces than Crashlytics; generous free tier. |
 | D14 | Source of visual truth | **The Claude Design project (`Njiani Apps.dc.html`)**, not the pitch deck | The pitch deck was a prototype, not a design. C1's first pass was built from its CSS and did not land. The design project supersedes it for every visual decision from here. |
 | D15 | Build unit after C1 | **One screen at a time**, not one component at a time | The redesign is organised as screens. Shared components are extracted into `njiani_core` as part of the revised C1, then screens are built on top, one per sign-off. |
+| D17 | Localisation | **ARB + `flutter gen-l10n`**, generated output committed and drift-guarded | A fresh clone analyses and tests with no codegen step. `tool/check.sh` regenerates and fails if the result moved, so the committed files cannot go stale. |
+| D18 | State management | **Riverpod without code generation** | `NotifierProvider` directly avoids a `build_runner` step in the build, which keeps `./tool/check.sh` the only thing a contributor has to run. |
 | D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
 ### Deferred deliberately
@@ -326,7 +328,7 @@ changes and test steps, and each waits for your local sign-off before the next b
 | --- | --- | --- |
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
 | C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
-| C2 | i18n (EN/SW), `go_router` shells, splash | Flip language; every string translates |
+| C2 | `pLang` + i18n (EN/SW), `go_router` guard, Riverpod, persistence | ✅ Flip language; restart and it is remembered |
 | C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | Migrations run; stages visible in Studio |
 | C4 | Phone + OTP auth (dev mode prints the code) | Log in on your own phone |
 | C5 | Profile + session persistence | Kill the app, reopen, still logged in |

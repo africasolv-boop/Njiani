@@ -1,0 +1,79 @@
+{
+  "@@locale": "en",
+
+  "appName": "Njiani",
+  "@appName": {
+    "description": "The product name. Never translated."
+  },
+
+  "tagline": "Rides going your way.",
+  "@tagline": {
+    "description": "One-line description under the wordmark."
+  },
+
+  "languageHeadingSw": "Chagua lugha",
+  "@languageHeadingSw": {
+    "description": "First line of the language screen heading. Deliberately identical in both .arb files: on this screen the user cannot yet reliably read either language, so the heading shows both regardless of locale."
+  },
+
+  "languageHeadingEn": "Choose your language",
+  "@languageHeadingEn": {
+    "description": "Second line of the bilingual language heading. Identical in both .arb files, for the reason given on languageHeadingSw."
+  },
+
+  "languageChangeLater": "You can change this later in Settings.",
+  "@languageChangeLater": {
+    "description": "Reassurance under the language heading. This one IS localised, and switches live as the user taps an option, so the choice is visibly demonstrated before it is confirmed."
+  },
+
+  "languageSwahili": "Kiswahili",
+  "@languageSwahili": {
+    "description": "Endonym. Always written in its own language, so identical in both .arb files."
+  },
+
+  "languageSwahiliHint": "Chaguo la kwanza",
+  "@languageSwahiliHint": {
+    "description": "Trailing note on the Kiswahili option, meaning 'first choice'. In Kiswahili in both files, as it labels the Kiswahili option."
+  },
+
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Endonym. Identical in both .arb files."
+  },
+
+  "languageEnglishHint": "Second language",
+  "@languageEnglishHint": {
+    "description": "Trailing note on the English option. In English in both files, as it labels the English option."
+  },
+
+  "languageContinue": "Endelea · Continue",
+  "@languageContinue": {
+    "description": "The only action on the language screen. Bilingual in both files: the user has not yet confirmed a language, so the button must be readable either way."
+  },
+
+  "nextComponentTitle": "Next: {component}",
+  "@nextComponentTitle": {
+    "description": "Placeholder heading for a screen not yet built.",
+    "placeholders": {
+      "component": {
+        "type": "String",
+        "example": "C4 — Phone number"
+      }
+    }
+  },
+
+  "nextComponentBody": "This screen arrives in the next component. Your language choice has been saved.",
+  "@nextComponentBody": {
+    "description": "Placeholder body for a screen not yet built."
+  },
+
+  "changeLanguage": "Change language",
+  "@changeLanguage": {
+    "description": "Returns to the language screen. Used from the placeholder while there is no Settings screen yet."
+  },
+
+  "openComponentGallery": "Component gallery",
+  "@openComponentGallery": {
+    "description": "Opens the development-only component gallery."
+  }
+}

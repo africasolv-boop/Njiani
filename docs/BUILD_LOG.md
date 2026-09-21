@@ -16,8 +16,8 @@
 | --- | --- | --- | --- |
 | — | Planning & architecture | ✅ | 2026-09-21 |
 | C0 | Monorepo scaffold + both app shells | ✅ | 2026-09-21 |
-| C1 | Design system (rev. 2, from the design project) | 🧪 awaiting your test | |
-| C2 | i18n + routing + app shells | 🔜 | |
+| C1 | Design system (rev. 2, from the design project) | ✅ | 2026-09-21 |
+| C2 | `pLang` — language choice, i18n, routing | 🧪 awaiting your test | |
 | C3 | Supabase schema + PostGIS + RLS + seed | 🔜 | |
 | C4 | Phone + OTP auth | 🔜 | |
 | C5 | Profile + session persistence | 🔜 | |
@@ -416,7 +416,7 @@ Verified: the guard exits 1 with a stale file present, and `--fix` clears it and
 
 ---
 
-## C1 rev. 2 — Design system from the design project · 🧪 awaiting your test
+## C1 rev. 2 — Design system from the design project · ✅ signed off
 
 **Goal** — bring the design system into line with `Njiani Apps.dc.html`, and rebuild the gallery
 as the state matrix that file's `gallery` spec asks for.
@@ -552,6 +552,133 @@ remain unverified** — which is exactly why step 1 above is first.
 | No screens yet — this is the component layer | **C2 onward**, one screen per sign-off |
 | `NjSkeleton` loops forever, so `pumpAndSettle` never settles in tests | documented on the widget |
 | Gallery ships in the release binary | **C18** |
+
+### Sign-off
+
+Approved 2026-09-21.
+
+---
+
+## C2 — `pLang`, language choice · 🧪 awaiting your test
+
+**Goal** — the first real screen, plus the infrastructure every screen after it needs:
+localisation in both languages, routing with guards, state management, and per-device
+persistence.
+
+**Credentials needed** — **none.**
+
+### The screen
+
+`pLang` from the design: the wordmark, a bilingual heading, two language options with Kiswahili
+pre-selected, and one Continue button. Three details from the spec that look like mistakes and
+are not:
+
+| Looks odd | Why |
+| --- | --- |
+| The heading shows **both** languages at once | On this one screen the user cannot yet reliably read either, so picking one would be a guess. Same for the `Endelea · Continue` button |
+| Tapping an option changes the screen **immediately**, before Continue | The choice is demonstrated rather than described. The subtitle switches language under your finger |
+| `Kiswahili` and `English` are never translated | They are endonyms — a language's name in its own language. Identical in both `.arb` files, deliberately |
+
+Kiswahili is pre-selected because it is the first language of the pilot corridor.
+
+### Infrastructure this component brings
+
+| Layer | Choice |
+| --- | --- |
+| **Localisation** | `flutter_localizations` + ARB. `NjStrings`, generated into `lib/src/l10n/generated` and **committed**, so a fresh clone analyses without a codegen step |
+| **State** | `flutter_riverpod`, no code generation — `NotifierProvider` directly, so there is no `build_runner` step |
+| **Routing** | `go_router` with a redirect guard. Sign-in (C4) and driver-approval (C6) guards join the same redirect |
+| **Persistence** | `shared_preferences`, read **before the first frame** so a returning user never sees the language screen flash past |
+
+### `confirmed` is not the same as `locale`
+
+`LanguageState` carries both the language and whether the user actually chose it. That
+distinction is the whole guard: showing Kiswahili because it is the default is not the same as a
+user asking for Kiswahili, and only the second stops the screen being shown again. It is what the
+spec means by *"never blocks a returning user."*
+
+### A real accessibility bug the tests caught
+
+At **1.3× system text scale on a small handset the screen overflowed by 189px.** The layout is
+content, then a `Spacer`, then a bottom button — which is correct on a big phone and clipped on a
+small one, so the Continue button became unreachable for anyone using large text.
+
+Every screen in the design has that shape, so the fix is a shared widget rather than a patch:
+**`NjScreenBody`** keeps the `Spacer` behaviour while the content fits and becomes a scroll view
+the moment it does not. There is a test at the clamp ceiling.
+
+Related: `NjianiRoot` clamps text scaling to 0.9–1.3. Past 1.3 the route board and seat counts
+stop fitting, and those are the two things a driver reads at a glance.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `lib/src/locale/nj_locale.dart` | The two languages. Parses `en_TZ` and `en-GB` by language subtag |
+| `lib/src/locale/language_store.dart` | `shared_preferences` store, plus an in-memory one for tests |
+| `lib/src/locale/language_controller.dart` | Riverpod notifier: `load` / `preview` / `confirm` / `reopen` |
+| `lib/src/l10n/arb/nj_en.arb`, `nj_sw.arb` | Every string, both languages, with a description on each |
+| `lib/src/l10n/generated/` | `NjStrings` — committed, drift-guarded |
+| `lib/src/app/nj_routes.dart` | Route paths, shared so the two apps cannot drift |
+| `lib/src/app/nj_router.dart` | Router and the language guard |
+| `lib/src/app/njiani_root.dart` | Shared root: theme, locale, router, `bootstrap()` |
+| `lib/src/screens/language_screen.dart` | **`pLang`** |
+| `lib/src/screens/placeholder_screen.dart` | Honest stand-in naming the component that will replace it |
+| `lib/src/widgets/nj_option_tile.dart` | Selectable row — teal border and tint, not a 20pt radio dot |
+| `lib/src/widgets/nj_screen_body.dart` | The scroll-when-needed column |
+
+**Changed** — `apps/*/lib/main.dart` are now one line each; `apps/*/pubspec.yaml` declare
+Riverpod; `tool/check.sh` gained the l10n drift guard.
+
+**Tests added — 38 new, 153 total** across `locale_test.dart`, `language_screen_test.dart`,
+`router_test.dart` and the two app suites.
+
+### How to test
+
+```sh
+git pull
+./tool/check.sh --fix     # expect: localisations up to date, no analyzer issues,
+                          # 153 tests passing
+
+cd apps/njiani_rider  && flutter run --dart-define-from-file=../../.env.local
+cd apps/njiani_driver && flutter run --dart-define-from-file=../../.env.local
+```
+
+Android only while you are on Windows.
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Launch either app, first time | The language screen. **Kiswahili already selected** |
+| 2 | Read the heading | Both lines: `Chagua lugha` above `Choose your language` |
+| 3 | Tap **English** | Teal border and tint move; the subtitle changes to English **immediately** |
+| 4 | Tap **Kiswahili** | It changes back. Nothing has been saved yet |
+| 5 | Tap `Endelea · Continue` | The placeholder naming the next component — **C4** in the rider app, **C6** in the driver app |
+| 6 | **Close the app fully and reopen** | Straight to the placeholder. The language screen does **not** appear again |
+| 7 | Tap **Change language** / **Badilisha lugha** | Back to the chooser |
+| 8 | Tap **Component gallery** | The C1 matrix, still reachable |
+| 9 | Android Settings → Display → Font size → largest, then reopen | The screen **scrolls**; Continue stays reachable |
+| 10 | Install both apps | Two icons; each shows its own next component |
+
+**Step 6 is the one that matters** — it is the whole point of the `confirmed` flag.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **153 tests**, including the overflow case at the text-scale
+ceiling and both languages rendering end to end.
+
+**Not verified** — no Android SDK here, so nothing compiled or run on a device. In particular
+**`shared_preferences` is never exercised against a real device** — every test uses the in-memory
+store. Step 6 is the first time the real one runs, so if the language screen reappears after a
+restart, that is where to look.
+
+### Known gaps — deliberate
+
+| Gap | Picked up by |
+| --- | --- |
+| `profiles.lang` is not written — only the device preference | **C5**, once there is an account |
+| No Settings screen; Change language sits on the placeholder | later |
+| Gallery strings are still English-only — it is a dev surface | not planned |
+| No sign-in guard yet | **C4**, in the same redirect |
 
 ### Sign-off
 

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:njiani_core/njiani_core.dart';
 
 /// Which of the two apps this binary is.
@@ -11,8 +10,6 @@ const NjianiApp njianiApp = NjianiApp.driver;
 
 /// Entry point for the Njiani driver app.
 ///
-/// C1 runs the shared component gallery so the design system can be judged on
-/// a real device. C2 replaces this with the real routed app shell.
-void main() {
-  runApp(const NjGalleryApp(app: njianiApp));
-}
+/// Everything shared -- theme, localisation, routing -- lives in
+/// [NjianiRoot]. This file should stay a single line.
+Future<void> main() => NjianiRoot.bootstrap(njianiApp);

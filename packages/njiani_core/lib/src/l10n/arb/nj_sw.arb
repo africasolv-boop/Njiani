@@ -1,0 +1,23 @@
+{
+  "@@locale": "sw",
+
+  "appName": "Njiani",
+  "tagline": "Usafiri unaoelekea njia yako.",
+
+  "languageHeadingSw": "Chagua lugha",
+  "languageHeadingEn": "Choose your language",
+
+  "languageChangeLater": "Unaweza kubadilisha hii baadaye kwenye Mipangilio.",
+
+  "languageSwahili": "Kiswahili",
+  "languageSwahiliHint": "Chaguo la kwanza",
+  "languageEnglish": "English",
+  "languageEnglishHint": "Second language",
+  "languageContinue": "Endelea · Continue",
+
+  "nextComponentTitle": "Inayofuata: {component}",
+  "nextComponentBody": "Skrini hii itakuja kwenye hatua inayofuata. Lugha uliyochagua imehifadhiwa.",
+
+  "changeLanguage": "Badilisha lugha",
+  "openComponentGallery": "Vipengele"
+}

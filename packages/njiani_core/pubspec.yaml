@@ -16,6 +16,18 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Localisation. Both languages ship from C2 -- no English-only strings.
+  flutter_localizations:
+    sdk: flutter
+  intl: any
+  # State. Riverpod streams realtime data cleanly and is testable without a
+  # widget tree, which matters once the driver feed arrives at C9.
+  flutter_riverpod: ^2.6.1
+  # Routing with guards: language chosen, signed in, driver approved.
+  go_router: ^14.6.2
+  # Per-device preferences: chosen language, so a returning user is never
+  # asked again. Anything that must survive a reinstall lives in Postgres.
+  shared_preferences: ^2.3.3
 
 dev_dependencies:
   flutter_test:
@@ -23,6 +35,9 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  # Enables `flutter gen-l10n` for this package (see l10n.yaml).
+  generate: true
+
   # Bricolage Grotesque, bundled rather than fetched at runtime: drivers are on
   # metered data, and text that reflows after a network fetch reads as a bug.
   # SIL Open Font License 1.1 -- see assets/fonts/OFL.txt.

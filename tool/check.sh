@@ -65,6 +65,35 @@ else
   echo "    none"
 fi
 
+# --------------------------------------------------------------------------
+# Localisations.
+#
+# The generated strings are committed so a fresh clone analyses and tests
+# without a codegen step. That only works if they stay in step with the .arb
+# files, so regenerate and fail if anything moved.
+# --------------------------------------------------------------------------
+echo ""
+echo "==> localisations"
+(cd packages/njiani_core && flutter gen-l10n >/dev/null 2>&1) || {
+  echo "    gen-l10n failed" >&2
+  exit 1
+}
+if ! git diff --quiet -- packages/njiani_core/lib/src/l10n/generated 2>/dev/null; then
+  if [ "$FIX" -eq 1 ]; then
+    echo "    regenerated (commit the result)"
+  else
+    echo "" >&2
+    echo "    Generated strings are out of date with the .arb files." >&2
+    echo "    They have just been regenerated -- review and commit:" >&2
+    echo "" >&2
+    git --no-pager diff --stat -- packages/njiani_core/lib/src/l10n/generated >&2
+    echo "" >&2
+    exit 1
+  fi
+else
+  echo "    up to date"
+fi
+
 echo ""
 echo "==> flutter analyze (whole workspace)"
 flutter analyze || exit 1
