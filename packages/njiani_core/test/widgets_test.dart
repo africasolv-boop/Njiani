@@ -282,7 +282,6 @@ void main() {
           const NjUploadBox(
             label: 'Tap to take a photo',
             doneLabel: 'License photo added',
-            done: false,
             onTap: _noop,
           ),
         ),
@@ -294,7 +293,7 @@ void main() {
           const NjUploadBox(
             label: 'Tap to take a photo',
             doneLabel: 'License photo added',
-            done: true,
+            state: NjUploadState.done,
             onTap: _noop,
           ),
         ),
@@ -374,7 +373,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(const NjGalleryApp(app: NjianiApp.rider));
-      await tester.pumpAndSettle();
+      // Not pumpAndSettle: the gallery contains an NjSkeleton, which loops
+      // forever by design, so the tree never settles.
+      await tester.pump(const Duration(milliseconds: 100));
 
       expect(find.byType(NjGalleryScreen), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -388,20 +389,287 @@ void main() {
       }
     });
 
-    testWidgets('theme toggle flips the palette', (tester) async {
+    testWidgets('renders both themes in the same view', (tester) async {
+      // The design's gallery spec: "Both themes in the same gallery, side by
+      // side." A component that works in one and vanishes in the other must
+      // be visible here, not discovered inside a flow.
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(const NjGalleryApp(app: NjianiApp.driver));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 100));
 
-      MaterialApp app() => tester.widget<MaterialApp>(find.byType(MaterialApp));
-      expect(app().themeMode, ThemeMode.system);
+      expect(find.text('Light'), findsWidgets);
+      expect(find.text('Dark'), findsWidgets);
+    });
+  });
 
-      await tester.tap(find.byIcon(Icons.dark_mode_outlined));
-      await tester.pumpAndSettle();
-      expect(app().themeMode, ThemeMode.dark);
+  group('NjButton sizes and blocked state', () {
+    testWidgets('compact is 48pt, primary is 56pt', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          NjButton(
+            label: 'Pickup',
+            size: NjButtonSize.compact,
+            onPressed: () {},
+          ),
+        ),
+      );
+      expect(tester.getSize(find.byType(NjButton)).height, 48);
 
-      await tester.tap(find.byIcon(Icons.light_mode_outlined));
-      await tester.pumpAndSettle();
-      expect(app().themeMode, ThemeMode.light);
+      await tester.pumpWidget(
+        wrap(NjButton(label: 'Send request', onPressed: () {})),
+      );
+      expect(tester.getSize(find.byType(NjButton)).height, 56);
+    });
+
+    testWidgets('blocked stays at full opacity, unlike disabled',
+        (tester) async {
+      // "Seats full" is a statement, not a dimmed control. The two must not
+      // look the same to a driver glancing at the feed.
+      await tester.pumpWidget(
+        wrap(
+          const NjButton(
+            label: 'Seats full',
+            variant: NjButtonVariant.blocked,
+            onPressed: null,
+          ),
+        ),
+      );
+      final blocked = tester.widget<Opacity>(
+        find.descendant(
+          of: find.byType(NjButton),
+          matching: find.byType(Opacity),
+        ),
+      );
+      expect(blocked.opacity, 1.0);
+
+      await tester.pumpWidget(
+        wrap(const NjButton(label: 'Send code', onPressed: null)),
+      );
+      final disabled = tester.widget<Opacity>(
+        find.descendant(
+          of: find.byType(NjButton),
+          matching: find.byType(Opacity),
+        ),
+      );
+      expect(disabled.opacity, 0.45);
+    });
+
+    testWidgets('blocked ignores taps even with a handler', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        wrap(
+          NjButton(
+            label: 'Seats full',
+            variant: NjButtonVariant.blocked,
+            onPressed: () => taps++,
+          ),
+        ),
+      );
+      await tester.tap(find.text('Seats full'), warnIfMissed: false);
+      expect(taps, 0);
+    });
+  });
+
+  group('NjUploadBox states', () {
+    testWidgets('each state shows its own wording', (tester) async {
+      const label = 'Tap to photograph your licence';
+      const done = 'Licence photo added';
+
+      for (final (state, expected) in const [
+        (NjUploadState.empty, label),
+        (NjUploadState.done, done),
+      ]) {
+        await tester.pumpWidget(
+          wrap(
+            NjUploadBox(
+              label: label,
+              doneLabel: done,
+              state: state,
+              onTap: _noop,
+            ),
+          ),
+        );
+        expect(find.text(expected), findsOneWidget);
+      }
+    });
+
+    testWidgets('failed says what was kept, not just what broke',
+        (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const NjUploadBox(
+            label: 'Tap to photograph your licence',
+            doneLabel: 'Licence photo added',
+            state: NjUploadState.failed,
+            onTap: _noop,
+          ),
+        ),
+      );
+      expect(find.textContaining('Your details are saved'), findsOneWidget);
+    });
+
+    testWidgets('uploading blocks taps', (tester) async {
+      var taps = 0;
+      await tester.pumpWidget(
+        wrap(
+          NjUploadBox(
+            label: 'Tap',
+            doneLabel: 'Done',
+            state: NjUploadState.uploading,
+            onTap: () => taps++,
+          ),
+        ),
+      );
+      await tester.tap(find.byType(NjUploadBox), warnIfMissed: false);
+      expect(taps, 0);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('NjOtpField error reset', () {
+    testWidgets('a wrong code clears the boxes', (tester) async {
+      Widget build({required bool hasError}) => wrap(
+            NjOtpField(
+              autofocus: false,
+              hasError: hasError,
+              onCompleted: (_) {},
+            ),
+          );
+
+      await tester.pumpWidget(build(hasError: false));
+      final boxes = find.byType(TextField);
+      for (var i = 0; i < 4; i++) {
+        await tester.enterText(boxes.at(i), '${i + 1}');
+        await tester.pump();
+      }
+      expect(
+        tester.widget<TextField>(boxes.first).controller?.text,
+        '1',
+      );
+
+      // The server rejects the code.
+      await tester.pumpWidget(build(hasError: true));
+      await tester.pump();
+
+      for (var i = 0; i < 4; i++) {
+        expect(
+          tester.widget<TextField>(boxes.at(i)).controller?.text,
+          isEmpty,
+          reason: 'box $i should clear so the code can be retyped cleanly',
+        );
+      }
+    });
+  });
+
+  group('new components', () {
+    testWidgets('NjActionTile exposes its subtitle', (tester) async {
+      var tapped = false;
+      await tester.pumpWidget(
+        wrap(
+          NjActionTile(
+            glyph: '!',
+            title: 'Report this driver',
+            subtitle: 'Price, behaviour, vehicle, or the plate not matching',
+            onTap: () => tapped = true,
+          ),
+        ),
+      );
+      expect(find.text('Report this driver'), findsOneWidget);
+      expect(find.textContaining('plate not matching'), findsOneWidget);
+      await tester.tap(find.byType(NjActionTile));
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('NjActionTile meets the 64pt target', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const NjActionTile(
+            title: 'Call Njiani',
+            subtitle: 'A person on the pilot team',
+            onTap: _noop,
+          ),
+        ),
+      );
+      expect(
+        tester.getSize(find.byType(NjActionTile)).height,
+        greaterThanOrEqualTo(64),
+      );
+    });
+
+    testWidgets('NjBadge renders every tone', (tester) async {
+      for (final tone in NjBadgeTone.values) {
+        await tester.pumpWidget(wrap(NjBadge(label: 'V2', tone: tone)));
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets('NjStatCard shows headline and supporting figures',
+        (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const NjStatCard(
+            caption: 'Today · 4 trips',
+            value: 'TSh 6,200',
+            stats: [
+              NjStat(label: 'This week', value: 'TSh 84,500'),
+              NjStat(label: 'Seats filled', value: '47 of 63'),
+            ],
+          ),
+        ),
+      );
+      expect(find.text('TSh 6,200'), findsOneWidget);
+      expect(find.text('TSh 84,500'), findsOneWidget);
+      expect(find.text('47 of 63'), findsOneWidget);
+    });
+
+    testWidgets('NjMeter clamps out-of-range values', (tester) async {
+      for (final value in [-1.0, 0.0, 0.5, 1.0, 9.0]) {
+        await tester.pumpWidget(wrap(NjMeter(value: value)));
+        await tester.pump();
+        expect(tester.takeException(), isNull, reason: 'value $value');
+      }
+    });
+
+    testWidgets('NjSegmentBar draws one block per seat', (tester) async {
+      await tester.pumpWidget(wrap(const NjSegmentBar(total: 4, filled: 3)));
+      expect(find.byType(Expanded), findsNWidgets(4));
+    });
+
+    testWidgets('NjStatusRow shows label and outcome', (tester) async {
+      await tester.pumpWidget(
+        wrap(
+          const NjStatusRow(
+            label: 'Licence photo',
+            status: 'Rejected',
+            tone: NjStatusTone.bad,
+          ),
+        ),
+      );
+      expect(find.text('Licence photo'), findsOneWidget);
+      expect(find.text('Rejected'), findsOneWidget);
+    });
+
+    testWidgets('NjBanner renders both tones', (tester) async {
+      for (final tone in NjBannerTone.values) {
+        await tester.pumpWidget(
+          wrap(NjBanner(title: 'No connection', message: 'Last known state', tone: tone)),
+        );
+        expect(find.text('No connection'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      }
+    });
+
+    testWidgets('NjSkeletonCard animates without throwing', (tester) async {
+      await tester.pumpWidget(wrap(const NjSkeletonCard()));
+      await tester.pump(const Duration(milliseconds: 600));
+      expect(tester.takeException(), isNull);
+      // Pump past the repeat boundary to catch a disposed-controller tick.
+      await tester.pump(const Duration(milliseconds: 1200));
+      expect(tester.takeException(), isNull);
     });
   });
 }

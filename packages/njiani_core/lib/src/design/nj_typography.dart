@@ -9,12 +9,25 @@ import 'package:flutter/material.dart';
 /// Sizes come from the pitch deck's CSS, converted from rem at the 16px root.
 abstract final class NjTypography {
   /// Font family name as declared in `pubspec.yaml`.
+  ///
+  /// Use this only with a [TextStyle]'s `package:` argument, which applies the
+  /// package prefix for you. Anywhere that takes a bare family name -- notably
+  /// [ThemeData.fontFamily] -- needs [themeFontFamily] instead.
   static const String fontFamily = 'BricolageGrotesque';
 
   /// The package that owns the font asset.
   ///
   /// Required so the apps can use a font declared in `njiani_core`.
   static const String fontPackage = 'njiani_core';
+
+  /// The fully qualified family name, for APIs that take no `package:`.
+  ///
+  /// Flutter resolves a font shipped inside a package under
+  /// `packages/<package>/<family>`. [TextStyle] does this for you when given
+  /// `package:`, but [ThemeData.fontFamily] does not -- passing the bare name
+  /// there silently falls back to the platform font, which renders some text
+  /// in Bricolage and the rest in Roboto on the same screen.
+  static const String themeFontFamily = 'packages/$fontPackage/$fontFamily';
 
   /// Builds the text theme in [color].
   static TextTheme textTheme(Color color) {
@@ -68,7 +81,7 @@ abstract final class NjTypography {
   static const TextStyle plate = TextStyle(
     fontFamily: fontFamily,
     package: fontPackage,
-    fontSize: 18.4,
+    fontSize: 18,
     fontWeight: FontWeight.w800,
     letterSpacing: 1.5,
     height: 1.1,

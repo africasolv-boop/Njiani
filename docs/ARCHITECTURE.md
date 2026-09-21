@@ -355,7 +355,56 @@ them. The backend components (C3, C9, C10) keep their place in the plan — scre
 Supabase after the flow has been judged on a real device. The numbered list above stays the
 commitment; what changes is that a "component" is now usually a screen.
 
-The exact screen list is set once the design project has been read.
+### The screen list
+
+Taken from the design project's own navigation, which keys every screen to a component.
+**23 screens plus the gallery.** Order within a component follows the flow, not the list.
+
+**Rider — "Njiani"**
+
+| Screen | Component | What it is |
+| --- | --- | --- |
+| `pLang` | **C2** | Language choice. Kiswahili pre-selected, shown once before auth |
+| `pPhone` | **C4** | Phone number, `+255` fixed in the field |
+| `pOtp` | **C4** | Four-box code, auto-advancing |
+| `pHome` | **C8** | Request a ride: destination, vehicle, price per seat |
+| `pSearch` | **C9** | Searching, with the real count of drivers who can see the offer |
+| `pNoDriver` | **C9** | Nobody took it — expiry, with the band and a one-tap fix |
+| `pMatched` | **C10** | Driver on the way. Phone numbers revealed only now |
+| `pTrip` | **C11** | On the trip. Route board, agreed price, safety one tap away |
+| `pRate` | **C12** | Arrived and rate. Skippable |
+| `pHistory` | **C12** | Trip history — the only record of an off-app settlement |
+| `pSafety` | **C15** | Share, call, report, and 112 |
+| `pOffline` | **C17** | Connection lost, honest degraded state |
+| `pPlaces` | *V2* | Saved places — designed so C8 leaves room for it |
+| `pCounter` | *V2* | Counter-offer — designed to show why it is not MVP |
+
+**Driver — "Njiani Driver"**
+
+| Screen | Component | What it is |
+| --- | --- | --- |
+| `dSignup` | **C6** | Sign up. The verification gate |
+| `dPending` | **C6** | Under review |
+| `dRejected` | **C6** | Rejected, naming the single thing to fix |
+| `dDirection` | **C7** | Pick a direction — the screen that makes Njiani not ride-hailing |
+| `dStage` | **§13.1** | Stage mode: where demand is, for a parked driver |
+| `dFeed` | **C9 / C10** | Live requests and the atomic claim. **The product** |
+| `dOnboard` | **C11** | On board, with v2 drop sequencing shown |
+| `dEarnings` | **C11** | Earnings and the weekly fee, made legible before it starts |
+| `dHistory` | **C12** | Seven days, grouped by day |
+
+**Design system**
+
+| Screen | Component | What it is |
+| --- | --- | --- |
+| `gallery` | **C1** | The component state matrix, both themes |
+
+Two screens in the design are marked **V2** and are deliberately not in the MVP. They are drawn
+so the MVP layout leaves room for them, and so the cost of `pCounter` in particular is visible:
+a counter-offer turns one atomic claim into a negotiation with its own state machine, timeouts
+and race conditions.
+
+The design also adopts §13.1 (stage mode) from the suggestions in §13 of this document.
 
 ---
 

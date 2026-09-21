@@ -53,10 +53,15 @@ abstract final class NjTheme {
       scaffoldBackgroundColor: nj.bg,
       canvasColor: nj.bg,
       textTheme: text,
-      fontFamily: NjTypography.fontFamily,
-      fontFamilyFallback: const ['system-ui'],
+      // Must be the package-qualified name: a bare family name resolves
+      // against the *app's* assets, not this package's, and fails silently.
+      fontFamily: NjTypography.themeFontFamily,
       extensions: <ThemeExtension<dynamic>>[nj],
       splashFactory: InkSparkle.splashFactory,
+      // The design's focus ring is bajaj yellow, so focus never reads as an
+      // error or a selection -- both of which already own teal and danger.
+      focusColor: nj.bajaj.withValues(alpha: 0.25),
+      highlightColor: nj.bajaj.withValues(alpha: 0.12),
       appBarTheme: AppBarTheme(
         backgroundColor: nj.bg,
         foregroundColor: nj.ink,

@@ -33,6 +33,7 @@ class NjHint extends StatelessWidget {
     return Text(
       text,
       style: context.njText.bodySmall?.copyWith(
+        fontSize: 13.2,
         fontWeight: FontWeight.w600,
         color: tone == NjHintTone.warning ? nj.danger : nj.teal,
       ),

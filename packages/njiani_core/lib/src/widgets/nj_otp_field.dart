@@ -53,6 +53,21 @@ class _NjOtpFieldState extends State<NjOtpField> {
   }
 
   @override
+  void didUpdateWidget(NjOtpField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Spec: on a wrong code every box goes danger, the boxes clear, and focus
+    // returns to the first. Retyping over four stale digits on a small
+    // keyboard is exactly where people give up.
+    if (widget.hasError && !oldWidget.hasError) {
+      for (final controller in _controllers) {
+        controller.clear();
+      }
+      widget.onChanged?.call('');
+      if (mounted) _nodes.first.requestFocus();
+    }
+  }
+
+  @override
   void dispose() {
     for (final controller in _controllers) {
       controller.dispose();

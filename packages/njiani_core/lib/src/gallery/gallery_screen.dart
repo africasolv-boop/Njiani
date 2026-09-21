@@ -2,49 +2,59 @@ import 'package:flutter/material.dart';
 
 import '../boot/boot_screen.dart';
 import '../config/app_identity.dart';
+import '../design/nj_colors.dart';
 import '../design/nj_theme.dart';
 import '../design/nj_tokens.dart';
 import '../util/money.dart';
+import '../widgets/nj_action_tile.dart';
 import '../widgets/nj_avatar.dart';
+import '../widgets/nj_badge.dart';
+import '../widgets/nj_banner.dart';
 import '../widgets/nj_button.dart';
 import '../widgets/nj_card.dart';
 import '../widgets/nj_choice_chips.dart';
 import '../widgets/nj_empty_state.dart';
 import '../widgets/nj_hint.dart';
 import '../widgets/nj_live_dot.dart';
+import '../widgets/nj_meter.dart';
 import '../widgets/nj_otp_field.dart';
 import '../widgets/nj_plate.dart';
 import '../widgets/nj_route_board.dart';
 import '../widgets/nj_seat_indicator.dart';
 import '../widgets/nj_segmented.dart';
 import '../widgets/nj_sheet.dart';
+import '../widgets/nj_skeleton.dart';
 import '../widgets/nj_stars.dart';
+import '../widgets/nj_stat_card.dart';
+import '../widgets/nj_status_row.dart';
 import '../widgets/nj_text_field.dart';
 import '../widgets/nj_toast.dart';
 import '../widgets/nj_upload_box.dart';
 import '../widgets/nj_where_row.dart';
 
-/// Every design-system component on one screen, in both themes.
+/// The component state matrix, rendered in both themes at once.
 ///
-/// This is the C1 deliverable: somewhere to judge the whole visual language
-/// against the pitch deck at once, and to check that nothing breaks in dark
-/// mode or at a small screen size. It is a development surface -- no app screen
-/// routes to it, and it disappears once real screens exist.
+/// This is what the design project's `gallery` spec asks for: not one instance
+/// of each component, but every state each one can be in, side by side in
+/// light and dark, so a missing state is caught here instead of inside a flow.
+///
+/// Side by side above 620pt, stacked below it -- on a 390pt phone two columns
+/// would be 190pt each, which is narrower than the components themselves.
 class NjGalleryScreen extends StatefulWidget {
   const NjGalleryScreen({
     super.key,
     required this.app,
-    required this.onToggleTheme,
-    required this.isDark,
+    this.onToggleTheme,
+    this.isDark = false,
   });
 
   /// Which app is hosting the gallery.
   final NjianiApp app;
 
-  /// Flips between the light and dark theme.
-  final VoidCallback onToggleTheme;
+  /// Optional single-theme override, for checking one appearance full width.
+  final VoidCallback? onToggleTheme;
 
-  /// Whether the dark theme is showing.
+  /// Whether the host is currently forcing the dark theme.
   final bool isDark;
 
   @override
@@ -54,35 +64,25 @@ class NjGalleryScreen extends StatefulWidget {
 class _NjGalleryScreenState extends State<NjGalleryScreen> {
   String _vehicle = 'bajaj';
   String _tab = 'requests';
+  String _triple = 'week';
   int? _price = 1500;
   int _seatsTaken = 1;
   int _rating = 4;
-  bool _licenceAdded = false;
-  bool _loading = false;
-  String _otp = '';
-  final _phoneController = TextEditingController(text: '712 345 678');
+  bool _otpError = false;
+  final _priceController = TextEditingController(text: '1,800');
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final nj = context.nj;
-
     return Scaffold(
       appBar: AppBar(
         title: Text('${widget.app.label} — components'),
         actions: [
-          IconButton(
-            tooltip: widget.isDark ? 'Switch to light' : 'Switch to dark',
-            onPressed: widget.onToggleTheme,
-            icon: Icon(
-              widget.isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-            ),
-          ),
           IconButton(
             tooltip: 'Build configuration',
             onPressed: () => Navigator.of(context).push(
@@ -97,158 +97,119 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
       body: ListView(
         padding: const EdgeInsets.only(bottom: NjSpace.xxxl * 2),
         children: [
-          _Section(
-            title: 'Route board',
-            note: 'The signature component. Yellow in both themes — it copies '
-                'the painted route boards on daladala, so it should not follow '
-                'the device appearance.',
-            fullBleed: true,
-            child: Column(
+          const _Intro(),
+
+          _Matrix(
+            title: 'NjButton',
+            spec: '4 variants × default / disabled 0.45 / loading / blocked. '
+                'Primary 56pt, compact 48pt.',
+            content: (context) => Column(
               children: [
-                NjRouteBoard(
-                  from: 'Ubungo',
-                  to: 'Kimara Korogwe',
-                  subtitle: "You're online",
-                  actionLabel: 'Change',
-                  onAction: () => NjToast.show(context, 'Change direction'),
+                for (final (label, variant) in const [
+                  ('Send request · bajaj, the committing tap',
+                      NjButtonVariant.bajaj),
+                  ('Send code · primary', NjButtonVariant.primary),
+                  ('Share trip · ghost', NjButtonVariant.ghost),
+                  ('Cancel request · dangerGhost', NjButtonVariant.dangerGhost),
+                ]) ...[
+                  NjButton(
+                    label: label,
+                    variant: variant,
+                    onPressed: () => NjToast.show(context, label),
+                  ),
+                  const SizedBox(height: NjSpace.sm),
+                ],
+                const NjButton(label: 'Send code · disabled', onPressed: null),
+                const SizedBox(height: NjSpace.sm),
+                NjButton(
+                  label: 'Sending…',
+                  loading: true,
+                  onPressed: () {},
                 ),
                 const SizedBox(height: NjSpace.sm),
-                const NjRouteBoard(
-                  from: 'Ubungo',
-                  to: 'Mbezi Mwisho',
-                  subtitle: 'On the way with Juma, T 482 DKT',
+                NjButton(
+                  label: 'Pickup · compact 48pt',
+                  size: NjButtonSize.compact,
+                  onPressed: () => NjToast.show(context, 'Claimed'),
+                ),
+                const SizedBox(height: NjSpace.sm),
+                const NjButton(
+                  label: 'Seats full · blocked',
+                  size: NjButtonSize.compact,
+                  variant: NjButtonVariant.blocked,
+                  onPressed: null,
                 ),
               ],
             ),
           ),
 
-          _Section(
-            title: 'Seats',
-            note: 'Three blocks for a bajaj, one for a boda. Tap to fill.',
-            child: Column(
+          _Matrix(
+            title: 'NjTextField',
+            spec: 'empty / focused teal / error danger + message / disabled.',
+            content: (context) => Column(
+              children: [
+                const NjTextField(
+                  label: 'Your price, per seat',
+                  prefix: 'TSh',
+                  hintText: '1,500',
+                ),
+                const SizedBox(height: NjSpace.md),
+                NjTextField(
+                  label: 'Tap to focus — border turns teal',
+                  prefix: 'TSh',
+                  controller: _priceController,
+                ),
+                const SizedBox(height: NjSpace.md),
+                const NjTextField(
+                  label: 'Phone number',
+                  prefix: '+255',
+                  errorText: 'Enter 9 digits, without the leading zero.',
+                ),
+                const SizedBox(height: NjSpace.md),
+                const NjTextField(
+                  label: 'Disabled',
+                  hintText: 'Not editable',
+                  enabled: false,
+                ),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjOtpField',
+            spec: 'empty / partial / complete / wrong-code reset. '
+                'A wrong code clears the boxes and refocuses the first.',
+            content: (context) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '$_seatsTaken of 3 seats taken',
-                            style: context.njText.titleSmall,
-                          ),
-                          Text(
-                            _seatsTaken >= 3
-                                ? 'Drop someone off to take more'
-                                : 'You can take ${3 - _seatsTaken} more',
-                            style: context.njText.bodySmall
-                                ?.copyWith(color: nj.muted),
-                          ),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: () =>
-                          setState(() => _seatsTaken = (_seatsTaken + 1) % 4),
-                      child: NjSeatIndicator(total: 3, taken: _seatsTaken),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: NjSpace.lg),
-                const Row(
-                  children: [
-                    Expanded(child: Text('Boda, one seat')),
-                    NjSeatIndicator(total: 1, taken: 1),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          _Section(
-            title: 'Number plate',
-            note: 'A safety component — passengers verify the bajaj by reading '
-                'it. Fixed plate colours in both themes.',
-            child: const Wrap(
-              spacing: NjSpace.md,
-              runSpacing: NjSpace.sm,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                NjPlateBadge(plate: 'T 482 DKT'),
-                NjPlateBadge(plate: 'MC 214 CXK', compact: true),
-              ],
-            ),
-          ),
-
-          _Section(
-            title: 'Buttons',
-            note: 'Yellow is reserved for the decisive tap — Send request, '
-                'Start heading — so it never looks like a routine action.',
-            child: Column(
-              children: [
-                NjButton(
-                  label: 'Send request',
-                  variant: NjButtonVariant.bajaj,
-                  onPressed: () => NjToast.show(context, 'Request sent'),
+                NjOtpField(
+                  autofocus: false,
+                  hasError: _otpError,
+                  onCompleted: (code) => NjToast.show(context, 'Code $code'),
                 ),
                 const SizedBox(height: NjSpace.md),
                 NjButton(
-                  label: 'Verify',
-                  onPressed: () => NjToast.show(context, 'Verified'),
-                ),
-                const SizedBox(height: NjSpace.md),
-                NjButton(
-                  label: 'Call Juma',
-                  icon: Icons.phone_outlined,
+                  label: _otpError ? 'Clear the error' : 'Simulate wrong code',
                   variant: NjButtonVariant.ghost,
-                  onPressed: () => NjToast.show(context, 'Calling…'),
-                ),
-                const SizedBox(height: NjSpace.md),
-                NjButton(
-                  label: 'Cancel request',
-                  variant: NjButtonVariant.dangerGhost,
-                  onPressed: () => NjToast.show(context, 'Cancelled'),
-                ),
-                const SizedBox(height: NjSpace.md),
-                const NjButton(label: 'Send code', onPressed: null),
-                const SizedBox(height: NjSpace.md),
-                NjButton(
-                  label: 'Finding a driver',
-                  loading: _loading,
-                  onPressed: () async {
-                    setState(() => _loading = true);
-                    await Future<void>.delayed(const Duration(seconds: 2));
-                    if (mounted) setState(() => _loading = false);
-                  },
+                  size: NjButtonSize.compact,
+                  onPressed: () => setState(() => _otpError = !_otpError),
                 ),
               ],
             ),
           ),
 
-          _Section(
-            title: 'Where to',
-            note: 'Teal dot for pickup, yellow square for destination — the '
-                'same two marks the map uses.',
-            child: const NjWhereRow(
-              fromLabel: 'Pickup, from your location',
-              fromValue: 'Ubungo Bus Terminal',
-              toLabel: 'Going to',
-              toValue: 'Kimara Korogwe',
-            ),
-          ),
-
-          _Section(
-            title: 'Vehicle and tabs',
-            child: Column(
+          _Matrix(
+            title: 'NjSegmented',
+            spec: 'Each option selected, 2-up and 3-up.',
+            content: (context) => Column(
               children: [
                 NjSegmented<String>(
                   semanticLabel: 'Vehicle type',
                   value: _vehicle,
                   onChanged: (v) => setState(() => _vehicle = v),
                   segments: const [
-                    NjSegment(value: 'bajaj', label: 'Bajaj'),
-                    NjSegment(value: 'boda', label: 'Boda boda'),
+                    NjSegment(value: 'bajaj', label: 'Bajaj · 3 seats'),
+                    NjSegment(value: 'boda', label: 'Boda · 1 seat'),
                   ],
                 ),
                 const SizedBox(height: NjSpace.md),
@@ -260,37 +221,221 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
                     NjSegment(value: 'onboard', label: 'On board (1)'),
                   ],
                 ),
+                const SizedBox(height: NjSpace.md),
+                NjSegmented<String>(
+                  value: _triple,
+                  onChanged: (v) => setState(() => _triple = v),
+                  segments: const [
+                    NjSegment(value: 'day', label: 'Day'),
+                    NjSegment(value: 'week', label: 'Week'),
+                    NjSegment(value: 'month', label: 'Month'),
+                  ],
+                ),
               ],
             ),
           ),
 
-          _Section(
-            title: 'Your price',
-            note: 'An offer below the band still sends — it just says so first. '
-                'The passenger sets the price, not the app.',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          _Matrix(
+            title: 'NjRouteBoard',
+            spec: 'Yellow in both themes — it imitates a painted daladala '
+                'board, not a surface.',
+            fullBleed: true,
+            content: (context) => Column(
               children: [
-                NjTextField(
-                  label: 'Your price',
-                  prefix: 'TSh',
-                  hintText: '1000',
-                  keyboardType: TextInputType.number,
+                NjRouteBoard(
+                  from: 'Ubungo',
+                  to: 'Kimara Korogwe',
+                  subtitle: "You're online",
+                  actionLabel: 'Change',
+                  onAction: () => NjToast.show(context, 'Change direction'),
                 ),
                 const SizedBox(height: NjSpace.sm),
-                NjHint(
-                  text: (_price ?? 0) < 1000
-                      ? 'Below what most drivers take. It may take longer to '
-                          'find a bajaj.'
-                      : 'Most drivers on this route take ${tsh(1000)} to '
-                          '${tsh(1500)}',
-                  tone: (_price ?? 0) < 1000
-                      ? NjHintTone.warning
-                      : NjHintTone.info,
+                const NjRouteBoard(
+                  from: 'Ubungo',
+                  to: 'Kimara Korogwe',
+                  subtitle: 'On the way with Juma · T 482 DKT',
+                ),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjSeatIndicator · NjPlateBadge · NjLiveDot',
+            spec: '0–3 of 3 and 0–1 of 1. Tap the seats to fill them.',
+            content: (context) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _seatsTaken = (_seatsTaken + 1) % 4),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '$_seatsTaken of 3 seats taken',
+                          style: context.njText.titleSmall,
+                        ),
+                      ),
+                      NjSeatIndicator(total: 3, taken: _seatsTaken),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: NjSpace.md),
+                const Row(
+                  children: [
+                    Expanded(child: Text('Boda · one seat')),
+                    NjSeatIndicator(total: 1, taken: 1),
+                  ],
+                ),
+                const SizedBox(height: NjSpace.md),
+                const Wrap(
+                  spacing: NjSpace.md,
+                  runSpacing: NjSpace.sm,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    NjPlateBadge(plate: 'T 482 DKT'),
+                    NjPlateBadge(plate: 'MC 214 CXK', compact: true),
+                    NjLiveDot(label: 'Live'),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjBadge · NjStatusRow',
+            spec: 'Scope markers and the rejection checklist.',
+            content: (context) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Wrap(
+                  spacing: NjSpace.sm,
+                  runSpacing: NjSpace.sm,
+                  children: [
+                    NjBadge(label: 'V2'),
+                    NjBadge(label: 'V2 · NOT IN MVP', tone: NjBadgeTone.bajaj),
+                    NjBadge(label: 'TSh 0', tone: NjBadgeTone.teal),
+                    NjBadge(label: 'REJECTED', tone: NjBadgeTone.danger),
+                  ],
+                ),
+                const SizedBox(height: NjSpace.md),
+                NjCard(
+                  style: NjCardStyle.outlined,
+                  child: Column(
+                    children: [
+                      const NjStatusRow(
+                        label: 'Phone number',
+                        status: 'Verified',
+                        tone: NjStatusTone.good,
+                      ),
+                      Divider(color: context.nj.line, height: 1),
+                      const NjStatusRow(
+                        label: 'Vehicle and plate',
+                        status: 'Accepted',
+                        tone: NjStatusTone.good,
+                      ),
+                      Divider(color: context.nj.line, height: 1),
+                      const NjStatusRow(
+                        label: 'Licence photo',
+                        status: 'Rejected',
+                        tone: NjStatusTone.bad,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjBanner',
+            spec: 'Connection lost, and a rejected document.',
+            content: (context) => const Column(
+              children: [
+                NjBanner(
+                  title: 'No connection. Showing your last known state.',
+                  showDot: true,
+                ),
+                SizedBox(height: NjSpace.md),
+                NjBanner(
+                  title: "We couldn't read your licence photo",
+                  message: 'Glare across the number. Take it again in shade, '
+                      'with the whole card in frame.',
+                ),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjActionTile',
+            spec: 'Safety actions. The subtitle is what makes the tap safe to '
+                'make.',
+            content: (context) => Column(
+              children: [
+                NjActionTile(
+                  glyph: '↗',
+                  tone: NjActionTone.primary,
+                  title: 'Share this trip',
+                  subtitle: 'Sends a live link by WhatsApp or SMS',
+                  onTap: () => NjToast.show(context, 'Trip link copied.'),
+                ),
+                const SizedBox(height: NjSpace.sm + 2),
+                NjActionTile(
+                  glyph: '☎',
+                  title: 'Call Njiani',
+                  subtitle: 'A person on the pilot team, 6am to 10pm',
+                  onTap: () => NjToast.show(context, 'Calling…'),
+                ),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjStatCard · NjMeter · NjSegmentBar',
+            spec: 'Earnings hero, countdown, and seats-filled blocks.',
+            content: (context) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                NjStatCard(
+                  caption: 'Today · 4 trips',
+                  value: tsh(6200),
+                  stats: const [
+                    NjStat(label: 'This week', value: 'TSh 84,500'),
+                    NjStat(label: 'Seats filled', value: '47 of 63'),
+                  ],
+                ),
+                const SizedBox(height: NjSpace.md),
+                const NjMeter(value: 0.62),
+                const SizedBox(height: NjSpace.sm),
+                Text(
+                  '37 seconds left',
+                  style: context.njText.bodySmall
+                      ?.copyWith(fontSize: 12.5, color: context.nj.muted),
+                ),
+                const SizedBox(height: NjSpace.md),
+                const NjSegmentBar(total: 4, filled: 3),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'Price · NjChoiceChips + NjHint',
+            spec: 'Below the band still sends — it just says so first.',
+            content: (context) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const NjHint(
+                  text: 'Most drivers on this route take TSh 1,000 to TSh 1,500',
+                ),
+                const SizedBox(height: NjSpace.sm),
+                const NjHint(
+                  text: 'Below what most drivers take. It may take longer to '
+                      'find a bajaj.',
+                  tone: NjHintTone.warning,
                 ),
                 const SizedBox(height: NjSpace.md),
                 NjPriceChips(
-                  prices: const [800, 1200, 1500],
+                  prices: const [1000, 1250, 1500],
                   selected: _price,
                   onSelected: (p) => setState(() => _price = p),
                 ),
@@ -298,88 +443,41 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
             ),
           ),
 
-          _Section(
-            title: 'Phone and code',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          _Matrix(
+            title: 'NjCard · NjAvatar · NjWhereRow',
+            spec: 'Filled and outlined, plus the claim-lost band.',
+            content: (context) => Column(
               children: [
-                NjTextField(
-                  label: 'Phone number',
-                  prefix: '+255',
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: NjSpace.lg),
-                NjTextField(
-                  label: 'Plate number',
-                  hintText: 'T 482 DKT',
-                  errorText: 'Enter the plate as it appears on the vehicle',
-                ),
-                const SizedBox(height: NjSpace.lg),
-                Text('4-digit code', style: context.njText.labelMedium),
-                const SizedBox(height: NjSpace.sm),
-                NjOtpField(
-                  autofocus: false,
-                  onChanged: (code) => setState(() => _otp = code),
-                  onCompleted: (code) => NjToast.show(context, 'Code $code'),
-                ),
-                if (_otp.isNotEmpty) ...[
-                  const SizedBox(height: NjSpace.sm),
-                  Text(
-                    'Typed: $_otp',
-                    style: context.njText.bodySmall?.copyWith(color: nj.muted),
+                const NjCard(
+                  child: NjWhereRow(
+                    fromLabel: 'Pickup, from your location',
+                    fromValue: 'Ubungo Bus Terminal',
+                    toLabel: 'Going to',
+                    toValue: 'Kimara Korogwe',
                   ),
-                ],
-              ],
-            ),
-          ),
-
-          _Section(
-            title: 'Driver card',
-            child: Column(
-              children: [
+                ),
+                const SizedBox(height: NjSpace.md),
                 NjCard(
-                  child: Column(
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          const NjAvatar(name: 'Juma Mwinyi'),
-                          const SizedBox(width: NjSpace.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Juma Mwinyi',
-                                  style: context.njText.titleSmall
-                                      ?.copyWith(fontWeight: FontWeight.w700),
-                                ),
-                                Text(
-                                  '4.8 rating, 312 trips',
-                                  style: context.njText.bodySmall
-                                      ?.copyWith(color: nj.muted),
-                                ),
-                              ],
+                      const NjAvatar(name: 'Juma Mwinyi'),
+                      const SizedBox(width: NjSpace.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Juma Mwinyi',
+                              style: context.njText.bodyMedium
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: NjSpace.md),
-                      const Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          NjPlateBadge(plate: 'T 482 DKT'),
-                          SizedBox(width: NjSpace.sm),
-                          // The plate is fixed-width by design, so whatever
-                          // sits beside it is what has to yield.
-                          Flexible(
-                            child: Text(
-                              'Blue bajaj',
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.end,
+                            Text(
+                              '4.8 rating · 312 trips',
+                              style: context.njText.bodySmall
+                                  ?.copyWith(color: context.nj.muted),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -391,14 +489,13 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Expanded(
                             child: Text(
-                              'Shekilango, 400 m ahead',
+                              'Shekilango · 400 m ahead',
                               style: context.njText.bodySmall
-                                  ?.copyWith(color: nj.muted),
+                                  ?.copyWith(color: context.nj.muted),
                             ),
                           ),
                           Text(tsh(1500), style: context.njText.headlineSmall),
@@ -406,91 +503,104 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
                       ),
                       Text(
                         'To Kimara Korogwe',
-                        style: context.njText.titleSmall
+                        style: context.njText.bodyMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: NjSpace.md),
-                      NjButton(
-                        label: 'Pickup',
-                        onPressed: () => NjToast.show(
-                          context,
-                          'Neema is yours. Pick up at Shekilango.',
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(NjSpace.md - 2),
+                        decoration: BoxDecoration(
+                          color: context.nj.dangerSoft,
+                          borderRadius: BorderRadius.circular(NjRadius.chip - 2),
+                        ),
+                        child: Text(
+                          'Taken by another driver',
+                          textAlign: TextAlign.center,
+                          style: context.njText.bodySmall?.copyWith(
+                            color: context.nj.danger,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: NjSpace.md),
-                Container(
-                  padding: const EdgeInsets.all(NjSpace.md),
-                  decoration: BoxDecoration(
-                    color: nj.dangerSoft,
-                    borderRadius: BorderRadius.circular(NjRadius.chip - 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      'Taken by another driver',
-                      style: context.njText.bodySmall?.copyWith(
-                        color: nj.danger,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+              ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjUploadBox',
+            spec: 'empty / uploading / done / failed.',
+            content: (context) => Column(
+              children: [
+                NjUploadBox(
+                  label: 'Tap to photograph your licence',
+                  doneLabel: 'Licence photo added',
+                  onTap: () {},
+                ),
+                const SizedBox(height: NjSpace.sm + 2),
+                NjUploadBox(
+                  label: 'Tap to photograph your licence',
+                  doneLabel: 'Licence photo added',
+                  state: NjUploadState.uploading,
+                  progress: 0.6,
+                  onTap: () {},
+                ),
+                const SizedBox(height: NjSpace.sm + 2),
+                NjUploadBox(
+                  label: 'Tap to photograph your licence',
+                  doneLabel: 'Licence photo added',
+                  state: NjUploadState.done,
+                  onTap: () {},
+                ),
+                const SizedBox(height: NjSpace.sm + 2),
+                NjUploadBox(
+                  label: 'Tap to photograph your licence',
+                  doneLabel: 'Licence photo added',
+                  state: NjUploadState.failed,
+                  onTap: () {},
                 ),
               ],
             ),
           ),
 
-          _Section(
-            title: 'Licence upload',
-            child: NjUploadBox(
-              label: 'Tap to take a photo of your license',
-              doneLabel: 'License photo added',
-              done: _licenceAdded,
-              onTap: () => setState(() => _licenceAdded = !_licenceAdded),
-            ),
-          ),
-
-          _Section(
-            title: 'Rating',
-            child: Center(
-              child: NjStars(
-                rating: _rating,
-                onRated: (value) => setState(() => _rating = value),
-              ),
-            ),
-          ),
-
-          _Section(
-            title: 'Live and empty states',
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          _Matrix(
+            title: 'NjEmptyState · NjSkeleton · NjStars',
+            spec: 'With and without an action; skeletons, not spinners.',
+            content: (context) => Column(
               children: [
-                const NjLiveDot(
-                  label: 'Live, passengers heading to Kimara Korogwe',
-                ),
                 NjEmptyState(
-                  icon: Icons.route_outlined,
-                  message: 'No requests yet on this road.\n'
-                      'New ones will appear here.',
+                  icon: Icons.schedule,
+                  message: 'Nobody heading to Kimara Korogwe yet.\n'
+                      "You'll hear a sound when a request comes in.",
                   action: NjButton(
                     label: 'Change direction',
                     expand: false,
+                    size: NjButtonSize.compact,
                     variant: NjButtonVariant.ghost,
-                    onPressed: () => NjToast.show(context, 'Change direction'),
+                    onPressed: () => NjToast.show(context, 'Change'),
+                  ),
+                ),
+                const NjSkeletonCard(),
+                const SizedBox(height: NjSpace.md),
+                Center(
+                  child: NjStars(
+                    rating: _rating,
+                    onRated: (value) => setState(() => _rating = value),
                   ),
                 ),
               ],
             ),
           ),
 
-          _Section(
-            title: 'Bottom sheet',
-            note: 'Rides 22pt over whatever is behind it, so it reads as '
-                'sitting on top of the map.',
+          _Matrix(
+            title: 'NjSheet',
+            spec: 'Rides 22pt over the map behind it.',
             fullBleed: true,
-            child: Container(
-              color: nj.map,
+            content: (context) => Container(
+              color: context.nj.map,
               padding: const EdgeInsets.only(top: NjSpace.xxxl),
               child: NjSheet(
                 child: Column(
@@ -502,15 +612,9 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
                     ),
                     const SizedBox(height: NjSpace.sm),
                     Text(
-                      '3 bajajs on Morogoro Road are heading your way.',
+                      '3 bajaj heading your way can see your offer.',
                       style: context.njText.bodyMedium
-                          ?.copyWith(color: nj.muted),
-                    ),
-                    const SizedBox(height: NjSpace.lg),
-                    NjButton(
-                      label: 'Cancel request',
-                      variant: NjButtonVariant.dangerGhost,
-                      onPressed: () => NjToast.show(context, 'Cancelled'),
+                          ?.copyWith(color: context.nj.muted),
                     ),
                   ],
                 ),
@@ -518,9 +622,10 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
             ),
           ),
 
-          _Section(
+          _Matrix(
             title: 'Type scale',
-            child: Column(
+            spec: 'From the design: 41.6 / 25.6 / 24 / 21.6 / 16.8 / 13.6.',
+            content: (context) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Njiani', style: context.njText.displayLarge),
@@ -530,61 +635,68 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
                 ),
                 Text('Arriving in 3 min', style: context.njText.headlineMedium),
                 Text(tsh(1500), style: context.njText.headlineSmall),
-                const SizedBox(height: NjSpace.sm),
-                Text('Body — 16px, 1.45 line height. Njiani connects '
-                    'passengers with bajaj and boda boda drivers who are '
-                    'already heading in the same direction.'),
+                const Text('Body — Njiani connects passengers with drivers '
+                    'already heading the same way.'),
                 Text(
                   'Small — captions and hints.',
-                  style: context.njText.bodySmall?.copyWith(color: nj.muted),
+                  style: context.njText.bodySmall
+                      ?.copyWith(color: context.nj.muted),
                 ),
               ],
             ),
           ),
 
-          _Section(
-            title: 'Palette',
-            child: const Wrap(
-              spacing: NjSpace.sm,
-              runSpacing: NjSpace.sm,
-              children: [
-                _Swatch(name: 'bajaj', token: _Token.bajaj),
-                _Swatch(name: 'teal', token: _Token.teal),
-                _Swatch(name: 'tealSoft', token: _Token.tealSoft),
-                _Swatch(name: 'danger', token: _Token.danger),
-                _Swatch(name: 'dangerSoft', token: _Token.dangerSoft),
-                _Swatch(name: 'ink', token: _Token.ink),
-                _Swatch(name: 'muted', token: _Token.muted),
-                _Swatch(name: 'line', token: _Token.line),
-                _Swatch(name: 'surface', token: _Token.surface),
-                _Swatch(name: 'surfaceAlt', token: _Token.surfaceAlt),
-                _Swatch(name: 'bg', token: _Token.bg),
-                _Swatch(name: 'map', token: _Token.map),
-              ],
-            ),
-          ),
+          const _Swatches(),
         ],
       ),
     );
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({
+class _Intro extends StatelessWidget {
+  const _Intro();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+          NjSpace.xl,
+          NjSpace.lg,
+          NjSpace.xl,
+          0,
+        ),
+        child: Text(
+          'Every component in every state, light above dark, so a missing '
+          'state is caught here instead of inside a flow.',
+          style: context.njText.bodySmall?.copyWith(color: context.nj.muted),
+        ),
+      );
+}
+
+/// Renders one component's states in both themes.
+///
+/// Side by side on a tablet, stacked on a phone: at 390pt two columns would be
+/// 190pt each, narrower than several of the components being shown.
+class _Matrix extends StatelessWidget {
+  const _Matrix({
     required this.title,
-    required this.child,
-    this.note,
+    required this.content,
+    this.spec,
     this.fullBleed = false,
   });
 
   final String title;
-  final Widget child;
-  final String? note;
+  final WidgetBuilder content;
+  final String? spec;
   final bool fullBleed;
 
   @override
   Widget build(BuildContext context) {
-    final nj = context.nj;
+    final wide = MediaQuery.sizeOf(context).width >= 620;
+
+    final panels = [
+      _ThemePanel(label: 'Light', dark: false, fullBleed: fullBleed, content: content),
+      _ThemePanel(label: 'Dark', dark: true, fullBleed: fullBleed, content: content),
+    ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,7 +706,7 @@ class _Section extends StatelessWidget {
             NjSpace.xl,
             NjSpace.xxl,
             NjSpace.xl,
-            NjSpace.sm,
+            NjSpace.md,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -602,90 +714,171 @@ class _Section extends StatelessWidget {
               Text(
                 title.toUpperCase(),
                 style: context.njText.labelSmall?.copyWith(
-                  color: nj.muted,
+                  color: context.nj.muted,
                   letterSpacing: 1.2,
                 ),
               ),
-              if (note != null) ...[
+              if (spec != null) ...[
                 const SizedBox(height: NjSpace.xs),
                 Text(
-                  note!,
-                  style: context.njText.bodySmall?.copyWith(color: nj.muted),
+                  spec!,
+                  style: context.njText.bodySmall
+                      ?.copyWith(color: context.nj.muted),
                 ),
               ],
             ],
           ),
         ),
-        if (fullBleed)
-          child
+        if (wide)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final panel in panels) Expanded(child: panel),
+              ],
+            ),
+          )
         else
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: NjSpace.xl),
-            child: child,
-          ),
-        const SizedBox(height: NjSpace.sm),
-        Divider(color: nj.line, height: NjSpace.xxl),
+          Column(children: panels),
       ],
     );
   }
 }
 
-enum _Token {
-  bajaj,
-  teal,
-  tealSoft,
-  danger,
-  dangerSoft,
-  ink,
-  muted,
-  line,
-  surface,
-  surfaceAlt,
-  bg,
-  map,
-}
+class _ThemePanel extends StatelessWidget {
+  const _ThemePanel({
+    required this.label,
+    required this.dark,
+    required this.content,
+    required this.fullBleed,
+  });
 
-class _Swatch extends StatelessWidget {
-  const _Swatch({required this.name, required this.token});
-
-  final String name;
-  final _Token token;
+  final String label;
+  final bool dark;
+  final WidgetBuilder content;
+  final bool fullBleed;
 
   @override
   Widget build(BuildContext context) {
-    final nj = context.nj;
-    final color = switch (token) {
-      _Token.bajaj => nj.bajaj,
-      _Token.teal => nj.teal,
-      _Token.tealSoft => nj.tealSoft,
-      _Token.danger => nj.danger,
-      _Token.dangerSoft => nj.dangerSoft,
-      _Token.ink => nj.ink,
-      _Token.muted => nj.muted,
-      _Token.line => nj.line,
-      _Token.surface => nj.surface,
-      _Token.surfaceAlt => nj.surfaceAlt,
-      _Token.bg => nj.bg,
-      _Token.map => nj.map,
-    };
+    final theme = dark ? NjTheme.dark : NjTheme.light;
+    final nj = dark ? NjColors.dark : NjColors.light;
 
-    return SizedBox(
-      width: 96,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 44,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(NjRadius.chip - 2),
-              border: Border.all(color: nj.line),
-            ),
+    return Theme(
+      data: theme,
+      child: Builder(
+        builder: (context) => Container(
+          color: nj.bg,
+          padding: EdgeInsets.fromLTRB(
+            fullBleed ? 0 : NjSpace.xl,
+            NjSpace.md,
+            fullBleed ? 0 : NjSpace.xl,
+            NjSpace.xl,
           ),
-          const SizedBox(height: NjSpace.xs),
-          Text(name, style: context.njText.bodySmall),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: EdgeInsets.only(
+                  left: fullBleed ? NjSpace.xl : 0,
+                  bottom: NjSpace.sm,
+                ),
+                child: Text(
+                  label,
+                  style: context.njText.labelSmall?.copyWith(color: nj.muted),
+                ),
+              ),
+              DefaultTextStyle(
+                style: theme.textTheme.bodyMedium!,
+                child: content(context),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+class _Swatches extends StatelessWidget {
+  const _Swatches();
+
+  static const _names = [
+    'bg',
+    'surface',
+    'surfaceAlt',
+    'ink',
+    'muted',
+    'line',
+    'bajaj',
+    'teal',
+    'tealSoft',
+    'danger',
+    'map',
+    'live',
+  ];
+
+  static Color _of(NjColors nj, String name) => switch (name) {
+        'bg' => nj.bg,
+        'surface' => nj.surface,
+        'surfaceAlt' => nj.surfaceAlt,
+        'ink' => nj.ink,
+        'muted' => nj.muted,
+        'line' => nj.line,
+        'bajaj' => nj.bajaj,
+        'teal' => nj.teal,
+        'tealSoft' => nj.tealSoft,
+        'danger' => nj.danger,
+        'map' => nj.map,
+        _ => nj.live,
+      };
+
+  static String _hex(Color c) =>
+      '#${((c.r * 255).round() << 16 | (c.g * 255).round() << 8 | (c.b * 255).round()).toRadixString(16).padLeft(6, '0').toUpperCase()}';
+
+  @override
+  Widget build(BuildContext context) => _Matrix(
+        title: 'Tokens',
+        spec: 'Every value matches the design project exactly. '
+            'bajaj and live are identical in both themes.',
+        content: (context) {
+          final nj = context.nj;
+          return Wrap(
+            spacing: NjSpace.sm,
+            runSpacing: NjSpace.sm,
+            children: [
+              for (final name in _names)
+                SizedBox(
+                  width: 82,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _of(nj, name),
+                          borderRadius: BorderRadius.circular(NjRadius.plate),
+                          border: Border.all(color: nj.line),
+                        ),
+                      ),
+                      const SizedBox(height: NjSpace.xs),
+                      Text(
+                        name,
+                        style: context.njText.labelSmall
+                            ?.copyWith(letterSpacing: 0),
+                      ),
+                      Text(
+                        _hex(_of(nj, name)),
+                        style: context.njText.bodySmall?.copyWith(
+                          fontSize: 10.5,
+                          color: nj.muted,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          );
+        },
+      );
 }
