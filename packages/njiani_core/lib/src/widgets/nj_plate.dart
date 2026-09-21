@@ -45,7 +45,7 @@ class NjPlateBadge extends StatelessWidget {
         ),
         child: Text(
           plate.toUpperCase(),
-          style: NjTypography.plate.copyWith(fontSize: compact ? 13 : 18.4),
+          style: NjTypography.plate.copyWith(fontSize: compact ? 13 : 18),
         ),
       ),
     );

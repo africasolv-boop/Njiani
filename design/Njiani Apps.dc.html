@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#D7DEDA;font-family:"Bricolage Grotesque",system-ui,sans-serif;color:#1D2226;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+a{color:#0E6E6C}a:hover{color:#0A5250}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid #F2B705;outline-offset:2px}
+@keyframes njdrop{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes njpulse{from{transform:scale(.4);opacity:.7}to{transform:scale(2.4);opacity:0}}
+@keyframes njspin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+
+<div style="display:flex;align-items:center;gap:16px;padding:14px 22px;background:#fff;border-bottom:1px solid #D2D9D5;flex-wrap:wrap">
+  <div style="display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.4px">
+    <svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="14" fill="#F2B705"></rect><path d="M10 33 C18 33 20 15 38 15" stroke="#2A2100" stroke-width="4" fill="none" stroke-linecap="round"></path><circle cx="10" cy="33" r="4" fill="#2A2100"></circle><rect x="34" y="11" width="8" height="8" rx="2" fill="#2A2100"></rect></svg>
+    Njiani
+  </div>
+  <div style="font-size:13.6px;color:#5A646B;max-width:46ch;line-height:1.35">Screen reference for <b style="color:#1D2226">africasolv-boop/Njiani</b>. Every screen is keyed to a component in the roadmap. Tap through — the flows and the live feed work.</div>
+  <div style="flex:1;min-width:20px"></div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span style="font-size:11.5px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:#5A646B">Spec</span>
+    <button onClick="{{ toggleSpec }}" style="border:2px solid #D2D9D5;background:transparent;border-radius:999px;padding:6px 14px;font-size:13.6px;font-weight:600" style-hover="border-color:#0E6E6C;color:#0E6E6C">{{ specBtn }}</button>
+  </div>
+</div>
+
+<div style="display:flex;align-items:flex-start;gap:0;flex-wrap:wrap">
+
+  <nav style="width:252px;flex:none;min-width:200px;align-self:stretch;background:#fff;border-right:1px solid #D2D9D5;padding:16px 0 40px;max-height:1000px;overflow-y:auto">
+    <sc-for list="{{ nav }}" as="group" hint-placeholder-count="3">
+      <div style="padding:14px 18px 6px;font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#5A646B">{{ group.title }}</div>
+      <sc-for list="{{ group.items }}" as="item" hint-placeholder-count="5">
+        <button onClick="{{ item.go }}" style="display:flex;width:100%;gap:8px;align-items:baseline;border:0;background:{{ item.bg }};color:{{ item.fg }};padding:9px 18px;text-align:left;font-size:14.5px;font-weight:{{ item.weight }};border-left:3px solid {{ item.mark }}" style-hover="background:#F3F6F4">
+          <span style="flex:1">{{ item.label }}</span>
+          <span style="font-size:10.5px;font-weight:700;letter-spacing:.4px;color:{{ item.tagFg }};background:{{ item.tagBg }};border-radius:4px;padding:2px 5px;flex:none">{{ item.tag }}</span>
+        </button>
+      </sc-for>
+    </sc-for>
+  </nav>
+
+  <div style="flex:1 1 430px;min-width:0;display:flex;justify-content:center;padding:36px 24px 60px;overflow-x:auto">
+    <div style="width:390px;flex:none">
+      <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 14px">
+        <span style="font-size:11.5px;font-weight:800;letter-spacing:.5px;color:#0E6E6C">{{ spec.component }}</span>
+        <span style="font-size:15px;font-weight:700">{{ spec.title }}</span>
+      </div>
+      <div style="width:390px;height:812px;border:10px solid #2A2F33;border-radius:44px;background:#E6EBE8;overflow:hidden;box-shadow:0 18px 40px rgba(29,34,38,.28);display:flex;flex-direction:column;position:relative">
+        <div style="height:32px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 22px;font-size:12px;font-weight:600;background:#fff">
+          <span>9:41</span><span>{{ carrier }} 4G</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;min-height:0;position:relative;background:#fff">
+
+          <sc-if value="{{ is.pLang }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:22px 20px;flex:1;display:flex;flex-direction:column">
+              <div style="margin:26px 0 22px">
+                <div style="font-size:41.6px;font-weight:800;letter-spacing:-1.6px;line-height:1">Njiani</div>
+                <div style="color:#5A646B;font-size:16px">Rides going your way.</div>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;line-height:1.1;margin:0 0 8px">Chagua lugha<br>Choose your language</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">You can change this later in Settings.</p>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px">
+                <button onClick="{{ pickSw }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;min-height:56px;border:2px solid {{ langSwBorder }};background:{{ langSwBg }};border-radius:16px;padding:14px 18px;font-size:16.8px;font-weight:700;text-align:left">Kiswahili<span style="font-size:13.6px;font-weight:600;color:#5A646B">Chaguo la kwanza</span></button>
+                <button onClick="{{ pickEn }}" style="display:flex;align-items:center;justify-content:space-between;width:100%;min-height:56px;border:2px solid {{ langEnBorder }};background:{{ langEnBg }};border-radius:16px;padding:14px 18px;font-size:16.8px;font-weight:700;text-align:left">English<span style="font-size:13.6px;font-weight:600;color:#5A646B">Second language</span></button>
+              </div>
+              <div style="flex:1"></div>
+              <button onClick="{{ go.pPhone }}" style="display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700">Endelea · Continue</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pPhone }}">
+            <div style="padding:22px 20px;flex:1;display:flex;flex-direction:column">
+              <div style="margin:26px 0 22px">
+                <div style="font-size:41.6px;font-weight:800;letter-spacing:-1.6px;line-height:1">Njiani</div>
+                <div style="color:#5A646B;font-size:16px">Rides going your way.</div>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;line-height:1.1;margin:0 0 8px">Enter your phone number</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">We'll send you a code by SMS.</p>
+              <label style="display:block;font-size:13.6px;font-weight:600;margin:20px 0 8px" for="njPh">Phone number</label>
+              <div style="display:flex;align-items:center;border:2px solid {{ phoneBorder }};border-radius:14px;background:#fff;overflow:hidden">
+                <span style="padding-left:16px;font-size:16.8px;font-weight:600;color:#5A646B">+255</span>
+                <input id="njPh" inputmode="numeric" maxlength="11" placeholder="712 345 678" value="{{ phone }}" onChange="{{ onPhone }}" style="border:0;background:transparent;padding:14px 16px;width:100%;font-size:16.8px;font-weight:500;outline:none">
+              </div>
+              <sc-if value="{{ phoneError }}">
+                <p style="margin:6px 0 0;font-size:13.6px;font-weight:600;color:#B83227">Enter 9 digits, without the leading zero.</p>
+              </sc-if>
+              <div style="flex:1"></div>
+              <button onClick="{{ sendCode }}" disabled="{{ phoneInvalid }}" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700;opacity:{{ sendOpacity }}">
+                <sc-if value="{{ sending }}"><span style="width:18px;height:18px;border:2.5px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;display:inline-block;animation:njspin .7s linear infinite"></span></sc-if>
+                {{ sendLabel }}
+              </button>
+              <p style="text-align:center;font-size:13.6px;color:#5A646B;margin:12px 0 0">By continuing you agree to the terms. Standard SMS rates apply.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pOtp }}">
+            <div style="padding:22px 20px;flex:1;display:flex;flex-direction:column">
+              <button onClick="{{ go.pPhone }}" style="align-self:flex-start;border:2px solid #D2D9D5;background:transparent;border-radius:16px;padding:9px 16px;font-size:14.5px;font-weight:700">Back</button>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;line-height:1.1;margin:24px 0 8px">Enter the 4-digit code</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">Sent to +255 {{ phoneShown }} by NJIANI</p>
+              <div style="display:flex;gap:10px;margin-top:22px">
+                <sc-for list="{{ otpBoxes }}" as="box" hint-placeholder-count="4">
+                  <input inputmode="numeric" maxlength="1" value="{{ box.v }}" onChange="{{ box.set }}" aria-label="{{ box.aria }}" style="width:52px;height:60px;text-align:center;font-size:24px;font-weight:800;border:2px solid {{ box.border }};border-radius:14px;background:#fff;outline:none">
+                </sc-for>
+              </div>
+              <p style="font-size:13.6px;margin:18px 0 0"><span style="color:#5A646B">Didn't get it?</span> <b>Resend in 0:42</b></p>
+              <div style="flex:1"></div>
+              <button onClick="{{ verify }}" disabled="{{ otpIncomplete }}" style="display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700;opacity:{{ verifyOpacity }}">Verify</button>
+              <p style="text-align:center;font-size:13.6px;color:#5A646B;margin:12px 0 0">Dev mode prints the code to the console.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pHome }}">
+            <div style="height:224px;flex:none;background:#D9E1DC;overflow:hidden;position:relative">
+              <svg viewBox="0 0 320 224" preserveAspectRatio="xMidYMid slice" style="display:block;width:100%;height:100%" role="img" aria-label="Map of Morogoro Road near Ubungo">
+                <rect width="320" height="224" fill="#D9E1DC"></rect>
+                <g stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"><path d="M-10 52 L330 78"></path><path d="M60 -10 L88 234"></path><path d="M206 -10 L232 234"></path><path d="M-10 178 L330 152"></path></g>
+                <path d="M340 26 C 240 62, 200 104, 150 130 S 40 182, -20 200" stroke="#F7E7B0" stroke-width="14" fill="none" stroke-linecap="round"></path>
+                <text x="236" y="52" font-size="10" font-weight="700" fill="#5A646B" transform="rotate(-20 236 52)">Morogoro Rd</text>
+                <circle cx="150" cy="130" r="9" fill="#0E6E6C" stroke="#fff" stroke-width="3"></circle>
+              </svg>
+              <div style="position:absolute;left:14px;top:14px;background:#fff;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(29,34,38,.2)">Ubungo · Morogoro Rd</div>
+            </div>
+            <div style="background:#fff;border-radius:24px 24px 0 0;margin-top:-22px;position:relative;z-index:2;padding:18px 20px 20px;flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto">
+              <div style="width:40px;height:4px;border-radius:4px;background:#D2D9D5;margin:0 auto 14px"></div>
+              <div style="display:grid;grid-template-columns:18px 1fr;gap:4px 12px;align-items:center">
+                <span style="width:12px;height:12px;border-radius:50%;background:#0E6E6C;justify-self:center"></span>
+                <div><div style="font-size:12px;color:#5A646B">Pickup, from your location</div><div style="font-weight:600">Ubungo Bus Terminal</div></div>
+                <span style="width:2px;height:14px;background:#D2D9D5;justify-self:center"></span><span></span>
+                <span style="width:12px;height:12px;background:#F2B705;border-radius:3px;justify-self:center"></span>
+                <div><div style="font-size:12px;color:#5A646B">Going to</div>
+                  <div style="display:flex;border:1px solid #D2D9D5;border-radius:14px;margin-top:3px;background:#fff">
+                    <select aria-label="Destination" value="{{ dest }}" onChange="{{ onDest }}" style="border:0;background:transparent;padding:9px 12px;font-weight:600;font-size:15.5px;width:100%;outline:none;appearance:none">
+                      <sc-for list="{{ stages }}" as="s" hint-placeholder-count="6"><option value="{{ s }}">{{ s }}</option></sc-for>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;background:#F3F6F4;border-radius:14px;padding:4px;gap:4px;margin-top:16px">
+                <button onClick="{{ pickBajaj }}" style="border:0;background:{{ bajajSegBg }};color:{{ bajajSegFg }};border-radius:10px;min-height:44px;font-size:15px;font-weight:600;box-shadow:{{ bajajSegShadow }}">Bajaj · 3 seats</button>
+                <button onClick="{{ pickBoda }}" style="border:0;background:{{ bodaSegBg }};color:{{ bodaSegFg }};border-radius:10px;min-height:44px;font-size:15px;font-weight:600;box-shadow:{{ bodaSegShadow }}">Boda · 1 seat</button>
+              </div>
+              <label style="display:block;font-size:13.6px;font-weight:600;margin:18px 0 8px" for="njPrice">Your price, per seat</label>
+              <div style="display:flex;align-items:center;border:2px solid {{ priceBorder }};border-radius:14px;background:#fff;overflow:hidden">
+                <span style="padding-left:16px;font-size:16.8px;font-weight:600;color:#5A646B">TSh</span>
+                <input id="njPrice" inputmode="numeric" placeholder="{{ bandLow }}" value="{{ price }}" onChange="{{ onPrice }}" style="border:0;background:transparent;padding:14px 16px;width:100%;font-size:16.8px;font-weight:500;outline:none">
+              </div>
+              <p style="margin:8px 0 0;font-size:13.2px;font-weight:600;color:{{ hintColor }}">{{ hintText }}</p>
+              <div style="display:flex;gap:8px;margin:12px 0 16px">
+                <sc-for list="{{ priceChips }}" as="chip" hint-placeholder-count="3">
+                  <button onClick="{{ chip.pick }}" style="flex:1;border:2px solid {{ chip.border }};background:{{ chip.bg }};border-radius:12px;min-height:44px;font-weight:600;font-size:15px">{{ chip.label }}</button>
+                </sc-for>
+              </div>
+              <div style="flex:1"></div>
+              <button onClick="{{ sendRequest }}" disabled="{{ priceEmpty }}" style="display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;border:0;border-radius:16px;background:#F2B705;color:#2A2100;font-size:16.8px;font-weight:700;opacity:{{ requestOpacity }}">Send request</button>
+              <p style="text-align:center;font-size:12.5px;color:#5A646B;margin:10px 0 0">Your request expires after 10 minutes if no driver takes it.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pSearch }}">
+            <div style="height:300px;flex:none;background:#D9E1DC;overflow:hidden">
+              <svg viewBox="0 0 320 300" preserveAspectRatio="xMidYMid slice" style="display:block;width:100%;height:100%" role="img" aria-label="Searching for drivers heading your way">
+                <rect width="320" height="300" fill="#D9E1DC"></rect>
+                <g stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"><path d="M-10 70 L330 100"></path><path d="M60 -10 L92 310"></path><path d="M206 -10 L236 310"></path><path d="M-10 236 L330 202"></path></g>
+                <path d="M340 34 C 240 80, 200 138, 150 172 S 40 242, -20 266" stroke="#F7E7B0" stroke-width="14" fill="none" stroke-linecap="round"></path>
+                <path d="M150 172 C 200 138, 240 80, 340 34" stroke="#0E6E6C" stroke-width="4" fill="none" stroke-dasharray="6 6" stroke-linecap="round"></path>
+                <circle cx="150" cy="172" r="30" fill="#0E6E6C" style="transform-origin:center;transform-box:fill-box;animation:njpulse 1.8s ease-out infinite"></circle>
+                <circle cx="150" cy="172" r="9" fill="#0E6E6C" stroke="#fff" stroke-width="3"></circle>
+                <g transform="translate(248,92)"><g transform="translate(-14,-12)"><path d="M3 4 Q14 -2 25 4 L27 18 L1 18 Z" fill="#1F5FB8" stroke="#111" stroke-width="1.5"></path><rect x="5" y="7" width="9" height="6" rx="1.5" fill="#CFE6F5"></rect><circle cx="6" cy="20" r="3" fill="#111"></circle><circle cx="22" cy="20" r="3" fill="#111"></circle></g></g>
+                <g transform="translate(300,60)"><g transform="translate(-14,-12)"><path d="M3 4 Q14 -2 25 4 L27 18 L1 18 Z" fill="#C8342B" stroke="#111" stroke-width="1.5"></path><rect x="5" y="7" width="9" height="6" rx="1.5" fill="#CFE6F5"></rect><circle cx="6" cy="20" r="3" fill="#111"></circle><circle cx="22" cy="20" r="3" fill="#111"></circle></g></g>
+              </svg>
+            </div>
+            <div style="background:#fff;border-radius:24px 24px 0 0;margin-top:-22px;position:relative;z-index:2;padding:18px 20px 20px;flex:1;display:flex;flex-direction:column">
+              <div style="width:40px;height:4px;border-radius:4px;background:#D2D9D5;margin:0 auto 14px"></div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;line-height:1.1;margin:0 0 8px">Finding a {{ vehWord }} to {{ dest }}</h3>
+              <p style="margin:0;color:#5A646B;font-size:16px">{{ searchCount }} heading your way can see your offer.</p>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:14px;display:flex;justify-content:space-between;align-items:center;gap:10px">
+                <div><div style="font-size:13.6px;color:#5A646B">Your offer</div><div style="font-size:24px;font-weight:800;letter-spacing:-.5px">TSh {{ offerText }}</div></div>
+                <div style="font-size:13.6px;color:#5A646B;text-align:right;line-height:1.35">Ubungo Bus Terminal<br>to {{ dest }}</div>
+              </div>
+              <sc-if value="{{ showRaise }}">
+                <p style="font-size:13.6px;margin:14px 0 6px"><b>Still looking.</b> <span style="color:#5A646B">Adding a little can help.</span></p>
+                <button onClick="{{ raise }}" style="width:100%;min-height:48px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:15px;font-weight:700">Add TSh 200 to my offer</button>
+              </sc-if>
+              <div style="flex:1"></div>
+              <button onClick="{{ go.pHome }}" style="width:100%;min-height:56px;border:2px solid #D2D9D5;background:transparent;color:#B83227;border-radius:16px;font-size:16.8px;font-weight:700">Cancel request</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pNoDriver }}">
+            <div style="padding:22px 20px;flex:1;display:flex;flex-direction:column;text-align:center">
+              <div style="margin:64px auto 0">
+                <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="#F3F6F4"></circle><path d="M24 28h24M24 38h24M24 48h14" stroke="#5A646B" stroke-width="3.5" stroke-linecap="round"></path></svg>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;line-height:1.1;margin:16px 0 8px">No driver took your offer</h3>
+              <p style="color:#5A646B;margin:0;font-size:16px">Your request for TSh {{ offerText }} to {{ dest }} expired after 10 minutes. Most drivers on this road take TSh {{ bandLow }} to {{ bandHigh }}.</p>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:20px;text-align:left">
+                <div style="font-size:13.6px;color:#5A646B">Try instead</div>
+                <div style="font-weight:600;margin-top:2px">Raise to TSh {{ bandMid }}, or wait for the evening rush when more bajaj head to {{ dest }}.</div>
+              </div>
+              <div style="flex:1"></div>
+              <button onClick="{{ retryHigher }}" style="width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700">Send again at TSh {{ bandMid }}</button>
+              <button onClick="{{ go.pHome }}" style="width:100%;min-height:56px;margin-top:10px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Change my request</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pMatched }}">
+            <div style="height:262px;flex:none;background:#D9E1DC;overflow:hidden">
+              <svg viewBox="0 0 320 262" preserveAspectRatio="xMidYMid slice" style="display:block;width:100%;height:100%" role="img" aria-label="Your driver on the way">
+                <rect width="320" height="262" fill="#D9E1DC"></rect>
+                <g stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"><path d="M-10 62 L330 90"></path><path d="M60 -10 L90 272"></path><path d="M206 -10 L234 272"></path><path d="M-10 206 L330 176"></path></g>
+                <path d="M340 30 C 240 70, 200 120, 150 150 S 40 210, -20 232" stroke="#F7E7B0" stroke-width="14" fill="none" stroke-linecap="round"></path>
+                <path d="M150 150 C 200 120, 240 70, 340 30" stroke="#0E6E6C" stroke-width="4" fill="none" stroke-linecap="round"></path>
+                <circle cx="150" cy="150" r="9" fill="#0E6E6C" stroke="#fff" stroke-width="3"></circle>
+                <g transform="translate({{ driverX }},{{ driverY }})"><g transform="translate(-14,-12)"><path d="M3 4 Q14 -2 25 4 L27 18 L1 18 Z" fill="#1F5FB8" stroke="#111" stroke-width="1.5"></path><rect x="5" y="7" width="9" height="6" rx="1.5" fill="#CFE6F5"></rect><circle cx="6" cy="20" r="3" fill="#111"></circle><circle cx="22" cy="20" r="3" fill="#111"></circle></g></g>
+              </svg>
+            </div>
+            <div style="background:#fff;border-radius:24px 24px 0 0;margin-top:-22px;position:relative;z-index:2;padding:18px 20px 20px;flex:1;display:flex;flex-direction:column;min-height:0;overflow-y:auto">
+              <div style="width:40px;height:4px;border-radius:4px;background:#D2D9D5;margin:0 auto 14px"></div>
+              <div style="font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1.1">{{ etaText }}</div>
+              <div style="color:#5A646B;font-size:13.6px">Wait at Ubungo Bus Terminal, main gate</div>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:14px">
+                <div style="display:flex;gap:10px;align-items:center">
+                  <div style="width:46px;height:46px;border-radius:50%;background:#D5EBE9;color:#0E6E6C;display:grid;place-items:center;font-weight:800;flex:none">JM</div>
+                  <div style="flex:1"><div style="font-weight:700">Juma Mwinyi</div><div style="font-size:13.6px;color:#5A646B">4.8 rating · 312 trips</div></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px">
+                  <span style="display:inline-block;background:#FFD21F;color:#111;border:2px solid #111;border-radius:6px;padding:2px 10px;font-weight:800;letter-spacing:1.5px;font-size:18px">{{ plate }}</span>
+                  <span style="font-size:13.6px"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#1F5FB8;vertical-align:-1px;margin-right:4px;border:1px solid rgba(0,0,0,.2)"></span>Blue {{ vehName }}</span>
+                </div>
+                <div style="font-size:13.6px;color:#5A646B;margin-top:10px">{{ coRiders }} Price agreed: <b style="color:#1D2226">TSh {{ offerText }}</b></div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:12px">
+                <button onClick="{{ callDriver }}" style="flex:1;min-height:56px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Call Juma</button>
+                <button onClick="{{ go.pSafety }}" style="flex:none;width:64px;min-height:56px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:13px;font-weight:700">Safety</button>
+              </div>
+              <sc-if value="{{ arrived }}">
+                <button onClick="{{ go.pTrip }}" style="width:100%;min-height:56px;margin-top:10px;border:0;border-radius:16px;background:#F2B705;color:#2A2100;font-size:16.8px;font-weight:700">I'm on board</button>
+              </sc-if>
+              <sc-if value="{{ notArrived }}">
+                <button onClick="{{ go.pHome }}" style="width:100%;min-height:56px;margin-top:10px;border:2px solid #D2D9D5;background:transparent;color:#B83227;border-radius:16px;font-size:16.8px;font-weight:700">Cancel · no penalty</button>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pTrip }}">
+            <div style="background:#F2B705;color:#2A2100;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none">
+              <div style="font-weight:800;letter-spacing:.6px;text-transform:uppercase;font-size:15.2px;line-height:1.15">Ubungo to {{ dest }}<span style="display:block;font-weight:600;letter-spacing:0;text-transform:none;font-size:11.5px;opacity:.75">On the way with Juma · {{ plate }}</span></div>
+            </div>
+            <div style="height:236px;flex:none;background:#D9E1DC;overflow:hidden">
+              <svg viewBox="0 0 320 236" preserveAspectRatio="xMidYMid slice" style="display:block;width:100%;height:100%" role="img" aria-label="On the trip">
+                <rect width="320" height="236" fill="#D9E1DC"></rect>
+                <g stroke="#fff" stroke-width="7" fill="none" stroke-linecap="round"><path d="M-10 56 L330 82"></path><path d="M60 -10 L88 246"></path><path d="M206 -10 L232 246"></path><path d="M-10 186 L330 158"></path></g>
+                <path d="M340 28 C 240 66, 200 110, 150 138 S 40 190, -20 210" stroke="#F7E7B0" stroke-width="14" fill="none" stroke-linecap="round"></path>
+                <path d="M150 138 S 40 190, -20 210" stroke="#0E6E6C" stroke-width="4" fill="none" stroke-linecap="round"></path>
+                <circle cx="150" cy="138" r="9" fill="#0E6E6C" stroke="#fff" stroke-width="3"></circle>
+              </svg>
+            </div>
+            <div style="background:#fff;border-radius:24px 24px 0 0;margin-top:-22px;position:relative;z-index:2;padding:18px 20px 20px;flex:1;display:flex;flex-direction:column">
+              <div style="width:40px;height:4px;border-radius:4px;background:#D2D9D5;margin:0 auto 14px"></div>
+              <div style="font-size:24px;font-weight:800;letter-spacing:-.5px">About 12 min to {{ dest }}</div>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:14px">
+                <div style="display:flex;justify-content:space-between"><span style="color:#5A646B">Pay when you arrive</span><b>TSh {{ offerText }}</b></div>
+                <div style="font-size:13.6px;color:#5A646B;margin-top:6px">Cash, M-Pesa, Tigo Pesa or Airtel Money. Njiani does not take the payment.</div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:12px">
+                <button onClick="{{ shareTrip }}" style="flex:1;min-height:56px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Share trip</button>
+                <button onClick="{{ go.pSafety }}" style="flex:1;min-height:56px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Get help</button>
+              </div>
+              <div style="flex:1"></div>
+              <button onClick="{{ go.pRate }}" style="width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700">I've arrived</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pRate }}">
+            <div style="padding:22px 20px;flex:1;display:flex;flex-direction:column;text-align:center">
+              <div style="margin:44px auto 0">
+                <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="#D5EBE9"></circle><path d="M22 37l10 10 18-20" stroke="#0E6E6C" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;line-height:1.1;margin:16px 0 8px">You've arrived at {{ dest }}</h3>
+              <p style="color:#5A646B;margin:0;font-size:16px">Pay Juma TSh {{ offerText }} in cash or mobile money.</p>
+              <p style="margin:26px 0 0;font-weight:600">How was the ride?</p>
+              <div style="display:flex;gap:8px;justify-content:center;margin:14px 0">
+                <sc-for list="{{ starList }}" as="star" hint-placeholder-count="5">
+                  <button onClick="{{ star.pick }}" aria-label="{{ star.aria }}" style="border:0;background:none;font-size:34px;line-height:1;padding:0;color:{{ star.color }}">★</button>
+                </sc-for>
+              </div>
+              <sc-if value="{{ lowRating }}">
+                <div style="background:#F6DEDB;border-radius:14px;padding:12px;text-align:left;font-size:13.6px;font-weight:600;color:#B83227">Tell us what went wrong. Reports about a driver go to a person, not a queue.</div>
+              </sc-if>
+              <div style="flex:1"></div>
+              <button onClick="{{ finishRating }}" disabled="{{ noRating }}" style="width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700;opacity:{{ ratingOpacity }}">Done</button>
+              <button onClick="{{ finishRating }}" style="width:100%;min-height:56px;margin-top:10px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Skip</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pHistory }}">
+            <div style="padding:20px 20px 10px;flex:none;border-bottom:1px solid #D2D9D5">
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:0">Your trips</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:4px 0 0">Kept for your records. Prices are what you agreed, not what Njiani charged.</p>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ riderTrips }}" as="t" hint-placeholder-count="4">
+                <div style="border:1px solid #D2D9D5;border-radius:16px;padding:14px;background:#fff">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+                    <div style="font-weight:700">{{ t.route }}</div>
+                    <div style="font-size:18px;font-weight:800;letter-spacing:-.3px">TSh {{ t.price }}</div>
+                  </div>
+                  <div style="font-size:13.6px;color:#5A646B;margin-top:4px">{{ t.when }} · {{ t.driver }} · {{ t.veh }}</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+                    <span style="font-size:13.6px;color:{{ t.statusColor }};font-weight:600">{{ t.status }}</span>
+                    <span style="font-size:13.6px;color:#5A646B">{{ t.stars }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pSafety }}">
+            <div style="padding:20px;flex:1;display:flex;flex-direction:column">
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:6px 0 8px">Safety</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">On this trip with Juma Mwinyi, {{ plate }}, to {{ dest }}.</p>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+                <button onClick="{{ shareTrip }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:64px;border:2px solid #D2D9D5;background:#fff;border-radius:16px;padding:12px 16px;text-align:left">
+                  <span style="width:40px;height:40px;border-radius:12px;background:#D5EBE9;color:#0E6E6C;display:grid;place-items:center;font-weight:800;flex:none">↗</span>
+                  <span><b style="display:block">Share this trip</b><span style="font-size:13.2px;color:#5A646B">Sends a live link by WhatsApp or SMS</span></span>
+                </button>
+                <button onClick="{{ callSupport }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:64px;border:2px solid #D2D9D5;background:#fff;border-radius:16px;padding:12px 16px;text-align:left">
+                  <span style="width:40px;height:40px;border-radius:12px;background:#F3F6F4;color:#1D2226;display:grid;place-items:center;font-weight:800;flex:none">☎</span>
+                  <span><b style="display:block">Call Njiani</b><span style="font-size:13.2px;color:#5A646B">A person on the pilot team, 6am to 10pm</span></span>
+                </button>
+                <button onClick="{{ reportDriver }}" style="display:flex;align-items:center;gap:12px;width:100%;min-height:64px;border:2px solid #D2D9D5;background:#fff;border-radius:16px;padding:12px 16px;text-align:left">
+                  <span style="width:40px;height:40px;border-radius:12px;background:#F3F6F4;color:#1D2226;display:grid;place-items:center;font-weight:800;flex:none">!</span>
+                  <span><b style="display:block">Report this driver</b><span style="font-size:13.2px;color:#5A646B">Price, behaviour, vehicle, or the plate not matching</span></span>
+                </button>
+              </div>
+              <div style="flex:1"></div>
+              <button onClick="{{ callEmergency }}" style="width:100%;min-height:64px;border:0;border-radius:16px;background:#B83227;color:#fff;font-size:18px;font-weight:800">Emergency · call 112</button>
+              <p style="text-align:center;font-size:12.5px;color:#5A646B;margin:10px 0 0">112 reaches police, ambulance and fire. Njiani does not place the call for you.</p>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pPlaces }}">
+            <div style="padding:20px;flex:1;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:0">Saved places</h3>
+                <span style="font-size:10.5px;font-weight:800;letter-spacing:.5px;background:#F3F6F4;color:#5A646B;border-radius:4px;padding:3px 6px">V2</span>
+              </div>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">A saved place is a stage on the corridor, not an address. Free-text addresses need a geocoder, which is out of MVP scope.</p>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:18px">
+                <div style="display:flex;align-items:center;gap:12px;border:2px solid #D2D9D5;border-radius:16px;padding:14px 16px">
+                  <span style="width:40px;height:40px;border-radius:12px;background:#D5EBE9;color:#0E6E6C;display:grid;place-items:center;font-weight:800;flex:none">H</span>
+                  <span style="flex:1"><b style="display:block">Home</b><span style="font-size:13.2px;color:#5A646B">Kimara Korogwe</span></span>
+                  <span style="font-size:13.2px;font-weight:700;color:#0E6E6C">Change</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;border:2px solid #D2D9D5;border-radius:16px;padding:14px 16px">
+                  <span style="width:40px;height:40px;border-radius:12px;background:#F3F6F4;color:#1D2226;display:grid;place-items:center;font-weight:800;flex:none">W</span>
+                  <span style="flex:1"><b style="display:block">Work</b><span style="font-size:13.2px;color:#5A646B">Ubungo Bus Terminal</span></span>
+                  <span style="font-size:13.2px;font-weight:700;color:#0E6E6C">Change</span>
+                </div>
+                <button style="display:flex;align-items:center;gap:12px;width:100%;border:2px dashed #D2D9D5;background:#F3F6F4;border-radius:16px;padding:14px 16px;text-align:left;color:#5A646B;font-size:15px;font-weight:600">+ Add a place from the stage list</button>
+              </div>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:18px;font-size:13.6px;color:#5A646B">On the request screen, Home and Work appear as two taps above the destination list — the only shortcut that survives on a 5-inch screen.</div>
+              <div style="flex:1"></div>
+              <button onClick="{{ go.pHome }}" style="width:100%;min-height:56px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Back to request</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pOffline }}">
+            <div style="padding:20px;flex:1;display:flex;flex-direction:column">
+              <div style="background:#F6DEDB;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center">
+                <span style="width:10px;height:10px;border-radius:50%;background:#B83227;flex:none"></span>
+                <span style="font-size:13.6px;font-weight:700;color:#B83227">No connection. Showing your last known state.</span>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:22px 0 8px">Your request is still live</h3>
+              <p style="color:#5A646B;margin:0;font-size:16px">It was sent before you lost signal, and it stays open on the server for 10 minutes. If a driver takes it you'll get an SMS as well as a notification.</p>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:18px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline"><span style="color:#5A646B;font-size:13.6px">Sent 2 min ago</span><b>TSh {{ offerText }}</b></div>
+                <div style="font-weight:600;margin-top:2px">Ubungo Bus Terminal to {{ dest }}</div>
+              </div>
+              <div style="background:#fff;border:1px solid #D2D9D5;border-radius:18px;padding:14px;margin-top:12px;font-size:13.6px;color:#5A646B">Cancelling needs a connection. The button stays visible but disabled, so the screen doesn't lie about what it can do.</div>
+              <div style="flex:1"></div>
+              <button disabled="{{ true }}" style="width:100%;min-height:56px;border:2px solid #D2D9D5;background:transparent;color:#B83227;border-radius:16px;font-size:16.8px;font-weight:700;opacity:.45">Cancel request</button>
+              <button onClick="{{ go.pSearch }}" style="width:100%;min-height:56px;margin-top:10px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700">Retry now</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pCounter }}">
+            <div style="padding:20px;flex:1;display:flex;flex-direction:column">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:10.5px;font-weight:800;letter-spacing:.5px;background:#F2B705;color:#2A2100;border-radius:4px;padding:3px 6px">V2 · NOT IN MVP</span>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:14px 0 8px">Juma offered a different price</h3>
+              <p style="color:#5A646B;margin:0;font-size:16px">One counter-offer per request, expiring in 60 seconds. If you decline, your original offer goes back to every other driver heading your way.</p>
+              <div style="background:#fff;border:2px solid #F2B705;border-radius:18px;padding:16px;margin-top:18px">
+                <div style="display:flex;justify-content:space-between;align-items:center">
+                  <div><div style="font-size:13.6px;color:#5A646B">You offered</div><div style="font-size:21.6px;font-weight:800;text-decoration:line-through;color:#5A646B">TSh {{ offerText }}</div></div>
+                  <span style="font-size:22px;color:#5A646B">→</span>
+                  <div style="text-align:right"><div style="font-size:13.6px;color:#5A646B">Juma asks</div><div style="font-size:24px;font-weight:800;letter-spacing:-.5px">TSh {{ counterPrice }}</div></div>
+                </div>
+                <div style="margin-top:12px;height:6px;border-radius:6px;background:#F3F6F4;overflow:hidden"><div style="width:62%;height:100%;background:#F2B705"></div></div>
+                <div style="font-size:12.5px;color:#5A646B;margin-top:6px">37 seconds left</div>
+              </div>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:12px;font-size:13.6px;color:#5A646B">Why this is v2: it turns one atomic claim into a negotiation with its own state machine, timeouts and race conditions. ARCHITECTURE.md §2 keeps the MVP at take-it-or-leave-it.</div>
+              <div style="flex:1"></div>
+              <button onClick="{{ acceptCounter }}" style="width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700">Accept TSh {{ counterPrice }}</button>
+              <button onClick="{{ go.pSearch }}" style="width:100%;min-height:56px;margin-top:10px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Keep my price, keep looking</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dSignup }}">
+            <div style="padding:20px;flex:1;overflow-y:auto">
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:4px 0 8px">Drive with Njiani</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">No commission during the pilot. We check every driver before they go live.</p>
+              <label style="display:block;font-size:13.6px;font-weight:600;margin:20px 0 8px">Phone number</label>
+              <div style="display:flex;align-items:center;border:2px solid #D2D9D5;border-radius:14px;background:#fff">
+                <span style="padding-left:16px;font-size:16.8px;font-weight:600;color:#5A646B">+255</span>
+                <input inputmode="numeric" placeholder="754 000 118" style="border:0;background:transparent;padding:14px 16px;width:100%;font-size:16.8px;outline:none">
+              </div>
+              <label style="display:block;font-size:13.6px;font-weight:600;margin:16px 0 8px">Full name</label>
+              <div style="display:flex;border:2px solid #D2D9D5;border-radius:14px;background:#fff">
+                <input placeholder="As on your licence" value="{{ dName }}" onChange="{{ onDName }}" style="border:0;background:transparent;padding:14px 16px;width:100%;font-size:16.8px;outline:none">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;background:#F3F6F4;border-radius:14px;padding:4px;gap:4px;margin-top:16px">
+                <button onClick="{{ pickDBajaj }}" style="border:0;background:{{ dBajajBg }};color:{{ dBajajFg }};border-radius:10px;min-height:44px;font-size:15px;font-weight:600;box-shadow:{{ dBajajShadow }}">Bajaj · 3 seats</button>
+                <button onClick="{{ pickDBoda }}" style="border:0;background:{{ dBodaBg }};color:{{ dBodaFg }};border-radius:10px;min-height:44px;font-size:15px;font-weight:600;box-shadow:{{ dBodaShadow }}">Boda · 1 seat</button>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:4px">
+                <div style="flex:1">
+                  <label style="display:block;font-size:13.6px;font-weight:600;margin:16px 0 8px">Plate number</label>
+                  <div style="display:flex;border:2px solid #D2D9D5;border-radius:14px;background:#fff">
+                    <input placeholder="{{ platePlaceholder }}" value="{{ dPlate }}" onChange="{{ onDPlate }}" style="border:0;background:transparent;padding:14px 16px;width:100%;font-size:16.8px;text-transform:uppercase;outline:none">
+                  </div>
+                </div>
+                <div style="width:118px">
+                  <label style="display:block;font-size:13.6px;font-weight:600;margin:16px 0 8px">Colour</label>
+                  <div style="display:flex;border:2px solid #D2D9D5;border-radius:14px;background:#fff">
+                    <select value="{{ dColor }}" onChange="{{ onDColor }}" style="border:0;background:transparent;padding:14px 10px;width:100%;font-size:16.8px;outline:none;appearance:none">
+                      <sc-for list="{{ colors }}" as="c" hint-placeholder-count="6"><option value="{{ c }}">{{ c }}</option></sc-for>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <label style="display:block;font-size:13.6px;font-weight:600;margin:16px 0 8px">Driving licence photo</label>
+              <button onClick="{{ addLicence }}" style="width:100%;border:2px {{ licenceStyle }} {{ licenceBorder }};border-radius:14px;padding:16px;text-align:center;background:{{ licenceBg }};color:{{ licenceFg }};font-size:14.5px;font-weight:{{ licenceWeight }}">{{ licenceLabel }}</button>
+              <p style="font-size:12.5px;color:#5A646B;margin:8px 0 0">Stored in a private bucket. Only the Njiani team can open it.</p>
+              <button onClick="{{ submitDriver }}" disabled="{{ signupInvalid }}" style="width:100%;min-height:56px;margin-top:18px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700;opacity:{{ signupOpacity }}">Submit for review</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dPending }}">
+            <div style="padding:20px;flex:1;display:flex;flex-direction:column;text-align:center">
+              <div style="margin:56px auto 0">
+                <svg width="72" height="72" viewBox="0 0 72 72" aria-hidden="true"><circle cx="36" cy="36" r="34" fill="#F3F6F4"></circle><circle cx="36" cy="36" r="20" fill="none" stroke="#F2B705" stroke-width="5"></circle><path d="M36 26v11l7 5" stroke="#1D2226" stroke-width="4" fill="none" stroke-linecap="round"></path></svg>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:16px 0 8px">We're checking your documents</h3>
+              <p style="color:#5A646B;margin:0;font-size:16px">Usually less than a day. We'll send an SMS when you're approved. You can close the app.</p>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:20px;text-align:left">
+                <div style="font-size:13.6px;color:#5A646B">Submitted</div>
+                <div style="font-weight:700">{{ dNameShown }}</div>
+                <div style="font-size:13.6px;margin-top:4px">{{ dVehLabel }} · {{ dColor }} · <span style="display:inline-block;background:#FFD21F;color:#111;border:2px solid #111;border-radius:6px;padding:0 7px;font-weight:800;letter-spacing:1.2px;font-size:13px">{{ dPlateShown }}</span></div>
+              </div>
+              <div style="flex:1"></div>
+              <button onClick="{{ go.dDirection }}" style="width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700">Demo · approve me</button>
+              <button onClick="{{ go.dRejected }}" style="width:100%;min-height:56px;margin-top:10px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Demo · show rejection</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dRejected }}">
+            <div style="padding:20px;flex:1;display:flex;flex-direction:column">
+              <div style="background:#F6DEDB;border-radius:14px;padding:14px;display:flex;gap:10px;align-items:flex-start">
+                <span style="width:22px;height:22px;border-radius:50%;background:#B83227;color:#fff;display:grid;place-items:center;font-weight:800;font-size:14px;flex:none">!</span>
+                <div><b style="color:#B83227">We couldn't read your licence photo</b><div style="font-size:13.6px;color:#B83227;margin-top:2px">Glare across the number. Take it again in shade, with the whole card in frame.</div></div>
+              </div>
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:22px 0 8px">One thing to fix</h3>
+              <p style="color:#5A646B;margin:0;font-size:16px">Everything else checked out. Replace the photo and you go back in the queue — you don't start again.</p>
+              <div style="background:#fff;border:1px solid #D2D9D5;border-radius:18px;padding:14px;margin-top:18px">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span>Phone number</span><span style="font-weight:700;color:#0E6E6C">Verified</span></div>
+                <div style="height:1px;background:#D2D9D5"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span>Vehicle and plate</span><span style="font-weight:700;color:#0E6E6C">Accepted</span></div>
+                <div style="height:1px;background:#D2D9D5"></div>
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><span>Licence photo</span><span style="font-weight:700;color:#B83227">Rejected</span></div>
+              </div>
+              <div style="flex:1"></div>
+              <button onClick="{{ retakeLicence }}" style="width:100%;min-height:56px;border:0;border-radius:16px;background:#0E6E6C;color:#fff;font-size:16.8px;font-weight:700">Take the photo again</button>
+              <button onClick="{{ callSupport }}" style="width:100%;min-height:56px;margin-top:10px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:16.8px;font-weight:700">Call Njiani</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dDirection }}">
+            <div style="padding:20px;flex:1;overflow-y:auto;display:flex;flex-direction:column">
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:4px 0 8px">Where are you heading?</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">You'll only see passengers going the same way.</p>
+              <div style="display:grid;grid-template-columns:18px 1fr;gap:12px;align-items:center;margin-top:16px">
+                <span style="width:12px;height:12px;border-radius:50%;background:#0E6E6C;justify-self:center"></span>
+                <div><div style="font-size:12px;color:#5A646B">Starting from your location</div><div style="font-weight:600">Ubungo</div></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+                <sc-for list="{{ destOptions }}" as="d" hint-placeholder-count="8">
+                  <button onClick="{{ d.pick }}" style="border:2px solid {{ d.border }};background:{{ d.bg }};color:{{ d.fg }};border-radius:14px;min-height:52px;padding:10px;text-align:left;font-weight:600;font-size:14.5px">{{ d.label }}</button>
+                </sc-for>
+              </div>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:14px;font-size:13.6px;color:#5A646B">You have <b style="color:#1D2226">{{ seatsTotal }}</b> free. Passengers already with you? Take them first, then add them from the On board tab.</div>
+              <button onClick="{{ goOnline }}" style="width:100%;min-height:56px;margin-top:14px;border:0;border-radius:16px;background:#F2B705;color:#2A2100;font-size:16.8px;font-weight:700">Go online · heading to {{ dDest }}</button>
+              <button onClick="{{ go.dStage }}" style="width:100%;min-height:52px;margin-top:10px;border:2px solid #D2D9D5;background:transparent;border-radius:16px;font-size:15px;font-weight:700">I'm parked · show me where demand is</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dStage }}">
+            <div style="background:#F3F6F4;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex:none;border-bottom:1px solid #D2D9D5">
+              <div><div style="font-weight:700;font-size:15px">Parked at Ubungo Mataa</div><div style="font-size:12.5px;color:#5A646B">No direction chosen · you are not online</div></div>
+              <span style="font-size:10.5px;font-weight:800;letter-spacing:.5px;background:#E6EBE8;color:#5A646B;border-radius:4px;padding:3px 6px">§13.1</span>
+            </div>
+            <div style="padding:18px 20px;flex:1;overflow-y:auto">
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:0 0 6px">Where people are going</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">Open requests within 2 km of you, right now. Choose a heading and you'll see them in your feed.</p>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:16px">
+                <sc-for list="{{ demand }}" as="d" hint-placeholder-count="4">
+                  <button onClick="{{ d.pick }}" style="display:flex;align-items:center;gap:12px;width:100%;border:1px solid #D2D9D5;background:#fff;border-radius:16px;padding:14px;text-align:left">
+                    <span style="flex:1"><b style="display:block;font-size:16px">{{ d.dest }}</b><span style="font-size:13.2px;color:#5A646B">{{ d.count }} · they offer {{ d.range }}</span></span>
+                    <span style="width:{{ d.barWidth }};height:8px;border-radius:8px;background:#F2B705;flex:none"></span>
+                    <span style="font-size:21.6px;font-weight:800;letter-spacing:-.3px;flex:none">{{ d.n }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;margin-top:16px;font-size:13.6px;color:#5A646B">Same PostGIS query as the feed, grouped by destination instead of listed. It attacks the problem on slide 2 — drivers sitting at a stage while passengers wait further up the road.</div>
+            </div>
+            <div style="padding:14px 20px 18px;flex:none;border-top:1px solid #D2D9D5">
+              <button onClick="{{ goOnline }}" style="width:100%;min-height:56px;border:0;border-radius:16px;background:#F2B705;color:#2A2100;font-size:16.8px;font-weight:700">Go online · heading to {{ dDest }}</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dFeed }}">
+            <div style="background:#F2B705;color:#2A2100;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none">
+              <div style="font-weight:800;letter-spacing:.6px;text-transform:uppercase;font-size:15.2px;line-height:1.15">Ubungo to {{ dDest }}<span style="display:block;font-weight:600;letter-spacing:0;text-transform:none;font-size:11.5px;opacity:.75">You're online</span></div>
+              <button onClick="{{ go.dDirection }}" style="border:0;background:rgba(0,0,0,.12);color:#2A2100;border-radius:10px;min-height:36px;padding:6px 12px;font-size:12.5px;font-weight:700">Change</button>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #D2D9D5;flex:none">
+              <div><div style="font-weight:700">{{ seatsLine }}</div><div style="font-size:13.6px;color:#5A646B">{{ seatsSub }}</div></div>
+              <div style="display:flex;gap:6px">
+                <sc-for list="{{ seatBlocks }}" as="b" hint-placeholder-count="3">
+                  <span style="width:26px;height:30px;border:2px solid {{ b.border }};background:{{ b.bg }};border-radius:8px 8px 5px 5px"></span>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid #D2D9D5;flex:none">
+              <button onClick="{{ tabReq }}" style="border:0;background:transparent;padding:12px;font-size:15px;font-weight:600;color:{{ reqTabFg }};border-bottom:3px solid {{ reqTabMark }}">Requests</button>
+              <button onClick="{{ tabOn }}" style="border:0;background:transparent;padding:12px;font-size:15px;font-weight:600;color:{{ onTabFg }};border-bottom:3px solid {{ onTabMark }}">On board ({{ seatsTaken }})</button>
+            </div>
+            <div style="flex:1;overflow-y:auto;min-height:0;padding:10px 12px 14px">
+              <sc-if value="{{ showRequests }}">
+                <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:#5A646B;padding:0 4px 10px">
+                  <span style="width:8px;height:8px;border-radius:50%;background:#2DB35A;display:inline-block"></span>Live · passengers heading to {{ dDest }}
+                </div>
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ feedCards }}" as="r" hint-placeholder-count="3">
+                    <div style="border:1px solid #D2D9D5;border-radius:16px;padding:12px;background:#fff;animation:njdrop .35s ease-out">
+                      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+                        <div style="font-size:13.6px;color:#5A646B">{{ r.from }} · {{ r.distLabel }} ahead</div>
+                        <div style="font-size:21.6px;font-weight:800;letter-spacing:-.4px">TSh {{ r.priceLabel }}</div>
+                      </div>
+                      <div style="font-weight:700;margin:2px 0 10px">To {{ r.to }}</div>
+                      <sc-if value="{{ r.taken }}">
+                        <div style="font-size:13.6px;font-weight:600;color:#B83227;background:#F6DEDB;border-radius:10px;padding:10px;text-align:center">Taken by another driver</div>
+                      </sc-if>
+                      <sc-if value="{{ r.open }}">
+                        <button onClick="{{ r.pick }}" disabled="{{ r.disabled }}" style="width:100%;min-height:48px;border:0;border-radius:12px;background:{{ r.btnBg }};color:{{ r.btnFg }};font-size:16px;font-weight:800">{{ r.btnLabel }}</button>
+                      </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ feedEmpty }}">
+                  <div style="text-align:center;color:#5A646B;padding:44px 16px">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#5A646B" stroke-width="1.5" style="margin-bottom:12px"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>
+                    <div style="font-size:16px">Nobody heading to {{ dDest }} yet. You'll hear a sound when a request comes in.</div>
+                  </div>
+                </sc-if>
+              </sc-if>
+              <sc-if value="{{ showOnboard }}">
+                <div style="display:flex;flex-direction:column;gap:10px">
+                  <sc-for list="{{ onboardCards }}" as="p" hint-placeholder-count="2">
+                    <div style="border:1px solid #D2D9D5;border-radius:16px;padding:12px;background:#fff">
+                      <div style="display:flex;justify-content:space-between;align-items:baseline"><b>{{ p.name }}</b><b>TSh {{ p.priceLabel }}</b></div>
+                      <div style="font-size:13.6px;color:#5A646B;margin:2px 0 10px">{{ p.where }} · drop at {{ p.to }}</div>
+                      <div style="display:flex;gap:10px">
+                        <button onClick="{{ p.call }}" style="flex:1;min-height:48px;border:2px solid #D2D9D5;background:#fff;border-radius:12px;font-weight:700">Call</button>
+                        <button onClick="{{ p.advance }}" style="flex:1;min-height:48px;border:2px solid #1D2226;background:#1D2226;color:#fff;border-radius:12px;font-weight:700">{{ p.advanceLabel }}</button>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ onboardEmpty }}">
+                  <div style="text-align:center;color:#5A646B;padding:44px 16px;font-size:16px">No passengers yet. Take a request to fill a seat.</div>
+                </sc-if>
+              </sc-if>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#F3F6F4;font-size:13.6px;flex:none">
+              <button onClick="{{ go.dEarnings }}" style="border:0;background:transparent;color:#5A646B;padding:0;font-size:13.6px">Today · {{ tripsLabel }}</button>
+              <b style="font-size:16px">TSh {{ earnedLabel }}</b>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dOnboard }}">
+            <div style="background:#F2B705;color:#2A2100;padding:10px 16px;flex:none">
+              <div style="font-weight:800;letter-spacing:.6px;text-transform:uppercase;font-size:15.2px;line-height:1.15">Ubungo to {{ dDest }}<span style="display:block;font-weight:600;letter-spacing:0;text-transform:none;font-size:11.5px;opacity:.75">3 of 3 seats taken · drop order</span></div>
+            </div>
+            <div style="padding:18px 20px;flex:1;overflow-y:auto">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+                <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:0">Drop order</h3>
+                <span style="font-size:10.5px;font-weight:800;letter-spacing:.5px;background:#F2B705;color:#2A2100;border-radius:4px;padding:3px 6px">V2</span>
+              </div>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">MVP drops passengers in whatever order the driver taps. This sequences them by position along the route — the same 0–1 fraction the matching query already computes.</p>
+              <div style="display:flex;flex-direction:column;gap:0;margin-top:18px">
+                <sc-for list="{{ dropOrder }}" as="d" hint-placeholder-count="3">
+                  <div style="display:flex;gap:12px">
+                    <div style="display:flex;flex-direction:column;align-items:center;flex:none;width:28px">
+                      <span style="width:28px;height:28px;border-radius:50%;background:{{ d.dotBg }};color:{{ d.dotFg }};display:grid;place-items:center;font-weight:800;font-size:13px">{{ d.n }}</span>
+                      <span style="width:2px;flex:1;background:#D2D9D5;min-height:20px"></span>
+                    </div>
+                    <div style="flex:1;padding-bottom:16px">
+                      <div style="display:flex;justify-content:space-between;align-items:baseline"><b>{{ d.name }}</b><span style="font-weight:700">TSh {{ d.price }}</span></div>
+                      <div style="font-size:13.6px;color:#5A646B">{{ d.stop }} · {{ d.km }} along the route</div>
+                      <sc-if value="{{ d.next }}">
+                        <button onClick="{{ d.drop }}" style="width:100%;min-height:48px;margin-top:10px;border:2px solid #1D2226;background:#1D2226;color:#fff;border-radius:12px;font-weight:700">Dropped off · add TSh {{ d.price }}</button>
+                      </sc-if>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="background:#F3F6F4;border-radius:18px;padding:14px;font-size:13.6px;color:#5A646B">Why v2: it needs stage sequence data per passenger and a resequence on every claim. The MVP list gets the same three people dropped, just without the numbering.</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dEarnings }}">
+            <div style="padding:20px;flex:1;overflow-y:auto">
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:4px 0 8px">Earnings</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:0">What passengers agreed to pay you. Njiani never holds this money — you collect it yourself.</p>
+              <div style="background:#1D2226;color:#fff;border-radius:18px;padding:18px;margin-top:16px">
+                <div style="font-size:13.6px;opacity:.7">Today · {{ tripsLabel }}</div>
+                <div style="font-size:33px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-top:2px">TSh {{ earnedLabel }}</div>
+                <div style="display:flex;gap:18px;margin-top:14px">
+                  <div><div style="font-size:12.5px;opacity:.7">This week</div><div style="font-weight:700;font-size:16px">TSh 84,500</div></div>
+                  <div><div style="font-size:12.5px;opacity:.7">Seats filled</div><div style="font-weight:700;font-size:16px">47 of 63</div></div>
+                </div>
+              </div>
+              <div style="border:1px solid #D2D9D5;border-radius:18px;padding:16px;margin-top:12px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <div><b style="font-size:16px">Weekly fee</b><div style="font-size:13.2px;color:#5A646B">Free during the pilot</div></div>
+                  <span style="font-size:11px;font-weight:800;letter-spacing:.5px;background:#D5EBE9;color:#0E6E6C;border-radius:4px;padding:4px 7px">TSh 0</span>
+                </div>
+                <div style="height:1px;background:#D2D9D5;margin:14px 0"></div>
+                <div style="font-size:13.6px;color:#5A646B">From the day the fee starts you will see it here, a week ahead, with the date it is due. A flat fee, not a cut of each trip — what you agree with a passenger is yours.</div>
+                <div style="display:flex;gap:10px;margin-top:12px">
+                  <div style="flex:1;background:#F3F6F4;border-radius:12px;padding:10px"><div style="font-size:12.5px;color:#5A646B">Planned</div><div style="font-weight:700">TSh 3,000 / week</div></div>
+                  <div style="flex:1;background:#F3F6F4;border-radius:12px;padding:10px"><div style="font-size:12.5px;color:#5A646B">Equivalent cut</div><div style="font-weight:700">under 4%</div></div>
+                </div>
+              </div>
+              <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#5A646B;margin:20px 0 8px">Today's seats</div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ earnRows }}" as="e" hint-placeholder-count="4">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid #D2D9D5;padding-bottom:8px">
+                    <div><div style="font-weight:600">{{ e.name }}</div><div style="font-size:13.2px;color:#5A646B">{{ e.when }} · {{ e.route }}</div></div>
+                    <b>TSh {{ e.price }}</b>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.dHistory }}">
+            <div style="padding:20px 20px 10px;flex:none;border-bottom:1px solid #D2D9D5">
+              <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:0">Your trips</h3>
+              <p style="font-size:13.6px;color:#5A646B;margin:4px 0 0">Seven days. Older trips stay on the server; positions are purged after 30 days.</p>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:12px 16px 20px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ driverTrips }}" as="t" hint-placeholder-count="4">
+                <div style="border:1px solid #D2D9D5;border-radius:16px;padding:14px;background:#fff">
+                  <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px">
+                    <div style="font-weight:700">{{ t.day }}</div>
+                    <div style="font-size:18px;font-weight:800;letter-spacing:-.3px">TSh {{ t.total }}</div>
+                  </div>
+                  <div style="font-size:13.6px;color:#5A646B;margin-top:4px">{{ t.seats }} · {{ t.route }}</div>
+                  <div style="display:flex;gap:6px;margin-top:10px">
+                    <sc-for list="{{ t.blocks }}" as="b" hint-placeholder-count="3">
+                      <span style="height:6px;flex:1;border-radius:6px;background:{{ b }}"></span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.gallery }}">
+            <div style="padding:20px 20px 10px;flex:none;border-bottom:1px solid #D2D9D5">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <h3 style="font-size:25.6px;font-weight:700;letter-spacing:-.5px;margin:0">Components</h3>
+                <button onClick="{{ toggleGalleryDark }}" style="border:2px solid #D2D9D5;background:transparent;border-radius:999px;padding:6px 12px;font-size:12.5px;font-weight:700">{{ galleryThemeLabel }}</button>
+              </div>
+              <p style="font-size:13.6px;color:#5A646B;margin:4px 0 0">Already built in njiani_core. This is the state matrix the gallery screen should cover.</p>
+            </div>
+            <div style="flex:1;overflow-y:auto;padding:16px;background:{{ galleryBg }};color:{{ galleryInk }}">
+              <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:{{ galleryMuted }};margin-bottom:10px">NjButton · 4 variants × 4 states</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <sc-for list="{{ galleryButtons }}" as="b" hint-placeholder-count="8">
+                  <div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:16px;background:{{ b.bg }};color:{{ b.fg }};border:2px solid {{ b.border }};font-size:14.5px;font-weight:700;opacity:{{ b.opacity }}">
+                      <sc-if value="{{ b.spinner }}"><span style="width:16px;height:16px;border:2.5px solid rgba(255,255,255,.35);border-top-color:currentColor;border-radius:50%;display:inline-block;animation:njspin .7s linear infinite"></span></sc-if>
+                      {{ b.label }}
+                    </div>
+                    <div style="font-size:11.5px;color:{{ galleryMuted }};margin-top:4px">{{ b.caption }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:{{ galleryMuted }};margin:22px 0 10px">NjTextField</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="display:flex;align-items:center;border:2px solid {{ galleryLine }};border-radius:14px;background:{{ gallerySurface }}"><span style="padding-left:14px;color:{{ galleryMuted }};font-weight:600">TSh</span><span style="padding:13px 14px;color:{{ galleryMuted }}">1,500</span></div>
+                <div style="display:flex;align-items:center;border:2px solid #0E6E6C;border-radius:14px;background:{{ gallerySurface }}"><span style="padding-left:14px;color:{{ galleryMuted }};font-weight:600">TSh</span><span style="padding:13px 14px;font-weight:500">1,800</span><span style="width:2px;height:20px;background:#0E6E6C;display:inline-block"></span></div>
+                <div>
+                  <div style="display:flex;align-items:center;border:2px solid #B83227;border-radius:14px;background:{{ gallerySurface }}"><span style="padding:13px 14px;font-weight:500">07</span></div>
+                  <div style="font-size:13.2px;font-weight:600;color:#B83227;margin-top:6px">Enter 9 digits, without the leading zero.</div>
+                </div>
+                <div style="display:flex;align-items:center;border:2px solid {{ galleryLine }};border-radius:14px;background:{{ galleryAlt }};opacity:.7"><span style="padding:13px 14px;color:{{ galleryMuted }}">Disabled</span></div>
+              </div>
+
+              <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:{{ galleryMuted }};margin:22px 0 10px">NjSeatIndicator · NjPlate · NjLiveDot</div>
+              <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <div style="display:flex;gap:6px">
+                  <span style="width:26px;height:30px;border:2px solid #0E6E6C;background:#0E6E6C;border-radius:8px 8px 5px 5px"></span>
+                  <span style="width:26px;height:30px;border:2px solid #0E6E6C;background:#0E6E6C;border-radius:8px 8px 5px 5px"></span>
+                  <span style="width:26px;height:30px;border:2px solid {{ galleryLine }};background:{{ gallerySurface }};border-radius:8px 8px 5px 5px"></span>
+                </div>
+                <span style="display:inline-block;background:#FFD21F;color:#111;border:2px solid #111;border-radius:6px;padding:2px 10px;font-weight:800;letter-spacing:1.5px;font-size:18px">T 482 DKT</span>
+                <span style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:{{ galleryMuted }}"><span style="width:8px;height:8px;border-radius:50%;background:#2DB35A"></span>Live</span>
+              </div>
+
+              <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:{{ galleryMuted }};margin:22px 0 10px">NjRouteBoard</div>
+              <div style="background:#F2B705;color:#2A2100;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:4px">
+                <div style="font-weight:800;letter-spacing:.6px;text-transform:uppercase;font-size:15.2px;line-height:1.15">Ubungo to Kimara Korogwe<span style="display:block;font-weight:600;letter-spacing:0;text-transform:none;font-size:11.5px;opacity:.75">You're online</span></div>
+                <span style="background:rgba(0,0,0,.12);border-radius:10px;padding:7px 12px;font-size:12.5px;font-weight:700">Change</span>
+              </div>
+              <div style="font-size:12.5px;color:{{ galleryMuted }};margin-top:6px">Yellow in both themes — it imitates a painted daladala board, not a surface.</div>
+
+              <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:{{ galleryMuted }};margin:22px 0 10px">NjHint · NjEmptyState · NjToast</div>
+              <div style="display:flex;flex-direction:column;gap:10px">
+                <div style="font-size:13.2px;font-weight:600;color:#0E6E6C">Most drivers on this route take TSh 1,000 to TSh 1,500</div>
+                <div style="font-size:13.2px;font-weight:600;color:#B83227">Below what most drivers take. It may take longer to find a bajaj.</div>
+                <div style="text-align:center;color:{{ galleryMuted }};padding:20px;border:1px dashed {{ galleryLine }};border-radius:16px;font-size:14.5px">Nobody heading to Kimara yet.</div>
+                <div style="background:{{ galleryToastBg }};color:{{ galleryToastFg }};border-radius:14px;padding:13px 15px;font-size:14.5px;font-weight:600">Neema is yours. Pick up at Shekilango.</div>
+              </div>
+
+              <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:{{ galleryMuted }};margin:22px 0 10px">Tokens</div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));gap:8px">
+                <sc-for list="{{ swatches }}" as="sw" hint-placeholder-count="8">
+                  <div>
+                    <div style="height:40px;border-radius:8px;background:{{ sw.hex }};border:1px solid {{ galleryLine }}"></div>
+                    <div style="font-size:11px;font-weight:700;margin-top:4px">{{ sw.name }}</div>
+                    <div style="font-size:10.5px;color:{{ galleryMuted }};font-family:ui-monospace,Menlo,monospace">{{ sw.hex }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+
+          <sc-if value="{{ toast }}">
+            <div role="status" style="position:absolute;left:14px;right:14px;bottom:16px;background:#1D2226;color:#fff;border-radius:14px;padding:13px 15px;font-size:14.5px;font-weight:600;z-index:10;animation:njdrop .25s ease-out">{{ toast }}</div>
+          </sc-if>
+
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap">
+        <sc-for list="{{ flowJump }}" as="j" hint-placeholder-count="4">
+          <button onClick="{{ j.go }}" style="border:1px solid {{ j.border }};background:{{ j.bg }};color:{{ j.fg }};border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600">{{ j.label }}</button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ specOpen }}" hint-placeholder-val="{{ true }}">
+    <aside style="width:330px;flex:none;min-width:260px;align-self:stretch;background:#fff;border-left:1px solid #D2D9D5;padding:22px 20px 60px;max-height:1000px;overflow-y:auto">
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#5A646B">Build note</div>
+      <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px">
+        <span style="font-size:11.5px;font-weight:800;color:#0E6E6C">{{ spec.component }}</span>
+        <span style="font-size:18px;font-weight:700;letter-spacing:-.3px">{{ spec.title }}</span>
+      </div>
+      <p style="font-size:14.5px;color:#5A646B;margin:10px 0 0;line-height:1.45">{{ spec.purpose }}</p>
+
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#5A646B;margin:22px 0 8px">njiani_core widgets</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <sc-for list="{{ spec.widgets }}" as="w" hint-placeholder-count="4">
+          <code style="font-size:12px;font-weight:600;background:#F3F6F4;border:1px solid #D2D9D5;border-radius:6px;padding:3px 7px;font-family:ui-monospace,Menlo,monospace">{{ w }}</code>
+        </sc-for>
+      </div>
+
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#5A646B;margin:22px 0 8px">States to build</div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        <sc-for list="{{ spec.states }}" as="st" hint-placeholder-count="4">
+          <div style="display:flex;gap:8px;font-size:13.6px;line-height:1.4">
+            <span style="font-weight:700;color:#0E6E6C;flex:none;min-width:62px">{{ st.k }}</span>
+            <span style="color:#5A646B">{{ st.v }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#5A646B;margin:22px 0 8px">Rules</div>
+      <ul style="margin:0;padding-left:1.1em;font-size:13.6px;color:#5A646B;line-height:1.5">
+        <sc-for list="{{ spec.rules }}" as="r" hint-placeholder-count="3"><li style="margin:5px 0">{{ r }}</li></sc-for>
+      </ul>
+
+      <div style="font-size:11.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:#5A646B;margin:22px 0 8px">Strings · en / sw</div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <sc-for list="{{ spec.strings }}" as="s" hint-placeholder-count="3">
+          <div style="border-left:2px solid #D2D9D5;padding-left:10px">
+            <div style="font-size:13.6px;font-weight:600">{{ s.en }}</div>
+            <div style="font-size:13.6px;color:#5A646B">{{ s.sw }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:1000}}">
+const STAGES = ["Kimara Korogwe","Kimara Mwisho","Mbezi Mwisho","Mwenge","Tegeta","Sinza","Makumbusho","Kariakoo","Posta","Buguruni","Tabata"];
+const BANDS = {"Kimara Korogwe":[1000,1500],"Kimara Mwisho":[1500,2000],"Mbezi Mwisho":[2000,3000],"Mwenge":[1500,2500],"Tegeta":[3000,4500],"Sinza":[1000,1500],"Makumbusho":[1500,2000],"Kariakoo":[2000,3000],"Posta":[2500,3500],"Buguruni":[2000,3000],"Tabata":[2000,2500]};
+const NAMES = ["Neema","Baraka","Asha","Hamisi","Rehema","Salim","Zawadi","Emmanuel","Mwanaidi","Kelvin","Halima","Joseph"];
+const STOPS = ["Ubungo Mataa","Ubungo Terminal gate","Shekilango","Riverside","Ubungo Maji","Kibo stage","Kimara Suka","Bucha stage"];
+const num = n => Number(n).toLocaleString("en-US");
+
+const NAV = [
+  {title:"Rider · Njiani", items:[
+    ["pLang","Language choice","C2"],["pPhone","Phone number","C4"],["pOtp","OTP code","C4"],
+    ["pHome","Request a ride","C8"],["pSearch","Searching","C9"],["pNoDriver","Nobody took it","C9"],
+    ["pMatched","Driver on the way","C10"],["pTrip","On the trip","C11"],["pRate","Arrived + rate","C12"],
+    ["pHistory","Trip history","C12"],["pSafety","Safety","C15"],["pOffline","Connection lost","C17"],
+    ["pPlaces","Saved places","V2"],["pCounter","Counter-offer","V2"]]},
+  {title:"Driver · Njiani Driver", items:[
+    ["dSignup","Sign up","C6"],["dPending","Under review","C6"],["dRejected","Rejected","C6"],
+    ["dDirection","Pick a direction","C7"],["dStage","Stage mode","§13.1"],["dFeed","Live requests","C9/C10"],
+    ["dOnboard","On board","C11"],["dEarnings","Earnings + fee","C11"],["dHistory","Driver history","C12"]]},
+  {title:"Design system", items:[["gallery","Component gallery","C1"]]}
+];
+
+const SPECS = {
+  pLang:{component:"C2",title:"Language choice",purpose:"Shown once, before auth, because every subsequent screen has to be in the right language. The choice writes profiles.lang and shared_preferences so it survives reinstall of the session, not the app.",
+    widgets:["NjButton","NjCard"],
+    states:[{k:"default",v:"Kiswahili pre-selected — the pilot corridor's first language"},{k:"changed",v:"Selected option gets teal 2pt border and tealSoft fill"},{k:"no pick",v:"Continue still works; falls through to Kiswahili"}],
+    rules:["Both labels appear in both languages on this screen only — the user cannot yet read either reliably.","Reachable later from Settings; never blocks a returning user."],
+    strings:[{en:"Choose your language",sw:"Chagua lugha"},{en:"Continue",sw:"Endelea"},{en:"You can change this later in Settings.",sw:"Unaweza kubadilisha hii baadaye kwenye Mipangilio."}]},
+  pPhone:{component:"C4",title:"Phone number",purpose:"Supabase phone OTP with a Send-SMS hook to a Tanzanian gateway. The +255 prefix is part of the field, not the value, so it cannot be deleted by accident.",
+    widgets:["NjTextField","NjButton"],
+    states:[{k:"empty",v:"Send code disabled at 0.45 opacity"},{k:"typing",v:"Enabled at 9 digits after stripping non-digits"},{k:"loading",v:"NjButton loading — spinner, taps blocked"},{k:"error",v:"errorText under the field, danger border, field keeps its value"},{k:"rate limit",v:"\"Too many codes. Try again in 15 minutes.\""}],
+    rules:["Strip a leading 0: 0712… and 712… are the same number.","Never clear the field on error — retyping a number on a bajaj is the worst possible ask.","SMS costs money per send; debounce the button and rate-limit server-side."],
+    strings:[{en:"Enter your phone number",sw:"Weka namba yako ya simu"},{en:"We'll send you a code by SMS.",sw:"Tutakutumia namba ya uthibitisho kwa SMS."},{en:"Send code",sw:"Tuma namba"}]},
+  pOtp:{component:"C4",title:"OTP code",purpose:"Four boxes, auto-advancing. Dev mode logs the code instead of sending an SMS so C4 can be tested without the gateway being live.",
+    widgets:["NjOtpField","NjButton"],
+    states:[{k:"empty",v:"First box focused, Verify disabled"},{k:"filled",v:"Verify enabled"},{k:"wrong",v:"All boxes go danger, boxes clear, focus returns to the first"},{k:"expired",v:"\"That code expired. Ask for a new one.\" + Resend enabled"},{k:"resend",v:"Countdown 0:42 → tappable Resend"}],
+    rules:["Accept SMS autofill on both platforms.","Paste of a 4-digit string fills all four boxes.","Attempts are capped server-side, not in the client."],
+    strings:[{en:"Enter the 4-digit code",sw:"Weka namba nne ulizopokea"},{en:"Didn't get it?",sw:"Hujapokea?"},{en:"Verify",sw:"Thibitisha"}]},
+  pHome:{component:"C8",title:"Request a ride",purpose:"The passenger's whole job in one sheet: where they are going, in what, for how much. The price band hint comes from price_bands, hand-seeded per stage pair at launch.",
+    widgets:["NjWhereRow","NjSegmented","NjTextField","NjChoiceChips","NjHint","NjButton","NjSheet"],
+    states:[{k:"default",v:"Nearest stage pre-filled as pickup, price empty, Send request disabled"},{k:"in band",v:"Teal hint: \"Most drivers on this route take TSh 1,000 to 1,500\""},{k:"below band",v:"Danger hint, request still sendable — never blocked"},{k:"boda",v:"Seat language switches to one seat; band re-reads for vehicle_type"},{k:"loading",v:"Sending — button spinner, sheet not dismissible"},{k:"error",v:"\"Couldn't send. Your request was not created.\" Explicit, because a silent failure means standing at the road for nothing"}],
+    rules:["Offers below the band send with a warning. Log every unmatched expiry with its offer — rejected offers reveal the price floor faster than accepted ones.","Chips are band low / band mid / band high, rounded to the nearest 100.","Pickup comes from the stage list only. Free-text addresses need a geocoder — out of MVP scope."],
+    strings:[{en:"Going to",sw:"Unaenda"},{en:"Your price, per seat",sw:"Bei yako, kwa kiti"},{en:"Most drivers on this route take TSh {low} to {high}",sw:"Madereva wengi wa njia hii wanakubali TSh {low} hadi {high}"},{en:"Send request",sw:"Tuma ombi"}]},
+  pSearch:{component:"C9",title:"Searching",purpose:"The waiting state. It must prove the app is working, so it names how many drivers can currently see the offer — a real number from match_requests_for_session, not a spinner.",
+    widgets:["NjSheet","NjLiveDot","NjCard","NjButton"],
+    states:[{k:"0 drivers",v:"\"No bajaj heading to Kimara right now. Your offer stays open.\""},{k:"n drivers",v:"Count of online sessions whose corridor contains this pickup"},{k:"stale 45s",v:"Offer the +TSh 200 raise"},{k:"expired 10min",v:"Route to the nobody-took-it screen"},{k:"claimed",v:"Realtime push moves straight to Driver on the way"}],
+    rules:["Raising the offer is an UPDATE to ride_requests.offer_price, not a new request — the queue position must not reset.","Cancel is free and instant at this stage; there is no driver to inconvenience yet.","Poll only as a fallback; the primary path is Postgres realtime on ride_requests."],
+    strings:[{en:"Finding a bajaj to {dest}",sw:"Kutafuta bajaji ya kwenda {dest}"},{en:"Add TSh 200 to my offer",sw:"Ongeza TSh 200 kwenye ofa yangu"},{en:"Cancel request",sw:"Ghairi ombi"}]},
+  pNoDriver:{component:"C9",title:"Nobody took it",purpose:"The failure state pg_cron creates when a request expires unmatched. It is the most informative screen in the app for pricing, and the most demoralising for the user — so it ends with one tap that fixes the likely cause.",
+    widgets:["NjEmptyState","NjButton","NjCard"],
+    states:[{k:"below band",v:"Leads with the band and offers the mid price"},{k:"in band",v:"Suggests time of day instead of price"},{k:"no drivers online",v:"\"No drivers were online on this road. Try between 6 and 9 in the morning.\""}],
+    rules:["Write the expiry with its offer, dest and time of day — this is the pricing dataset.","Do not auto-resend. A request the passenger did not press send on is a passenger standing at the wrong stage."],
+    strings:[{en:"No driver took your offer",sw:"Hakuna dereva aliyekubali ofa yako"},{en:"Send again at TSh {mid}",sw:"Tuma tena kwa TSh {mid}"}]},
+  pMatched:{component:"C10",title:"Driver on the way",purpose:"The moment after accept_ride_request returns ok. Phone numbers are revealed to each side only now, and only for this seat.",
+    widgets:["NjCard","NjPlate","NjAvatar","NjButton"],
+    states:[{k:"approaching",v:"ETA counts down from the Haversine estimate; marker animates along the route"},{k:"arrived",v:"\"Your bajaj is here\" + I'm on board becomes the primary action"},{k:"driver cancels",v:"\"Juma cancelled. Your request is open again.\" — request returns to open, seat frees"},{k:"no show",v:"After 5 min past ETA, offer Cancel with no penalty"},{k:"shared bajaj",v:"Names how many other passengers are already aboard"}],
+    rules:["Cancel is free until the driver arrives. MVP has no penalty either way — reputation comes later.","ETA is Haversine ÷ 18 km/h until C14, then OSRM. Never show seconds; show minutes or \"Almost there\".","Plate is the trust anchor — show it larger than the driver's name."],
+    strings:[{en:"Arriving in {n} min",sw:"Inafika baada ya dakika {n}"},{en:"I'm on board",sw:"Nimepanda"},{en:"Price agreed",sw:"Bei imekubaliwa"}]},
+  pTrip:{component:"C11",title:"On the trip",purpose:"Minimal by design: the passenger is on a moving bajaj. Route board on top so a glance confirms the right vehicle, the agreed price where it cannot be argued about, and safety one tap away.",
+    widgets:["NjRouteBoard","NjSheet","NjCard","NjButton"],
+    states:[{k:"riding",v:"ETA to destination, agreed price, share and help"},{k:"dropped by driver",v:"Driver taps Dropped off → passenger goes to rating automatically"},{k:"connection lost",v:"Banner, last known ETA, nothing hidden"}],
+    rules:["Njiani never touches the money. Say so on this screen — it sets the expectation before the cash moment.","The trip ends when either side marks it; whichever comes first wins."],
+    strings:[{en:"About {n} min to {dest}",sw:"Dakika {n} hadi {dest}"},{en:"Pay when you arrive",sw:"Lipa ukifika"},{en:"Share trip",sw:"Tuma safari"}]},
+  pRate:{component:"C12",title:"Arrived and rate",purpose:"One question, five stars, skippable. A rating that costs effort is a rating nobody gives.",
+    widgets:["NjStars","NjButton"],
+    states:[{k:"unrated",v:"Done disabled, Skip always enabled"},{k:"1–2 stars",v:"Reveal a report prompt — low ratings are the only reliable safety signal at 15 drivers"},{k:"submitted",v:"Return to the request screen with the destination cleared"}],
+    rules:["Never block the app behind a rating.","A 1-star rating should reach a human on the pilot team the same day."],
+    strings:[{en:"How was the ride?",sw:"Safari ilikuwaje?"},{en:"Skip",sw:"Ruka"}]},
+  pHistory:{component:"C12",title:"Trip history",purpose:"A record of agreed prices, which matters because settlement happens off-app. It is the only place a disputed fare can be checked.",
+    widgets:["NjCard","NjEmptyState"],
+    states:[{k:"empty",v:"\"No trips yet. Your first ride will show here.\""},{k:"loading",v:"Three skeleton cards, not a spinner"},{k:"cancelled trip",v:"Shown in muted text with the reason"},{k:"offline",v:"Serve from the local cache with a \"last updated\" line"}],
+    rules:["Location traces are purged after 30 days; trip records are retained (PDPA 2022, ARCHITECTURE §12).","Show the plate and driver name — that is what a passenger remembers, not a trip id."],
+    strings:[{en:"Your trips",sw:"Safari zako"},{en:"Cancelled",sw:"Imeghairiwa"}]},
+  pSafety:{component:"C15",title:"Safety",purpose:"Three actions and an emergency number. Reachable from the matched screen and the trip screen, never buried in a menu.",
+    widgets:["NjButton","NjCard"],
+    states:[{k:"on a trip",v:"Names the driver, plate and destination"},{k:"not on a trip",v:"Share is hidden; call and report remain"},{k:"report sent",v:"\"A person will read this today.\" — no ticket numbers"}],
+    rules:["112 opens the dialer with the number pre-filled; the app never places the call.","The shared link is a signed, expiring URL showing driver, plate, route and last position — nothing else.","Report reasons: price changed, driver behaviour, vehicle condition, plate did not match, other."],
+    strings:[{en:"Share this trip",sw:"Tuma safari hii"},{en:"Emergency · call 112",sw:"Dharura · piga 112"},{en:"Report this driver",sw:"Ripoti dereva huyu"}]},
+  pOffline:{component:"C17",title:"Connection lost",purpose:"Dar data is patchy and drivers are on metered connections. Every screen that shows server state needs an honest degraded version of itself.",
+    widgets:["NjHint","NjCard","NjButton"],
+    states:[{k:"offline, request live",v:"Banner + last known state; destructive actions disabled"},{k:"offline, no state",v:"Cached history only"},{k:"reconnecting",v:"Retry shows a spinner, then refreshes in place"}],
+    rules:["Never show a disabled button without saying why it is disabled.","Requests live on the server, so losing signal must not look like losing the request.","An SMS on claim is the fallback channel when push cannot land."],
+    strings:[{en:"No connection. Showing your last known state.",sw:"Hakuna mtandao. Tunaonyesha hali ya mwisho."},{en:"Retry now",sw:"Jaribu tena"}]},
+  pPlaces:{component:"V2",title:"Saved places",purpose:"Not in MVP. Recorded here so the request screen's layout leaves room for it: two shortcut taps above the destination list.",
+    widgets:["NjCard","NjButton"],
+    states:[{k:"none saved",v:"Only the add row"},{k:"saved",v:"Home and Work appear on the request screen as chips"}],
+    rules:["A saved place is a stage id, not an address — no geocoder in MVP (ARCHITECTURE D9).","Cap at two named places plus recents. More is a menu nobody reads."],
+    strings:[{en:"Saved places",sw:"Maeneo yaliyohifadhiwa"},{en:"Home",sw:"Nyumbani"},{en:"Work",sw:"Kazini"}]},
+  pCounter:{component:"V2",title:"Counter-offer",purpose:"Not in MVP, and deliberately so. Designed here because you asked for it, and because seeing it makes the cost obvious: a negotiation needs its own state machine on top of the atomic seat claim.",
+    widgets:["NjCard","NjButton"],
+    states:[{k:"received",v:"60s countdown, original price struck through"},{k:"accepted",v:"Becomes a normal claim at the new price"},{k:"declined or expired",v:"Original offer returns to every matching driver"}],
+    rules:["One counter per request, per driver. Otherwise it becomes a bidding war on a phone screen at a bus stage.","Requires ride_requests.counter_price, counter_by, counter_expires_at and a second race guard.","MVP stays take-it-or-leave-it (ARCHITECTURE §2)."],
+    strings:[{en:"{driver} offered a different price",sw:"{driver} ametoa bei tofauti"},{en:"Keep my price, keep looking",sw:"Baki na bei yangu, endelea kutafuta"}]},
+
+  dSignup:{component:"C6",title:"Driver sign up",purpose:"The verification gate. Everything here is checked by a person before drivers.status moves off pending, and the driver cannot write that column.",
+    widgets:["NjTextField","NjSegmented","NjUploadBox","NjButton"],
+    states:[{k:"incomplete",v:"Submit disabled until name, plate and licence photo are all present"},{k:"uploading",v:"Upload box shows progress; submit stays disabled"},{k:"upload failed",v:"\"Photo didn't upload. Your details are saved.\" — retry only the photo"},{k:"submitted",v:"Screen is replaced by the pending state; no back navigation"}],
+    rules:["Vehicle type decides seats_total by check constraint: bajaj 3, boda 1. It is not an editable setting.","Licence photos go to a private bucket, signed URLs, admin read only.","Plate is upper-cased on input — drivers type it in every casing there is.","Confirm boda passenger carriage is permitted on the corridor before onboarding boda drivers (ARCHITECTURE §12)."],
+    strings:[{en:"Drive with Njiani",sw:"Endesha na Njiani"},{en:"Driving licence photo",sw:"Picha ya leseni ya udereva"},{en:"Submit for review",sw:"Tuma kwa uhakiki"}]},
+  dPending:{component:"C6",title:"Under review",purpose:"A driver who submits at a stage will close the app and come back. This screen has to be the whole status, with nothing to do.",
+    widgets:["NjCard","NjPlate","NjButton"],
+    states:[{k:"pending",v:"What was submitted, and that an SMS is coming"},{k:"approved",v:"Realtime on drivers.status replaces the screen with the direction picker"},{k:"rejected",v:"Routes to the rejection screen with the reason"},{k:"suspended",v:"Same layout, different copy, support number prominent"}],
+    rules:["Poll or subscribe — a driver should never have to reinstall to discover they were approved.","Send the approval SMS from the same sender ID as the OTP; it is the only channel that reliably reaches a driver who has closed the app."],
+    strings:[{en:"We're checking your documents",sw:"Tunahakiki nyaraka zako"},{en:"Usually less than a day.",sw:"Kwa kawaida chini ya siku moja."}]},
+  dRejected:{component:"C6",title:"Rejected",purpose:"Almost every rejection at this size is a bad photo, not a bad driver. The screen says which single thing to fix and keeps everything already accepted.",
+    widgets:["NjCard","NjHint","NjButton"],
+    states:[{k:"photo unreadable",v:"Retake only the photo, keep queue position"},{k:"licence expired",v:"Needs a new licence; support number, not a retake"},{k:"plate mismatch",v:"Manual review, calls the driver"}],
+    rules:["A rejection reason is written by a person and is required — never ship an empty rejection.","Re-submission does not reset the other checks.","Keep the reason list short and human. Drivers read these at a stage, on a cracked screen, in sunlight."],
+    strings:[{en:"One thing to fix",sw:"Kitu kimoja cha kurekebisha"},{en:"Take the photo again",sw:"Piga picha tena"}]},
+  dDirection:{component:"C7",title:"Pick a direction",purpose:"The screen that makes Njiani not a ride-hailing app. The driver declares a heading before seeing a single request, which is why it comes first in the flow.",
+    widgets:["NjWhereRow","NjCard","NjButton"],
+    states:[{k:"no GPS",v:"Ask for permission with the reason, then fall back to picking a start stage by hand"},{k:"chosen",v:"Selected stage is bajaj-yellow filled with ink text"},{k:"going online",v:"Creates driver_sessions row with seats_free = seats_total"},{k:"already online",v:"Returning here shows Change, not Go online"}],
+    rules:["Changing direction ends the session and starts a new one. Claimed seats survive; the feed is cleared.","Destination list is stages on the active route, ordered by seq — never alphabetical.","Position updates are throttled: battery and data cost real money to a driver."],
+    strings:[{en:"Where are you heading?",sw:"Unaelekea wapi?"},{en:"You'll only see passengers going the same way.",sw:"Utaona abiria wanaoelekea njia moja na wewe."},{en:"Go online · heading to {dest}",sw:"Anza · unaelekea {dest}"}]},
+  dStage:{component:"§13.1",title:"Stage mode",purpose:"For a driver parked with no heading chosen. Same PostGIS query as the feed, grouped by destination instead of listed — so the driver picks a direction because there is demand in it, not out of habit.",
+    widgets:["NjCard","NjButton","NjEmptyState"],
+    states:[{k:"demand",v:"Destinations ranked by open request count within 2 km"},{k:"no demand",v:"\"Nobody waiting near you right now.\" + the busiest hour from the last week"},{k:"tapped",v:"Sets the heading and goes straight online"}],
+    rules:["Counts only, never passenger identities — a parked driver has no claim on anyone.","Cache for 30 seconds. A number that flickers while someone stares at it reads as broken.","This is the most direct answer to problem 3 on pitch slide 2: drivers idle at a stage while passengers wait up the road."],
+    strings:[{en:"Where people are going",sw:"Watu wanakoelekea"},{en:"{n} waiting",sw:"{n} wanasubiri"}]},
+  dFeed:{component:"C9 / C10",title:"Live requests",purpose:"The product. match_requests_for_session() streams passengers who are in the corridor, ahead of the driver, and stopping at or before the driver's destination. Pickup is one atomic transaction.",
+    widgets:["NjRouteBoard","NjSeatIndicator","NjSegmented","NjCard","NjButton","NjLiveDot","NjEmptyState","NjToast"],
+    states:[{k:"empty",v:"Named, reassuring, and says a sound will play — a driver must not think the app is broken"},{k:"new request",v:"Card drops in over 350ms, plus a sound; ordered nearest-ahead first"},{k:"claim won",v:"Seat fills, toast names the pickup stop, card leaves the feed"},{k:"claim lost",v:"Red \"Taken by another driver\" band for ~2s, then the card leaves"},{k:"seats full",v:"Every Pickup becomes a disabled \"Seats full\""},{k:"offline",v:"Route board greys, banner, feed frozen with a timestamp"}],
+    rules:["Race safety lives in accept_ride_request(), not the UI. The loser sees already_taken.","Order by ST_LineLocatePoint ascending — nearest passenger ahead at the top. Never by price.","One tap to claim, with no confirm dialog; the driver is in traffic. Undo is Cancel on the On board tab.","Drivers never hold a blanket read policy on ride_requests; they read only through their own session."],
+    strings:[{en:"Live · passengers heading to {dest}",sw:"Moja kwa moja · abiria wanaoelekea {dest}"},{en:"Pickup",sw:"Chukua"},{en:"Taken by another driver",sw:"Amechukuliwa na dereva mwingine"},{en:"Seats full",sw:"Viti vimejaa"}]},
+  dOnboard:{component:"C11",title:"On board · drop order",purpose:"Three seats, three drop points. The MVP list drops passengers in whatever order the driver taps; this screen shows the v2 sequencing on top of it.",
+    widgets:["NjCard","NjButton","NjSeatIndicator"],
+    states:[{k:"claimed",v:"\"Waiting at Shekilango\" + Picked up"},{k:"aboard",v:"\"On board\" + Dropped off"},{k:"dropped",v:"Leaves the list, price is added to today, seat frees"},{k:"no show",v:"Cancel frees the seat with no penalty either way in MVP"}],
+    rules:["Each seat is its own trip_seats row with its own price and state — never one trip with three passengers.","MVP: tap order. V2: order by ST_LineLocatePoint of each drop stage, resequenced on every claim.","Dropping off is the only action that moves money in the driver's mind — make it the darkest button on the screen."],
+    strings:[{en:"Picked up",sw:"Nimemchukua"},{en:"Dropped off",sw:"Nimemfikisha"},{en:"Drop order",sw:"Mpangilio wa kufikisha"}]},
+  dEarnings:{component:"C11",title:"Earnings and the weekly fee",purpose:"A driver's reason to keep the app installed. It also has to make the business model legible before the fee ever starts, so it is never a surprise.",
+    widgets:["NjCard","NjButton"],
+    states:[{k:"pilot",v:"Fee shown as TSh 0 with \"Free during the pilot\""},{k:"fee active",v:"Amount, due date, and days remaining, a week ahead"},{k:"fee overdue",v:"Warning, not a lockout. Decide the grace period before writing this state"},{k:"empty day",v:"\"No seats filled yet today.\" Weekly total stays visible"}],
+    rules:["Sum of trip_seats.price where state = dropped. Njiani holds no money and takes no cut per trip — say so on the screen.","Show the fee as a flat weekly amount and its equivalent percentage; drivers compare against Bolt's commission, not against zero.","Collecting the fee is a driver-side, low-volume flow — much simpler than per-trip passenger payments (ARCHITECTURE §11)."],
+    strings:[{en:"Earnings",sw:"Mapato"},{en:"Weekly fee",sw:"Ada ya wiki"},{en:"Free during the pilot",sw:"Bure kipindi cha majaribio"}]},
+  dHistory:{component:"C12",title:"Driver history",purpose:"Seven days, grouped by day, with seats filled shown as blocks — a driver's question is \"was yesterday better?\", not \"what was trip 41?\".",
+    widgets:["NjCard","NjEmptyState","NjSeatIndicator"],
+    states:[{k:"empty",v:"\"No trips yet. Go online to start filling seats.\""},{k:"loading",v:"Skeleton day cards"},{k:"offline",v:"Cached week with a last-updated line"}],
+    rules:["Group by day, not by trip. Seat blocks reuse NjSeatIndicator's vocabulary so the unit stays consistent across the app.","Position traces purge at 30 days; trip records are kept (PDPA 2022)."],
+    strings:[{en:"Your trips",sw:"Safari zako"},{en:"{n} seats filled",sw:"Viti {n} vilijaa"}]},
+  gallery:{component:"C1",title:"Component gallery",purpose:"njiani_core already ships 18 widgets, the token set and a gallery screen. This is the state matrix that gallery should render, so a missing state gets caught here instead of in a flow.",
+    widgets:["NjButton","NjTextField","NjOtpField","NjSegmented","NjChoiceChips","NjCard","NjSheet","NjRouteBoard","NjSeatIndicator","NjPlate","NjAvatar","NjStars","NjHint","NjLiveDot","NjEmptyState","NjToast","NjUploadBox","NjWhereRow"],
+    states:[{k:"NjButton",v:"4 variants × default / pressed / disabled 0.45 / loading"},{k:"NjTextField",v:"empty / focused teal / error danger + message / disabled surfaceAlt"},{k:"NjOtpField",v:"empty / partial / complete / wrong-code reset"},{k:"NjSegmented",v:"each option selected, 2-up and 3-up"},{k:"NjUploadBox",v:"empty / uploading / done / failed"},{k:"NjSeatIndicator",v:"0–3 of 3, and 0–1 of 1"},{k:"NjEmptyState",v:"with and without an action"},{k:"NjToast",v:"one line and two lines"}],
+    rules:["Both themes in the same gallery, side by side. bajaj yellow and the live dot are identical in both — they imitate physical objects.","Every value from NjSpace / NjRadius / NjBorder / NjDuration. A number not on the scale is almost always a mistake.","Minimum tap target 44pt; primary buttons 56pt. These screens are used one-handed on a moving vehicle.","Accent-on-ground contrast is checked at text sizes, not just at headline sizes."],
+    strings:[{en:"Components",sw:"Vipengele"},{en:"Light theme",sw:"Mandhari nyeupe"},{en:"Dark theme",sw:"Mandhari nyeusi"}]}
+};
+
+class Component extends DCLogic {
+  state = {
+    screen:"pPhone", specOpen:true, lang:"sw",
+    phone:"", phoneTouched:false, sending:false,
+    otp:["","","",""],
+    dest:"Kimara Korogwe", vtype:"bajaj", price:"",
+    showRaise:false, driverT:0, arrived:false,
+    rating:0, toast:"",
+    dTab:"req", feed:[], onboard:[], earned:0, trips:0, uid:0,
+    dVeh:"bajaj", dName:"", dPlate:"", dColor:"Blue", dLicense:false, dDest:"Kimara Korogwe",
+    galleryDark:false
+  };
+  timers = [];
+
+  componentWillUnmount(){ this.clear(); }
+  clear(){ this.timers.forEach(t=>{clearTimeout(t);clearInterval(t);}); this.timers=[]; }
+
+  go(screen){
+    this.clear();
+    this.setState({screen, toast:""});
+    if(screen==="pSearch") this.runSearch();
+    if(screen==="pMatched") this.runApproach();
+    if(screen==="dFeed") this.runFeed();
+  }
+  say(msg){
+    const t = setTimeout(()=>this.setState({toast:""}), 2600);
+    this.timers.push(t);
+    this.setState({toast:msg});
+  }
+  band(){ return BANDS[this.state.dest] || [1000,2000]; }
+  offer(){ return Number(this.state.price) || this.band()[0]; }
+
+  runSearch(){
+    this.setState({showRaise:false});
+    this.timers.push(setTimeout(()=>this.setState({showRaise:true}), 2400));
+    this.timers.push(setTimeout(()=>this.go("pMatched"), 6200));
+  }
+  runApproach(){
+    this.setState({driverT:0, arrived:false});
+    const id = setInterval(()=>{
+      const t = Math.min(1, this.state.driverT + 0.04);
+      this.setState({driverT:t, arrived:t>=1});
+      if(t>=1) clearInterval(id);
+    }, 220);
+    this.timers.push(id);
+  }
+  makeReq(){
+    const uid = this.state.uid + 1;
+    const [lo,hi] = BANDS[this.state.dDest] || [1000,2000];
+    const price = Math.max(500, Math.round((lo + Math.random()*(hi-lo+400) - 200)/100)*100);
+    const dists = [150,300,400,600,800,1200];
+    this.state.uid = uid;
+    return {id:uid, name:NAMES[uid%NAMES.length], from:STOPS[uid%STOPS.length], dist:dists[uid%dists.length], price, state:"open"};
+  }
+  runFeed(){
+    if(!this.state.feed.length){
+      const seed = [this.makeReq(), this.makeReq(), this.makeReq()];
+      this.setState({feed:seed, uid:this.state.uid});
+    }
+    const id = setInterval(()=>{
+      if(this.state.screen!=="dFeed") return;
+      let feed = [this.makeReq(), ...this.state.feed];
+      const open = feed.filter(r=>r.state==="open");
+      if(open.length>3 && Math.random()<0.5){
+        const victim = open[open.length-1];
+        feed = feed.map(r=>r===victim?{...r,state:"taken"}:r);
+        this.timers.push(setTimeout(()=>{
+          this.setState({feed:this.state.feed.filter(r=>!(r.id===victim.id&&r.state==="taken"))});
+        }, 2200));
+      }
+      this.setState({feed:feed.slice(0,7), uid:this.state.uid});
+    }, 4200);
+    this.timers.push(id);
+  }
+
+  renderVals(){
+    const s = this.state;
+    const [lo,hi] = this.band();
+    const mid = Math.round((lo+hi)/2/100)*100;
+    const p = Number(s.price) || 0;
+    const below = p>0 && p<lo;
+    const veh = s.vtype==="bajaj" ? "bajaj" : "boda";
+    const spec = SPECS[s.screen] || {component:"—",title:"—",purpose:"",widgets:[],states:[],rules:[],strings:[]};
+
+    const go = {};
+    NAV.forEach(g=>g.items.forEach(([id])=> go[id] = ()=>this.go(id)));
+
+    const nav = NAV.map(g=>({
+      title:g.title,
+      items:g.items.map(([id,label,tag])=>{
+        const sel = s.screen===id;
+        const v2 = tag==="V2";
+        return {label, tag, go:go[id],
+          bg: sel?"#F3F6F4":"transparent", fg: sel?"#1D2226":"#5A646B",
+          weight: sel?"700":"500", mark: sel?"#0E6E6C":"transparent",
+          tagBg: v2?"#F2B705":"#E6EBE8", tagFg: v2?"#2A2100":"#5A646B"};
+      })
+    }));
+
+    const riderFlow = ["pPhone","pOtp","pHome","pSearch","pMatched","pTrip","pRate"];
+    const driverFlow = ["dSignup","dPending","dDirection","dFeed","dOnboard","dEarnings"];
+    const flowIds = riderFlow.includes(s.screen) ? riderFlow : (driverFlow.includes(s.screen) ? driverFlow : []);
+    const flowJump = flowIds.map(id=>{
+      const label = NAV.flatMap(g=>g.items).find(i=>i[0]===id)[1];
+      const sel = id===s.screen;
+      return {label, go:go[id], bg: sel?"#1D2226":"#fff", fg: sel?"#fff":"#5A646B", border: sel?"#1D2226":"#D2D9D5"};
+    });
+
+    const seatsTotal = s.dVeh==="bajaj" ? 3 : 1;
+    const seatsTaken = s.onboard.length;
+
+    return {
+      nav, spec, go, flowJump,
+      specOpen: s.specOpen,
+      specBtn: s.specOpen ? "Hide" : "Show",
+      toggleSpec: ()=>this.setState({specOpen:!s.specOpen}),
+      carrier: s.screen.startsWith("d") ? "Airtel" : "Vodacom",
+      is: Object.fromEntries(NAV.flatMap(g=>g.items).map(([id])=>[id, s.screen===id])),
+      toast: s.toast,
+
+      langSwBg: s.lang==="sw"?"#D5EBE9":"#fff", langSwBorder: s.lang==="sw"?"#0E6E6C":"#D2D9D5",
+      langEnBg: s.lang==="en"?"#D5EBE9":"#fff", langEnBorder: s.lang==="en"?"#0E6E6C":"#D2D9D5",
+      pickSw: ()=>this.setState({lang:"sw"}), pickEn: ()=>this.setState({lang:"en"}),
+
+      phone: s.phone,
+      phoneShown: s.phone || "712 345 678",
+      phoneBorder: (s.phoneTouched && s.phone.replace(/\D/g,"").length && s.phone.replace(/\D/g,"").length<9) ? "#B83227" : "#D2D9D5",
+      phoneError: s.phoneTouched && s.phone.replace(/\D/g,"").length>0 && s.phone.replace(/\D/g,"").length<9,
+      phoneInvalid: s.phone.replace(/\D/g,"").length<9 || s.sending,
+      sendOpacity: (s.phone.replace(/\D/g,"").length<9 || s.sending) ? 0.45 : 1,
+      sendLabel: s.sending ? "Sending…" : "Send code",
+      sending: s.sending,
+      onPhone: e=>this.setState({phone:e.target.value, phoneTouched:true}),
+      sendCode: ()=>{
+        this.setState({sending:true});
+        this.timers.push(setTimeout(()=>{ this.setState({sending:false}); this.go("pOtp"); }, 700));
+      },
+
+      otpBoxes: s.otp.map((v,i)=>({v, aria:"Digit "+(i+1), border: v?"#0E6E6C":"#D2D9D5",
+        set: e=>{ const otp=[...this.state.otp]; otp[i]=e.target.value.replace(/\D/g,"").slice(-1); this.setState({otp}); }})),
+      otpIncomplete: s.otp.some(v=>!v),
+      verifyOpacity: s.otp.some(v=>!v) ? 0.45 : 1,
+      verify: ()=>this.go("pHome"),
+
+      stages: STAGES, dest: s.dest,
+      onDest: e=>this.setState({dest:e.target.value, price:""}),
+      bandLow: num(lo), bandHigh: num(hi), bandMid: num(mid),
+      price: s.price, priceEmpty: !p, requestOpacity: p?1:0.45,
+      priceBorder: below ? "#B83227" : "#D2D9D5",
+      hintColor: below ? "#B83227" : "#0E6E6C",
+      hintText: below ? ("Below what most drivers take. It may take longer to find a "+veh+".") : ("Most drivers on this route take TSh "+num(lo)+" to TSh "+num(hi)),
+      onPrice: e=>this.setState({price:e.target.value.replace(/\D/g,"")}),
+      priceChips: [lo,mid,hi].map(v=>({label:num(v), pick:()=>this.setState({price:String(v)}),
+        border: p===v?"#0E6E6C":"#D2D9D5", bg: p===v?"#D5EBE9":"#fff"})),
+      bajajSegBg: s.vtype==="bajaj"?"#fff":"transparent", bajajSegFg: s.vtype==="bajaj"?"#1D2226":"#5A646B",
+      bajajSegShadow: s.vtype==="bajaj"?"0 1px 3px rgba(29,34,38,.18)":"none",
+      bodaSegBg: s.vtype==="boda"?"#fff":"transparent", bodaSegFg: s.vtype==="boda"?"#1D2226":"#5A646B",
+      bodaSegShadow: s.vtype==="boda"?"0 1px 3px rgba(29,34,38,.18)":"none",
+      pickBajaj: ()=>this.setState({vtype:"bajaj"}), pickBoda: ()=>this.setState({vtype:"boda"}),
+      sendRequest: ()=>this.go("pSearch"),
+
+      vehWord: veh, vehName: s.vtype==="bajaj"?"bajaj":"Boxer",
+      plate: s.vtype==="bajaj"?"T 482 DKT":"MC 214 CXK",
+      coRiders: s.vtype==="bajaj" ? "1 other passenger on board." : "",
+      offerText: num(this.offer()),
+      searchCount: (s.vtype==="bajaj"?"3 bajaj":"2 boda"),
+      showRaise: s.showRaise,
+      raise: ()=>this.setState({price:String(this.offer()+200), showRaise:false}),
+      retryHigher: ()=>{ this.setState({price:String(mid)}); this.go("pSearch"); },
+
+      driverX: (340 + (150-340)*s.driverT).toFixed(1),
+      driverY: (30 + (142-30)*s.driverT).toFixed(1),
+      etaText: s.arrived ? "Your bajaj is here" : ("Arriving in "+Math.max(1,Math.ceil(3*(1-s.driverT)))+" min"),
+      arrived: s.arrived, notArrived: !s.arrived,
+      callDriver: ()=>this.say("Calling +255 754 ••• 118 …"),
+      shareTrip: ()=>this.say("Trip link copied. Send it to someone you trust."),
+      callSupport: ()=>this.say("Calling the Njiani pilot line …"),
+      reportDriver: ()=>this.say("Report sent. A person will read this today."),
+      callEmergency: ()=>this.say("Opening the dialer with 112 …"),
+
+      starList: [1,2,3,4,5].map(i=>({aria:i+(i>1?" stars":" star"), color: i<=s.rating?"#F2B705":"#D2D9D5",
+        pick: ()=>this.setState({rating:i})})),
+      lowRating: s.rating>0 && s.rating<3,
+      noRating: !s.rating, ratingOpacity: s.rating?1:0.45,
+      finishRating: ()=>{ this.setState({rating:0, price:""}); this.go("pHistory"); },
+
+      counterPrice: num(this.offer()+500),
+      acceptCounter: ()=>{ this.setState({price:String(this.offer()+500)}); this.go("pMatched"); },
+
+      riderTrips: [
+        {route:"Ubungo → Kimara Korogwe", price:"1,500", when:"Today, 08:12", driver:"Juma Mwinyi", veh:"Bajaj T 482 DKT", status:"Completed", statusColor:"#0E6E6C", stars:"★★★★★"},
+        {route:"Ubungo → Sinza", price:"1,200", when:"Yesterday, 18:40", driver:"Neema Kessy", veh:"Bajaj T 119 BXR", status:"Completed", statusColor:"#0E6E6C", stars:"★★★★☆"},
+        {route:"Ubungo → Mwenge", price:"2,000", when:"Fri, 07:55", driver:"Baraka Mosha", veh:"Boda MC 214 CXK", status:"Completed", statusColor:"#0E6E6C", stars:"Not rated"},
+        {route:"Ubungo → Tegeta", price:"3,000", when:"Thu, 17:20", driver:"—", veh:"—", status:"Expired · nobody took it", statusColor:"#5A646B", stars:""}
+      ],
+
+      dName: s.dName, dPlate: s.dPlate, dColor: s.dColor, dDest: s.dDest,
+      colors: ["Blue","Red","Green","Yellow","Black","White"],
+      platePlaceholder: s.dVeh==="bajaj" ? "T 482 DKT" : "MC 214 CXK",
+      onDName: e=>this.setState({dName:e.target.value}),
+      onDPlate: e=>this.setState({dPlate:e.target.value.toUpperCase()}),
+      onDColor: e=>this.setState({dColor:e.target.value}),
+      pickDBajaj: ()=>this.setState({dVeh:"bajaj"}), pickDBoda: ()=>this.setState({dVeh:"boda"}),
+      dBajajBg: s.dVeh==="bajaj"?"#fff":"transparent", dBajajFg: s.dVeh==="bajaj"?"#1D2226":"#5A646B",
+      dBajajShadow: s.dVeh==="bajaj"?"0 1px 3px rgba(29,34,38,.18)":"none",
+      dBodaBg: s.dVeh==="boda"?"#fff":"transparent", dBodaFg: s.dVeh==="boda"?"#1D2226":"#5A646B",
+      dBodaShadow: s.dVeh==="boda"?"0 1px 3px rgba(29,34,38,.18)":"none",
+      addLicence: ()=>this.setState({dLicense:true}),
+      retakeLicence: ()=>{ this.setState({dLicense:true}); this.go("dPending"); },
+      licenceStyle: s.dLicense ? "solid" : "dashed",
+      licenceBorder: s.dLicense ? "#0E6E6C" : "#D2D9D5",
+      licenceBg: s.dLicense ? "#D5EBE9" : "#F3F6F4",
+      licenceFg: s.dLicense ? "#0E6E6C" : "#5A646B",
+      licenceWeight: s.dLicense ? "700" : "500",
+      licenceLabel: s.dLicense ? "Licence photo added" : "Tap to photograph your licence",
+      signupInvalid: !(s.dName.trim() && s.dPlate.trim() && s.dLicense),
+      signupOpacity: (s.dName.trim() && s.dPlate.trim() && s.dLicense) ? 1 : 0.45,
+      submitDriver: ()=>this.go("dPending"),
+      dNameShown: s.dName || "Juma Mwinyi",
+      dPlateShown: s.dPlate || (s.dVeh==="bajaj" ? "T 482 DKT" : "MC 214 CXK"),
+      dVehLabel: s.dVeh==="bajaj" ? "Bajaj, 3 seats" : "Boda boda, 1 seat",
+
+      destOptions: STAGES.map(d=>({label:d, pick:()=>this.setState({dDest:d, feed:[]}),
+        border: s.dDest===d?"#1D2226":"#D2D9D5", bg: s.dDest===d?"#F2B705":"#fff", fg: s.dDest===d?"#2A2100":"#1D2226"})),
+      goOnline: ()=>this.go("dFeed"),
+      seatsTotal: seatsTotal===1 ? "1 seat" : (seatsTotal+" seats"),
+      demand: [
+        {dest:"Kimara Korogwe", n:6, count:"6 waiting", range:"TSh 1,000–1,500", barWidth:"44px"},
+        {dest:"Kimara Mwisho", n:4, count:"4 waiting", range:"TSh 1,500–2,000", barWidth:"30px"},
+        {dest:"Mbezi Mwisho", n:2, count:"2 waiting", range:"TSh 2,000–3,000", barWidth:"16px"},
+        {dest:"Sinza", n:1, count:"1 waiting", range:"TSh 1,000–1,500", barWidth:"10px"}
+      ].map(d=>({...d, pick:()=>this.setState({dDest:d.dest, feed:[]})})),
+
+      seatsTaken, 
+      seatsLine: seatsTaken+" of "+seatsTotal+(seatsTotal===1?" seat":" seats")+" taken",
+      seatsSub: seatsTaken>=seatsTotal ? "Drop someone off to take more" : ("You can take "+(seatsTotal-seatsTaken)+" more"),
+      seatBlocks: Array.from({length:seatsTotal},(_,i)=>({
+        bg: i<seatsTaken?"#0E6E6C":"#fff", border: i<seatsTaken?"#0E6E6C":"#D2D9D5"})),
+      tabReq: ()=>this.setState({dTab:"req"}), tabOn: ()=>this.setState({dTab:"on"}),
+      reqTabFg: s.dTab==="req"?"#1D2226":"#5A646B", reqTabMark: s.dTab==="req"?"#1D2226":"transparent",
+      onTabFg: s.dTab==="on"?"#1D2226":"#5A646B", onTabMark: s.dTab==="on"?"#1D2226":"transparent",
+      showRequests: s.dTab==="req", showOnboard: s.dTab==="on",
+      feedEmpty: s.dTab==="req" && !s.feed.length,
+      onboardEmpty: s.dTab==="on" && !s.onboard.length,
+      feedCards: s.feed.map(r=>{
+        const full = seatsTaken>=seatsTotal;
+        return {from:r.from, to:s.dDest, priceLabel:num(r.price),
+          distLabel: r.dist>=1000 ? (r.dist/1000).toFixed(1)+" km" : r.dist+" m",
+          taken: r.state==="taken", open: r.state!=="taken",
+          disabled: full, btnBg: full?"#F3F6F4":"#0E6E6C", btnFg: full?"#5A646B":"#fff",
+          btnLabel: full ? "Seats full" : "Pickup",
+          pick: ()=>{
+            if(this.state.onboard.length>=seatsTotal) return;
+            this.setState({
+              onboard:[...this.state.onboard, {...r, picked:false, to:s.dDest}],
+              feed:this.state.feed.filter(x=>x.id!==r.id)
+            });
+            this.say(r.name+" is yours. Pick up at "+r.from+".");
+          }};
+      }),
+      onboardCards: s.onboard.map(p=>({
+        name:p.name, priceLabel:num(p.price), to:p.to || s.dDest,
+        where: p.picked ? "On board" : ("Waiting at "+p.from),
+        advanceLabel: p.picked ? "Dropped off" : "Picked up",
+        call: ()=>this.say("Calling "+p.name+" …"),
+        advance: ()=>{
+          if(!p.picked){
+            this.setState({onboard:this.state.onboard.map(x=>x.id===p.id?{...x,picked:true}:x)});
+          } else {
+            this.setState({
+              onboard:this.state.onboard.filter(x=>x.id!==p.id),
+              earned:this.state.earned + p.price,
+              trips:this.state.trips + 1
+            });
+            this.say(p.name+" dropped off. TSh "+num(p.price)+" added to today.");
+          }
+        }
+      })),
+      tripsLabel: s.trips===1 ? "1 trip" : (s.trips+" trips"),
+      earnedLabel: num(s.earned),
+
+      dropOrder: [
+        {n:1, name:"Neema", price:"1,500", stop:"Shekilango", km:"3.1 km"},
+        {n:2, name:"Baraka", price:"1,500", stop:"Kibo stage", km:"5.4 km"},
+        {n:3, name:"Asha", price:"1,200", stop:"Kimara Korogwe", km:"7.8 km"}
+      ].map((d,i)=>({...d, next:i===0, dotBg: i===0?"#0E6E6C":"#F3F6F4", dotFg: i===0?"#fff":"#5A646B",
+        drop: ()=>this.say("Neema dropped off. TSh 1,500 added to today.")})),
+      earnRows: [
+        {name:"Neema Kessy", when:"08:12", route:"Ubungo → Shekilango", price:"1,500"},
+        {name:"Baraka Mosha", when:"08:12", route:"Ubungo → Kimara Korogwe", price:"1,500"},
+        {name:"Asha Juma", when:"07:40", route:"Ubungo → Sinza", price:"1,200"},
+        {name:"Hamisi Said", when:"07:05", route:"Ubungo → Kimara Mwisho", price:"2,000"}
+      ],
+      driverTrips: [
+        {day:"Today", total:"6,200", seats:"4 seats filled", route:"Ubungo → Kimara, 3 runs", blocks:["#0E6E6C","#0E6E6C","#0E6E6C","#D2D9D5"]},
+        {day:"Yesterday", total:"11,400", seats:"8 seats filled", route:"Ubungo → Kimara, 4 runs", blocks:["#0E6E6C","#0E6E6C","#0E6E6C","#0E6E6C"]},
+        {day:"Friday", total:"7,800", seats:"5 seats filled", route:"Ubungo → Mwenge, 3 runs", blocks:["#0E6E6C","#0E6E6C","#D2D9D5","#D2D9D5"]},
+        {day:"Thursday", total:"3,000", seats:"2 seats filled", route:"Ubungo → Kimara, 2 runs", blocks:["#0E6E6C","#D2D9D5","#D2D9D5","#D2D9D5"]}
+      ],
+
+      toggleGalleryDark: ()=>this.setState({galleryDark:!s.galleryDark}),
+      galleryThemeLabel: s.galleryDark ? "Dark theme" : "Light theme",
+      galleryBg: s.galleryDark ? "#14181B" : "#fff",
+      galleryInk: s.galleryDark ? "#ECF0EE" : "#1D2226",
+      galleryMuted: s.galleryDark ? "#9AA5AB" : "#5A646B",
+      galleryLine: s.galleryDark ? "#333C42" : "#D2D9D5",
+      gallerySurface: s.galleryDark ? "#1E2428" : "#fff",
+      galleryAlt: s.galleryDark ? "#252C31" : "#F3F6F4",
+      galleryToastBg: s.galleryDark ? "#ECF0EE" : "#1D2226",
+      galleryToastFg: s.galleryDark ? "#14181B" : "#fff",
+      galleryButtons: (()=>{
+        const teal = s.galleryDark ? "#3BB0AA" : "#0E6E6C";
+        const tealInk = s.galleryDark ? "#06201F" : "#fff";
+        const ink = s.galleryDark ? "#ECF0EE" : "#1D2226";
+        const line = s.galleryDark ? "#333C42" : "#D2D9D5";
+        const danger = s.galleryDark ? "#E8766B" : "#B83227";
+        return [
+          {label:"Send code", caption:"primary", bg:teal, fg:tealInk, border:teal, opacity:1, spinner:false},
+          {label:"Send request", caption:"bajaj · the committing tap", bg:"#F2B705", fg:"#2A2100", border:"#F2B705", opacity:1, spinner:false},
+          {label:"Share trip", caption:"ghost", bg:"transparent", fg:ink, border:line, opacity:1, spinner:false},
+          {label:"Cancel request", caption:"dangerGhost", bg:"transparent", fg:danger, border:line, opacity:1, spinner:false},
+          {label:"Send code", caption:"primary · disabled 0.45", bg:teal, fg:tealInk, border:teal, opacity:0.45, spinner:false},
+          {label:"Sending…", caption:"primary · loading", bg:teal, fg:tealInk, border:teal, opacity:1, spinner:true},
+          {label:"Pickup", caption:"primary · in-feed 48pt", bg:teal, fg:tealInk, border:teal, opacity:1, spinner:false},
+          {label:"Seats full", caption:"primary · blocked", bg:s.galleryDark?"#252C31":"#F3F6F4", fg:s.galleryDark?"#9AA5AB":"#5A646B", border:s.galleryDark?"#252C31":"#F3F6F4", opacity:1, spinner:false}
+        ];
+      })(),
+      swatches: s.galleryDark ? [
+        {name:"bg", hex:"#14181B"},{name:"surface", hex:"#1E2428"},{name:"surfaceAlt", hex:"#252C31"},
+        {name:"ink", hex:"#ECF0EE"},{name:"muted", hex:"#9AA5AB"},{name:"line", hex:"#333C42"},
+        {name:"bajaj", hex:"#F2B705"},{name:"teal", hex:"#3BB0AA"},{name:"tealSoft", hex:"#1B3634"},
+        {name:"danger", hex:"#E8766B"},{name:"map", hex:"#222A2E"},{name:"live", hex:"#2DB35A"}
+      ] : [
+        {name:"bg", hex:"#E6EBE8"},{name:"surface", hex:"#FFFFFF"},{name:"surfaceAlt", hex:"#F3F6F4"},
+        {name:"ink", hex:"#1D2226"},{name:"muted", hex:"#5A646B"},{name:"line", hex:"#D2D9D5"},
+        {name:"bajaj", hex:"#F2B705"},{name:"teal", hex:"#0E6E6C"},{name:"tealSoft", hex:"#D5EBE9"},
+        {name:"danger", hex:"#B83227"},{name:"map", hex:"#D9E1DC"},{name:"live", hex:"#2DB35A"}
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

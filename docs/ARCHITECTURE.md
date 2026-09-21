@@ -47,6 +47,9 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D11 | Payments | **Cash / direct mobile money. App records the amount only.** | No wallet, no escrow, no aggregator licensing. Revisit when the weekly driver fee launches. See §11. |
 | D12 | Admin | Supabase Studio + SQL views → Flutter Web admin at C16 | Do not build a dashboard before there is data to put in it. |
 | D13 | Error tracking | **Sentry** | Better Flutter stack traces than Crashlytics; generous free tier. |
+| D14 | Source of visual truth | **The Claude Design project (`Njiani Apps.dc.html`)**, not the pitch deck | The pitch deck was a prototype, not a design. C1's first pass was built from its CSS and did not land. The design project supersedes it for every visual decision from here. |
+| D15 | Build unit after C1 | **One screen at a time**, not one component at a time | The redesign is organised as screens. Shared components are extracted into `njiani_core` as part of the revised C1, then screens are built on top, one per sign-off. |
+| D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
 ### Deferred deliberately
 
@@ -322,7 +325,7 @@ changes and test steps, and each waits for your local sign-off before the next b
 | # | Component | Signed off when you can |
 | --- | --- | --- |
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
-| C1 | Design system — pitch CSS tokens → Flutter theme, light + dark, core widgets | ✅ Component gallery renders; dark mode toggles |
+| C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | i18n (EN/SW), `go_router` shells, splash | Flip language; every string translates |
 | C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | Migrations run; stages visible in Studio |
 | C4 | Phone + OTP auth (dev mode prints the code) | Log in on your own phone |
@@ -343,6 +346,65 @@ changes and test steps, and each waits for your local sign-off before the next b
 
 **C9 and C10 are the product.** C0–C8 is plumbing to reach them; C11–C18 is polish around them.
 If you want to reach them sooner, say so and we can stub auth and come back to it.
+
+### Revised shape from C2 onward (D15, D16)
+
+The redesign is organised as screens, so the build unit changes to match. C2 onward becomes one
+screen per sign-off, each built against realistic mock data, in the order the design presents
+them. The backend components (C3, C9, C10) keep their place in the plan — screens are wired to
+Supabase after the flow has been judged on a real device. The numbered list above stays the
+commitment; what changes is that a "component" is now usually a screen.
+
+### The screen list
+
+Taken from the design project's own navigation, which keys every screen to a component.
+**23 screens plus the gallery.** Order within a component follows the flow, not the list.
+
+**Rider — "Njiani"**
+
+| Screen | Component | What it is |
+| --- | --- | --- |
+| `pLang` | **C2** | Language choice. Kiswahili pre-selected, shown once before auth |
+| `pPhone` | **C4** | Phone number, `+255` fixed in the field |
+| `pOtp` | **C4** | Four-box code, auto-advancing |
+| `pHome` | **C8** | Request a ride: destination, vehicle, price per seat |
+| `pSearch` | **C9** | Searching, with the real count of drivers who can see the offer |
+| `pNoDriver` | **C9** | Nobody took it — expiry, with the band and a one-tap fix |
+| `pMatched` | **C10** | Driver on the way. Phone numbers revealed only now |
+| `pTrip` | **C11** | On the trip. Route board, agreed price, safety one tap away |
+| `pRate` | **C12** | Arrived and rate. Skippable |
+| `pHistory` | **C12** | Trip history — the only record of an off-app settlement |
+| `pSafety` | **C15** | Share, call, report, and 112 |
+| `pOffline` | **C17** | Connection lost, honest degraded state |
+| `pPlaces` | *V2* | Saved places — designed so C8 leaves room for it |
+| `pCounter` | *V2* | Counter-offer — designed to show why it is not MVP |
+
+**Driver — "Njiani Driver"**
+
+| Screen | Component | What it is |
+| --- | --- | --- |
+| `dSignup` | **C6** | Sign up. The verification gate |
+| `dPending` | **C6** | Under review |
+| `dRejected` | **C6** | Rejected, naming the single thing to fix |
+| `dDirection` | **C7** | Pick a direction — the screen that makes Njiani not ride-hailing |
+| `dStage` | **§13.1** | Stage mode: where demand is, for a parked driver |
+| `dFeed` | **C9 / C10** | Live requests and the atomic claim. **The product** |
+| `dOnboard` | **C11** | On board, with v2 drop sequencing shown |
+| `dEarnings` | **C11** | Earnings and the weekly fee, made legible before it starts |
+| `dHistory` | **C12** | Seven days, grouped by day |
+
+**Design system**
+
+| Screen | Component | What it is |
+| --- | --- | --- |
+| `gallery` | **C1** | The component state matrix, both themes |
+
+Two screens in the design are marked **V2** and are deliberately not in the MVP. They are drawn
+so the MVP layout leaves room for them, and so the cost of `pCounter` in particular is visible:
+a counter-offer turns one atomic claim into a negotiation with its own state machine, timeouts
+and race conditions.
+
+The design also adopts §13.1 (stage mode) from the suggestions in §13 of this document.
 
 ---
 

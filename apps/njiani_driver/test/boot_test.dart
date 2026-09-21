@@ -6,8 +6,10 @@ import 'package:njiani_driver/main.dart' as app;
 
 void main() {
   testWidgets('boots into the shared component gallery', (tester) async {
-    await tester.pumpWidget(const NjGalleryApp(app: NjianiApp.driver));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(const NjGalleryApp(app: app.njianiApp));
+    // Not pumpAndSettle: the gallery contains an NjSkeleton, which loops
+    // forever by design, so the tree never settles.
+    await tester.pump(const Duration(milliseconds: 100));
 
     // The gallery lives in njiani_core, so finding it proves the workspace
     // dependency resolves and the shared package is really being used.
@@ -16,23 +18,30 @@ void main() {
 
   testWidgets('the boot screen stays reachable for credential checks',
       (tester) async {
-    await tester.pumpWidget(const NjGalleryApp(app: NjianiApp.driver));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(const NjGalleryApp(app: app.njianiApp));
+    await tester.pump(const Duration(milliseconds: 100));
 
     await tester.tap(find.byTooltip('Build configuration'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byType(BootScreen), findsOneWidget);
     expect(find.text(NjianiApp.driver.bundleId), findsOneWidget);
   });
 
-  testWidgets('main() launches this app, not the other one', (tester) async {
-    // Guards against the two mains being copy-pasted and left identical.
-    // Asserted on the widget properties rather than on visible text, because
-    // 'Njiani Driver' contains 'Njiani' and substring matching cannot tell
-    // the two apps apart.
-    app.main();
-    await tester.pumpAndSettle();
+  test('this binary is wired to the driver identity', () {
+    // Guards against the two apps' main.dart being copy-pasted and left
+    // identical. Asserted on the constant rather than by calling runApp:
+    // runApp inside a test starts tickers against the real clock, which then
+    // trips an assertion when the test clock is advanced.
+    expect(app.njianiApp, NjianiApp.driver);
+    expect(app.njianiApp.bundleId, 'tz.njiani.driver');
+    expect(app.njianiApp.label, NjianiApp.driver.label);
+  });
+
+  testWidgets('the gallery is built for this identity', (tester) async {
+    await tester.pumpWidget(const NjGalleryApp(app: app.njianiApp));
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(
       tester.widget<NjGalleryScreen>(find.byType(NjGalleryScreen)).app,
