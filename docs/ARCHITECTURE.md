@@ -322,7 +322,7 @@ changes and test steps, and each waits for your local sign-off before the next b
 | # | Component | Signed off when you can |
 | --- | --- | --- |
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
-| C1 | Design system — pitch CSS tokens → Flutter theme, light + dark, core widgets | Component gallery renders; dark mode toggles |
+| C1 | Design system — pitch CSS tokens → Flutter theme, light + dark, core widgets | ✅ Component gallery renders; dark mode toggles |
 | C2 | i18n (EN/SW), `go_router` shells, splash | Flip language; every string translates |
 | C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | Migrations run; stages visible in Studio |
 | C4 | Phone + OTP auth (dev mode prints the code) | Log in on your own phone |

@@ -41,5 +41,8 @@ linter:
     use_super_parameters: true
 
     # --- documentation ---
-    # Public API in njiani_core is shared by two apps, so it gets documented.
-    public_member_api_docs: false # enabled for njiani_core at C1
+    # Off as a lint, but njiani_core's public API is documented by convention:
+    # it is shared by two apps, and the "why" behind a component is the part
+    # that does not survive in the code. Enforcing it as a rule would also
+    # demand docs on every enum value, which is noise.
+    public_member_api_docs: false
