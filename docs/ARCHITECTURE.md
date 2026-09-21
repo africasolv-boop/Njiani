@@ -36,7 +36,7 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | --- | --- | --- | --- |
 | D1 | Backend | **Supabase** (Postgres 15 + PostGIS + Realtime + RLS + Storage + Edge Functions) | The core query — *"whose pickup is ahead of me along my route?"* — is geometry, not proximity. PostGIS answers it in ~15 lines. Firestore structurally cannot, and would need rewriting at route #2. Also gives race-safe seat claiming via SQL row locks. |
 | D2 | Push notifications | **Firebase Cloud Messaging only** | Free, both platforms, no other Firebase service used. |
-| D3 | Client framework | **Flutter 3.27+ / Dart 3.6+** | One codebase → Android + iOS, as the pitch plans. Small binary for low-end driver phones. Dart 3.6 is the floor because we use native pub workspaces. |
+| D3 | Client framework | **Flutter 3.27+ / Dart 3.6+** floor; built and verified on **Flutter 3.47.5 / Dart 3.13.4** | One codebase → Android + iOS, as the pitch plans. Small binary for low-end driver phones. Dart 3.6 is the floor because we use native pub workspaces. |
 | D4 | App packaging | **Two apps from one monorepo** — `Njiani` (rider) and `Njiani Driver` | User's call. Monorepo with a shared `njiani_core` package means two store listings but one design system, one data layer, one set of migrations. |
 | D5 | Dev/test machine | **macOS + iPhone + Android device** | Both platforms testable locally from day one. Every component's test steps cover both. |
 | D6 | Maps — MVP | **`flutter_map`** behind a `MapAdapter` interface | Pure Dart, no native build config, runs instantly on both simulators. Maps are *display only* until C14 — matching runs on named stages in PostGIS. |
@@ -88,6 +88,9 @@ njiani/
 │   ├── ARCHITECTURE.md          # ← this file
 │   ├── BUILD_LOG.md             # per-component record + file changes + test steps
 │   └── CREDENTIALS.md           # every credential, blank, with where to get it
+├── tool/check.sh                # analyze + test the whole workspace
+├── CLAUDE.md                    # working conventions
+├── analysis_options.yaml        # one lint config for all three packages
 ├── pubspec.yaml                 # pub workspace root
 └── .env.example                 # every key, blank
 ```
@@ -318,7 +321,7 @@ changes and test steps, and each waits for your local sign-off before the next b
 
 | # | Component | Signed off when you can |
 | --- | --- | --- |
-| C0 | Monorepo scaffold, both app shells, docs, `.env.example` | `flutter run` boots both apps on iOS and Android |
+| C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
 | C1 | Design system — pitch CSS tokens → Flutter theme, light + dark, core widgets | Component gallery renders; dark mode toggles |
 | C2 | i18n (EN/SW), `go_router` shells, splash | Flip language; every string translates |
 | C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | Migrations run; stages visible in Studio |

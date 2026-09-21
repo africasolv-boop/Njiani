@@ -1,0 +1,25 @@
+# Shared by BOTH apps (Njiani rider + Njiani Driver).
+#
+# Anything that is not specific to one app belongs here: design system, models,
+# the Supabase data layer, localisation, geo helpers. A fix made here ships to
+# both apps at once -- that is the whole reason the monorepo exists.
+name: njiani_core
+description: Shared design system, domain models and data layer for the Njiani apps.
+version: 0.1.0
+publish_to: none
+resolution: workspace
+
+environment:
+  sdk: ^3.13.4
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
