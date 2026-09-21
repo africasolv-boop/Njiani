@@ -15,8 +15,8 @@
 | # | Component | Status | Signed off |
 | --- | --- | --- | --- |
 | — | Planning & architecture | ✅ | 2026-09-21 |
-| C0 | Monorepo scaffold + both app shells | 🧪 awaiting your test | |
-| C1 | Design system | 🔜 | |
+| C0 | Monorepo scaffold + both app shells | ✅ | 2026-09-21 |
+| C1 | Design system | 🧪 awaiting your test | |
 | C2 | i18n + routing + app shells | 🔜 | |
 | C3 | Supabase schema + PostGIS + RLS + seed | 🔜 | |
 | C4 | Phone + OTP auth | 🔜 | |
@@ -101,7 +101,7 @@ application code is written.
 
 ---
 
-## C0 — Monorepo scaffold + both app shells · 🧪 awaiting your test
+## C0 — Monorepo scaffold + both app shells · ✅ signed off
 
 **Goal** — both apps build, launch and render shared code from `njiani_core` on your iPhone and
 your Android device, with a lint and test harness that guards everything built after this.
@@ -223,6 +223,148 @@ stage, that is where to look first.
 | No backend, no `supabase/` directory yet | **C3** |
 | App icons are still Flutter's default | **C18** |
 | `SMS_*` keys are in `.env.example` but unused — they are server-side only | **C4** |
+
+### Sign-off
+
+Approved 2026-09-21.
+
+---
+
+## C1 — Design system · 🧪 awaiting your test
+
+**Goal** — the pitch deck's visual language becomes a real Flutter theme plus 18 reusable
+components, judged side by side against the mockups in both light and dark.
+
+**Credentials needed** — **none.**
+
+### What it does
+
+Both apps now open a **component gallery**: every component on one scrolling screen, with a
+theme toggle in the app bar so you can flip light and dark without leaving your place in the
+list. Everything is interactive — tap the seats to fill them, tap the chips, type in the code
+boxes, toggle the licence upload.
+
+The C0 boot screen is still there, behind the ⓘ button, so the credential checklist stays
+reachable.
+
+### Design decisions worth your opinion
+
+| Decision | Reasoning |
+| --- | --- |
+| **Yellow means commitment** | The bajaj yellow button is reserved for the decisive tap — *Send request*, *Start heading to Kimara*. Teal carries routine actions. So the irreversible tap never looks like the routine one. |
+| **Bajaj yellow does not change in dark mode** | It imitates physical objects — the vehicles, and the painted daladala route boards. A route board does not have a dark mode. Same for the number plate and the green "live" dot. There is a test asserting this. |
+| **The font is bundled, not downloaded** | `google_fonts` fetches at runtime. Drivers are on metered data, and text that reflows after a network fetch reads as a bug. 420 KB for five weights, shipped in the binary. |
+| **2pt outlines, not Material hairlines** | These screens are used outdoors in Dar sunlight, where Material's default 1px underline disappears. |
+| **No profile photos** | Drivers are verified by licence and identified by plate, so initials suffice — and there is no photo to collect, store or protect. |
+| **A price hint warns, it never blocks** | An offer below the usual band still sends. The passenger sets the price; the app only says what usually works. |
+
+### Files added
+
+**Design tokens** — `packages/njiani_core/lib/src/design/`
+
+| File | What it is |
+| --- | --- |
+| `nj_colors.dart` | All 19 colour tokens from the pitch CSS, as a typed `ThemeExtension`. Material's `ColorScheme` has no slot for "bajaj yellow" or "map road", so they live here rather than being forced into approximate Material roles |
+| `nj_tokens.dart` | Spacing scale, radii, border widths, durations, shadows |
+| `nj_typography.dart` | The type scale, converted from the deck's rem values |
+| `nj_theme.dart` | `NjTheme.light` / `NjTheme.dark`, plus the `context.nj` accessor |
+
+**Components** — `packages/njiani_core/lib/src/widgets/` — 18 files
+
+`NjButton` (4 variants, loading state) · `NjTextField` (prefix, error) · `NjOtpField` ·
+`NjSegmented` · `NjPriceChips` / `NjChoiceChip` · **`NjRouteBoard`** · **`NjSeatIndicator`** ·
+**`NjPlateBadge`** · `NjCard` (filled/outlined) · `NjAvatar` · `NjHint` · `NjEmptyState` ·
+`NjLiveDot` · `NjSheet` · `NjToast` · `NjStars` · `NjUploadBox` · `NjWhereRow`
+
+**Other**
+
+| File | What it is |
+| --- | --- |
+| `lib/src/util/money.dart` | `tsh(1500)` → `TSh 1,500`. Hand-rolled rather than pulling in `intl` for one grouping rule |
+| `lib/src/gallery/gallery_screen.dart` | The gallery |
+| `lib/src/gallery/gallery_app.dart` | Hosts it with its own theme switch |
+| `assets/fonts/` | Bricolage Grotesque, 5 weights + `OFL.txt` |
+| `lib/njiani_core.dart` | Barrel, now exporting the design system |
+| `apps/*/lib/main.dart` | Both now run the gallery |
+
+**Tests added** — 61 new, 84 total
+
+| File | Covers |
+| --- | --- |
+| `test/theme_test.dart` | Token invariants, `lerp`/`copyWith`, theme registration, `context.nj` fallback — and **16 WCAG contrast assertions** |
+| `test/widgets_test.dart` | Behaviour of every interactive component, plus a gallery scroll that fails on any layout overflow |
+| `test/money_test.dart` | Shilling formatting |
+
+### The contrast tests
+
+Sixteen assertions check every foreground/background pair real text actually lands on, in both
+themes, against WCAG 2.1 — 4.5:1 for body text, 3:1 for large bold button labels. All pass.
+This is the part eyeballing a palette does not catch: if a token is ever nudged and quietly
+becomes unreadable, the build fails instead of the driver squinting.
+
+### Two real bugs the tests caught
+
+1. **Plate badge overflow.** A `NjPlateBadge` beside a text label overflowed by 56px on a narrow
+   screen. A plate is fixed-width content and deliberately does not shrink — a half-rendered
+   plate is worse than useless for identifying a vehicle — so the fix is that *siblings* must be
+   flexible. Fixed at both call sites and documented on the component itself.
+2. **An identity test that could not fail.** The C0 test asserting each app shows its own name
+   used substring matching — but "Njiani Driver" contains "Njiani", so it could never
+   distinguish them. Now asserts on the widget properties instead.
+
+---
+
+### How to test
+
+```sh
+git pull
+flutter pub get
+./tool/check.sh          # expect: no analyzer issues, 84 tests passing
+
+cd apps/njiani_rider  && flutter run --dart-define-from-file=../../.env.local
+cd apps/njiani_driver && flutter run --dart-define-from-file=../../.env.local
+```
+
+**On each of iOS and Android:**
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Launch either app | The component gallery, in Bricolage Grotesque |
+| 2 | Tap the moon/sun in the app bar | The whole palette flips. Check that **yellow stays yellow** — route board, plate, buttons |
+| 3 | Scroll to **Route board** | Compare against slide 4 of the pitch. This is the signature component |
+| 4 | Tap the seat blocks | They fill teal, one per tap, then wrap back to empty |
+| 5 | Tap the price chips | Selected chip gets a teal border and tint |
+| 6 | Tap **Send request** | A dark toast appears bottom, then fades |
+| 7 | Tap **Finding a driver** | Spinner for 2 seconds; the button ignores further taps |
+| 8 | Type in the 4 code boxes | Focus advances; backspace on an empty box steps back |
+| 9 | Tap the licence upload box | Dashed grey → solid teal with a tick |
+| 10 | Tap the stars | Rating changes |
+| 11 | Tap ⓘ in the app bar | The C0 boot screen with the credential checklist |
+| 12 | Rotate to landscape, scroll the whole list | No yellow-and-black overflow stripes anywhere |
+
+**What I most want your opinion on:** step 3 (does the route board read like a daladala board?)
+and step 2 (does the dark palette hold up, or does anything disappear?).
+
+### What I verified here, and what I could not
+
+**Verified** — `flutter analyze` clean, **84 tests passing**, including 16 contrast assertions
+and a full gallery scroll that fails on any overflow.
+
+**Not verified** — still no Android SDK or Xcode here, so no compiled build and no real device.
+Specifically unverified: **how Bricolage Grotesque actually renders.** Flutter's test
+environment substitutes a fixed-width test font, so every text measurement in my tests is
+approximate. If something is clipped or mis-spaced on your device, the font metrics are the
+first place to look.
+
+### Known gaps — deliberate
+
+| Gap | Picked up by |
+| --- | --- |
+| Gallery strings are English-only | **C2** — localisation |
+| No map component yet | **C14** |
+| No routing; the gallery is the whole app | **C2** |
+| `NjToast` uses a raw `Overlay`; no queueing if two fire at once | revisit if it bites |
+| Gallery ships in the release binary | **C18** removes it |
 
 ### Sign-off
 
