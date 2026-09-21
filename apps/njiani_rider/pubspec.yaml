@@ -1,0 +1,27 @@
+# Njiani -- request a bajaj or boda boda going your way.
+#
+# App-specific code only. Shared code lives in packages/njiani_core.
+name: njiani_rider
+description: "Njiani -- request a bajaj or boda boda going your way."
+publish_to: none
+resolution: workspace
+
+# version is the store version. Bump build number (+N) on every upload.
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  njiani_core: ^0.1.0
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

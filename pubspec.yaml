@@ -1,0 +1,18 @@
+# Njiani monorepo root.
+#
+# This is a Dart pub workspace (Dart 3.6+). It is not a publishable package and
+# contains no code of its own -- it exists to give every member package a single
+# shared lockfile and a single `.dart_tool` resolution.
+#
+# Run `flutter pub get` here once and all three members resolve together.
+name: njiani_workspace
+description: Njiani monorepo root. Workspace only, no code.
+publish_to: none
+
+environment:
+  sdk: ^3.13.4
+
+workspace:
+  - packages/njiani_core
+  - apps/njiani_rider
+  - apps/njiani_driver

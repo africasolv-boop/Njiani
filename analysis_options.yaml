@@ -1,0 +1,45 @@
+# Single lint configuration for the whole workspace.
+#
+# The analyzer walks up the directory tree, so this one file governs both apps
+# and the shared package. Deliberately no per-package overrides: the two apps
+# should be held to identical standards.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  errors:
+    # Treat these as build-breaking rather than advisory.
+    missing_required_param: error
+    missing_return: error
+    invalid_annotation_target: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - "**/generated_plugin_registrant.dart"
+
+linter:
+  rules:
+    # --- correctness ---
+    always_declare_return_types: true
+    avoid_dynamic_calls: true
+    avoid_empty_else: true
+    cancel_subscriptions: true
+    close_sinks: true
+    # Realtime streams and location listeners make this one matter here.
+    unawaited_futures: true
+
+    # --- consistency ---
+    prefer_single_quotes: true
+    prefer_final_locals: true
+    prefer_relative_imports: true
+    directives_ordering: true
+    require_trailing_commas: true
+    sort_pub_dependencies: false
+
+    # --- readability ---
+    avoid_redundant_argument_values: true
+    unnecessary_parenthesis: true
+    use_super_parameters: true
+
+    # --- documentation ---
+    # Public API in njiani_core is shared by two apps, so it gets documented.
+    public_member_api_docs: false # enabled for njiani_core at C1
