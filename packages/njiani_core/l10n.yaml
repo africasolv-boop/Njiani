@@ -1,0 +1,11 @@
+# Localisation for both Njiani apps.
+#
+# Generated output is committed, so a fresh clone analyses and tests without a
+# codegen step first. Regenerate with `flutter gen-l10n` from this directory
+# after editing any .arb file; ./tool/check.sh does it for you.
+arb-dir: lib/src/l10n/arb
+template-arb-file: nj_en.arb
+output-localization-file: nj_strings.dart
+output-class: NjStrings
+output-dir: lib/src/l10n/generated
+nullable-getter: false
