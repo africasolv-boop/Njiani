@@ -17,8 +17,8 @@
 | — | Planning & architecture | ✅ | 2026-09-21 |
 | C0 | Monorepo scaffold + both app shells | ✅ | 2026-09-21 |
 | C1 | Design system (rev. 2, from the design project) | ✅ | 2026-09-21 |
-| C2 | `pLang` — language choice, i18n, routing | 🧪 awaiting your test | |
-| C3 | Supabase schema + PostGIS + RLS + seed | 🔜 | |
+| C2 | `pLang` — language choice, i18n, routing | ✅ | 2026-09-22 |
+| C3 | Supabase schema + PostGIS + RLS + seed | 🧪 awaiting your test | |
 | C4 | Phone + OTP auth | 🔜 | |
 | C5 | Profile + session persistence | 🔜 | |
 | C6 | Driver onboarding + verification | 🔜 | |
@@ -559,7 +559,7 @@ Approved 2026-09-21.
 
 ---
 
-## C2 — `pLang`, language choice · 🧪 awaiting your test
+## C2 — `pLang`, language choice · ✅ signed off
 
 **Goal** — the first real screen, plus the infrastructure every screen after it needs:
 localisation in both languages, routing with guards, state management, and per-device
@@ -679,6 +679,177 @@ restart, that is where to look.
 | No Settings screen; Change language sits on the placeholder | later |
 | Gallery strings are still English-only — it is a dev surface | not planned |
 | No sign-in guard yet | **C4**, in the same redirect |
+
+### Sign-off
+
+Approved 2026-09-22.
+
+---
+
+## C3 — Database: schema, PostGIS, RLS, seed · 🧪 awaiting your test
+
+**Goal** — the schema the whole product runs on, including the two functions
+that *are* the product, with the security model that keeps passengers' data
+away from drivers.
+
+**Credentials needed** — **`SUPABASE_URL`, `SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY`, for the first time.** See `docs/CREDENTIALS.md`.
+
+### This one I could actually run
+
+Every component so far shipped unexecuted, because there is no Android SDK
+here. This one is different: I installed **Postgres 16 + PostGIS 3.4.2 +
+pg_cron** in this container, applied the migrations to a real database, seeded
+it, and ran the test suite.
+
+**47 assertions pass**, including a genuine two-connection race.
+
+### The two functions, tested against real geometry
+
+`match_requests_for_session()` — ten assertions, one per rule:
+
+| Assertion | Result |
+| --- | --- |
+| A passenger ahead on the road is matched | ✓ |
+| A passenger **behind** the driver is not | ✓ |
+| A passenger going **past** the driver's destination is not | ✓ |
+| A passenger 2 km off the road is not | ✓ |
+| A boda request is not shown to a bajaj driver | ✓ |
+| An expired request is not matched | ✓ |
+| A full vehicle sees nothing | ✓ |
+| Nearest ahead is first — **never the highest price** | ✓ |
+| Distance is measured **along the road**, not straight-line | ✓ |
+| Another user passing this session id gets an empty feed | ✓ |
+
+`accept_ride_request()` — raced for real. Two separate psql connections, two
+different drivers, one passenger, 0.3 s apart:
+
+```
+driver A: t|ok
+driver B: f|already_taken
+```
+
+B genuinely blocked on A's row lock, then re-evaluated its `WHERE status =
+'open'` against the committed row and correctly found nothing. Six invariants
+checked afterwards: claimed exactly once, exactly one seat row, exactly one
+driver lost a seat, the other kept all three, the agreed price was copied onto
+the seat, and the seat belongs to the winning session.
+
+### Two real bugs the tests found
+
+**1. A cancelled seat stranded the passenger permanently.** `trip_seats` had
+`UNIQUE(request_id)`. When a driver released a seat, the request correctly went
+back on the road — visible to every driver, and **impossible for any of them to
+take**, because the cancelled row still held the unique slot. The first driver
+cancellation in production would have produced a request that looked live and
+could never be claimed.
+
+Fixed with a partial unique index: at most one *live* seat per request, with
+cancelled rows kept as history.
+
+**2. An enum cast in `release_trip_seat`.** A `CASE` returning `text` into a
+`request_status` column. It would have failed the first time anyone cancelled.
+
+Neither was reachable by reading the code carefully. Both took executing it.
+
+### Security model — 15 assertions
+
+The two that carry the weight:
+
+- **A driver cannot read `ride_requests` at all.** They hold no policy on that
+  table; the feed comes only from `match_requests_for_session()`, which is
+  `SECURITY DEFINER` and scoped to their own online session. A driver cannot
+  enumerate passengers, cannot see outside their corridor, and sees nothing
+  while offline. Verified by querying the table as a driver: **0 rows.**
+- **A driver cannot approve themselves.** `drivers.status` is protected by
+  column-level `GRANT`, because RLS operates on rows and cannot protect a
+  single column. Verified: the update is refused, while editing their own plate
+  still works.
+
+Also checked: passengers cannot read driver sessions or the admin list, signed-
+out users see nothing, a rejection without a reason is refused, approval
+without a licence on file is refused, a bajaj session cannot claim four seats,
+and a passenger cannot hold two open requests.
+
+### Files added
+
+```
+supabase/
+├── migrations/        8 files — extensions, enums, reference data, identity,
+│                      matching tables, the two functions, RLS, cron
+├── seed.sql           Ubungo <-> Kimara: 2 routes, 20 stages, 180 price bands
+├── tests/             47 assertions + run.sh
+└── README.md          how to apply and test, including a no-Docker path
+```
+
+### How to test
+
+**You need a Supabase project now.** Two paths, both in `supabase/README.md`:
+
+**Easiest on Windows — hosted, no Docker:**
+
+1. Create a free project at supabase.com
+2. Database → Extensions: enable **postgis** and **pg_cron** (the schema will
+   not apply without them)
+3. `supabase link --project-ref <ref>` then `supabase db push`
+4. Then seed, and run the tests with the connection string from
+   Settings → Database:
+   ```sh
+   DATABASE_URL="postgresql://..." ./supabase/tests/run.sh
+   ```
+
+**Fully local** — `supabase start` then `supabase db reset`, needs Docker
+Desktop.
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Apply the migrations | All 8 apply with no errors |
+| 2 | Run `seed.sql` | `2 routes, 20 stages, 180 price bands, 8.8 km` |
+| 3 | Studio → Table editor → `stages` | Twenty rows, ten per direction, `seq` ascending |
+| 4 | Run `./supabase/tests/run.sh` | **47 assertions passed** |
+| 5 | Watch the race line | `driver A: t\|ok` and `driver B: f\|already_taken` |
+| 6 | Studio → SQL editor, select from `price_bands` | Ubungo→Kimara Korogwe is 1,000–1,500 |
+
+Nothing in the apps changes yet — C3 is schema only. The apps still run C2.
+
+### ⚠ The coordinates are not surveyed
+
+`seed.sql` uses plausible positions along Morogoro Road. They are good enough
+to develop against and **are not measured**.
+
+This matters more than it sounds: a stage placed 400 m from where people
+actually stand falls outside the 300 m corridor, and the matching query returns
+nothing while looking perfectly healthy. There is no error to see.
+
+Before launch, walk the corridor and take a GPS reading at each stage. That
+same visit is when the price bands get real numbers — everything except the two
+anchors from the pitch deck is interpolated by distance and marked as a
+placeholder.
+
+### What I verified, and what I could not
+
+**Verified** — all 8 migrations apply to an empty database; the seed loads;
+47 SQL assertions pass, including real concurrency, on Postgres 16 / PostGIS
+3.4.2 / pg_cron 1.6.
+
+**Not verified** — this ran against **local Postgres with a stub for Supabase's
+`auth` schema, `auth.uid()` and the `anon`/`authenticated`/`service_role`
+roles**. Supabase's real auth, its Realtime publication, and its storage
+buckets are untested. Step 1 on your project is the first time these meet the
+real thing.
+
+Also untested: `pg_cron` schedules are created but I have not watched one fire
+on a one-minute cadence.
+
+### Known gaps — deliberate
+
+| Gap | Picked up by |
+| --- | --- |
+| No Dart client, no repositories | **C4** onward |
+| Realtime publication not configured | **C9**, where the live feed needs it |
+| Storage bucket for licence photos not created | **C6** |
+| Only the Ubungo↔Kimara corridor is seeded | more routes post-pilot |
+| Boda price bands duplicate the bajaj ones | needs observed data |
 
 ### Sign-off
 

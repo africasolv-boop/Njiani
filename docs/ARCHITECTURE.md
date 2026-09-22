@@ -329,7 +329,7 @@ changes and test steps, and each waits for your local sign-off before the next b
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
 | C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | `pLang` + i18n (EN/SW), `go_router` guard, Riverpod, persistence | ✅ Flip language; restart and it is remembered |
-| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | Migrations run; stages visible in Studio |
+| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 47 SQL assertions pass |
 | C4 | Phone + OTP auth (dev mode prints the code) | Log in on your own phone |
 | C5 | Profile + session persistence | Kill the app, reopen, still logged in |
 | C6 | Driver signup, licence upload, pending screen, approval | Submit → approve in Studio → screen changes |
