@@ -31,9 +31,16 @@ flutter run --dart-define-from-file=../../.env.local
 
 | Key | Where to get it | Status |
 | --- | --- | --- |
-| `SUPABASE_URL` | Supabase dashboard → Project Settings → API → Project URL | 🟡 C3 |
-| `SUPABASE_ANON_KEY` | same page → Project API keys → `anon` `public` | 🟡 C3 |
-| `SUPABASE_SERVICE_ROLE_KEY` | same page → `service_role` | 🟡 C3 |
+| `SUPABASE_URL` | Supabase dashboard → Project Settings → API → Project URL | 🟡 **needed now** |
+| `SUPABASE_ANON_KEY` | same page → Project API keys → `anon` `public` | 🟡 **needed now** |
+| `SUPABASE_SERVICE_ROLE_KEY` | same page → `service_role` | 🟡 **needed now** |
+
+**Before applying the migrations**, enable two extensions in the dashboard
+(Database → Extensions): **postgis** and **pg_cron**. The schema will not
+apply without them.
+
+`supabase/README.md` has the full apply-and-test procedure, including a
+no-Docker path for Windows.
 
 ⚠️ **`SUPABASE_SERVICE_ROLE_KEY` bypasses all Row Level Security.** It goes in Edge Function
 secrets and your local `.env.local` only. It must **never** appear in `apps/` code, because
