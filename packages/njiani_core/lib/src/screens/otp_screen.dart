@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -132,6 +133,7 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
               Text(
                 switch (auth.failure!) {
                   AuthFailure.rateLimited => strings.errRateLimited,
+                  AuthFailure.providerDisabled => strings.errProviderDisabled,
                   AuthFailure.offline => strings.errOffline,
                   AuthFailure.notConfigured => strings.errNotConfigured,
                   _ => strings.errUnknown,
@@ -140,6 +142,20 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
                   fontSize: 13.2,
                   color: nj.danger,
                   fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+
+            // The provider's own words, in debug builds only. See the note
+            // on the phone screen.
+            if (kDebugMode && auth.failureDetail != null) ...[
+              const SizedBox(height: NjSpace.md),
+              Text(
+                'Server said: ${auth.failureDetail}',
+                style: context.njText.bodySmall?.copyWith(
+                  fontSize: 12,
+                  color: nj.muted,
+                  fontFamily: 'monospace',
                 ),
               ),
             ],

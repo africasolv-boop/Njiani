@@ -318,6 +318,12 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'Sign out'**
   String get signOut;
+
+  /// AuthFailure.providerDisabled. A project configuration problem, not a user error, so the message names the dashboard setting to change rather than blaming the number.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone sign-in is not switched on for this project yet. Enable Authentication → Providers → Phone, and wire up the Send SMS hook.'**
+  String get errProviderDisabled;
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

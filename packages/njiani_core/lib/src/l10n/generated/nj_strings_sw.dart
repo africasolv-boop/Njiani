@@ -133,4 +133,8 @@ class NjStringsSw extends NjStrings {
 
   @override
   String get signOut => 'Toka';
+
+  @override
+  String get errProviderDisabled =>
+      'Kuingia kwa namba ya simu bado hakujawashwa kwenye mradi huu. Washa Authentication → Providers → Phone, kisha unganisha Send SMS hook.';
 }

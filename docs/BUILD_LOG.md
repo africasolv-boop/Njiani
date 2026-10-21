@@ -1039,6 +1039,43 @@ project and no Beem account, so:
 | The SMS body is bilingual in one message rather than per-profile language | needs `profiles.lang` from C5 |
 | No SMS cost dashboard; the function logs one line per send | **C16** |
 
+### Fix, 2026-10-21 — a backend error was reported as a bad phone number
+
+**Symptom.** A valid nine-digit number showed *"Enter 9 digits, without the
+leading zero."* while the Send code button stayed enabled.
+
+**Cause.** Not the counting. `TzPhone` parsed the number correctly — verified
+by reproducing the exact input. The error came from the server, through this:
+
+```dart
+if (message.contains('phone')) return AuthFailure.invalidPhone;
+```
+
+Supabase replies *"Phone logins are disabled"* when the Phone provider is off
+or the SMS hook is not wired. That contains "phone", so it was mapped to a
+digit-count error — blaming the user's number for a project setting, and
+sending them to correct something that was already right.
+
+**Fixes**
+
+1. **Send and verify are classified separately.** A send failure can never be
+   about the digits, because the client checks them first. The only outcomes
+   are rate limit, provider disabled, or unknown. `invalidPhone` is now set
+   *only* by our own parsing.
+2. **`AuthFailure.providerDisabled`** added, with a message naming the
+   dashboard setting to change rather than the user's number.
+3. **The provider's own message is kept** on `AuthState.failureDetail` and
+   shown on screen in debug builds as `Server said: …`. A classifier that
+   discards the real message cannot be debugged, which is why this took a
+   screenshot to find.
+4. **`maxLength` raised from 13 to 20.** `+255 712 345 678` is sixteen
+   characters, so pasting one was silently truncated and left the button
+   disabled with nothing to explain it.
+
+**Tests added — 14**, including the exact regression: a send failure whose
+message contains "phone" must never render the digit-count error, and all
+three forms of a real number must enable the button.
+
 ### Sign-off
 
 _Awaiting your test._

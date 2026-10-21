@@ -130,4 +130,8 @@ class NjStringsEn extends NjStrings {
 
   @override
   String get signOut => 'Sign out';
+
+  @override
+  String get errProviderDisabled =>
+      'Phone sign-in is not switched on for this project yet. Enable Authentication → Providers → Phone, and wire up the Send SMS hook.';
 }

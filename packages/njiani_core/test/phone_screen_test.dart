@@ -101,6 +101,62 @@ void main() {
       expect(find.textContaining('15 minutes'), findsOneWidget);
     });
 
+    testWidgets('a backend problem is NOT reported as a bad number',
+        (tester) async {
+      // The regression: a disabled provider used to show "Enter 9 digits,
+      // without the leading zero" about a number that was already correct.
+      auth
+        ..sendFailure = AuthFailure.providerDisabled
+        ..failureDetail = 'Phone logins are disabled';
+      await pump(tester);
+
+      await tester.enterText(find.byType(TextField), '656834063');
+      await tester.pump();
+      await tester.tap(find.text('Send code'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('Enter 9 digits'),
+        findsNothing,
+        reason: 'the digits are fine; the project setting is not',
+      );
+      expect(find.textContaining('not switched on'), findsOneWidget);
+    });
+
+    testWidgets('a real nine-digit number is accepted, with or without the '
+        'leading zero', (tester) async {
+      await pump(tester);
+
+      for (final typed in ['656834063', '0656834063', '+255656834063']) {
+        await tester.enterText(find.byType(TextField), typed);
+        await tester.pump();
+        expect(
+          tester.widget<NjButton>(find.byType(NjButton)).onPressed,
+          isNotNull,
+          reason: '"$typed" is the same valid number',
+        );
+      }
+    });
+
+    testWidgets('a pasted international number with spaces is not truncated',
+        (tester) async {
+      // A tighter maxLength silently chopped this and left the button
+      // disabled with nothing on screen to explain why.
+      await pump(tester);
+
+      await tester.enterText(find.byType(TextField), '+255 656 834 063');
+      await tester.pump();
+
+      expect(
+        tester.widget<NjButton>(find.byType(NjButton)).onPressed,
+        isNotNull,
+      );
+
+      await tester.tap(find.text('Send code'));
+      await tester.pumpAndSettle();
+      expect(auth.sent.single.e164, '+255656834063');
+    });
+
     testWidgets('an unconfigured build names the missing keys',
         (tester) async {
       await pumpScreen(tester, const PhoneScreen(),

@@ -171,5 +171,9 @@
   "signOut": "Sign out",
   "@signOut": {
     "description": "Ends the session. On the placeholder while there is no Settings screen, so the sign-in flow can be re-walked without reinstalling."
+  },
+  "errProviderDisabled": "Phone sign-in is not switched on for this project yet. Enable Authentication → Providers → Phone, and wire up the Send SMS hook.",
+  "@errProviderDisabled": {
+    "description": "AuthFailure.providerDisabled. A project configuration problem, not a user error, so the message names the dashboard setting to change rather than blaming the number."
   }
 }
