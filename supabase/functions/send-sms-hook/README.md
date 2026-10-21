@@ -23,6 +23,22 @@ signature, which the function checks and refuses without.
 Then: Dashboard → Authentication → Hooks → **Send SMS hook** → point it at the
 deployed URL and paste the same signing secret.
 
+## Is it even deployed?
+
+```sh
+curl https://<project-ref>.supabase.co/functions/v1/send-sms-hook
+```
+
+```json
+{"ok":true,"provider":"console",
+ "configured":{"SEND_SMS_HOOK_SECRET":true,"BEEM_API_KEY":false,...}}
+```
+
+Presence only, never values. **If this does not answer, the function is not
+deployed** — and Supabase reports an unreachable hook to the app as
+`Gateway Timeout`, an error that says nothing about its own cause. Check here
+first, before anything in the app.
+
 ## Two modes
 
 | `SMS_PROVIDER` | Behaviour |
@@ -43,6 +59,18 @@ not quietly start spending money. Read a logged code with
 - [ ] `Authentication → Rate limits` is set deliberately. Every send costs
       money, and this is the only place a cap cannot be bypassed by
       reinstalling the app
+
+## No imports, on purpose
+
+Everything in here is a Web standard available in Deno. An earlier version
+imported `node:crypto` and used a bare `Buffer`, which is not a global in Deno
+— the module failed to boot, so the hook never answered, and that surfaced as
+`Gateway Timeout`. Keeping the function dependency-free removes that class of
+failure and keeps cold starts inside the hook's short timeout.
+
+`signature.ts` is pure Web Crypto for the same reason, which also lets it be
+tested outside Deno: `node tool/check-sms-signature.mjs` checks it against an
+independently computed HMAC.
 
 ## The API this calls
 

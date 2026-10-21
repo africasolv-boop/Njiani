@@ -105,6 +105,24 @@ else
   fi
 fi
 
+# --------------------------------------------------------------------------
+# Edge function signature.
+#
+# The Send-SMS hook authenticates Supabase by a webhook signature. Getting it
+# wrong either rejects real deliveries or lets anyone who learns the URL spend
+# Njiani's SMS credit, and neither shows up in a Flutter test.
+# --------------------------------------------------------------------------
+if [ -f tool/check-sms-signature.mjs ] && command -v node >/dev/null 2>&1; then
+  echo ""
+  echo "==> send-sms hook signature"
+  if node tool/check-sms-signature.mjs > /tmp/njiani_sig.log 2>&1; then
+    echo "    $(grep -c '^  ok' /tmp/njiani_sig.log) checks passed"
+  else
+    cat /tmp/njiani_sig.log >&2
+    exit 1
+  fi
+fi
+
 echo ""
 echo "==> flutter analyze (whole workspace)"
 flutter analyze || exit 1
