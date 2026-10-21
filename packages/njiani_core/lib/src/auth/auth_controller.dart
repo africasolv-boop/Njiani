@@ -44,6 +44,7 @@ class AuthState {
     this.phone,
     this.busy = false,
     this.failure,
+    this.failureDetail,
     this.codeSentAt,
   });
 
@@ -60,6 +61,9 @@ class AuthState {
   /// Why the last attempt failed, if it did.
   final AuthFailure? failure;
 
+  /// What the provider actually said, kept for diagnosis.
+  final String? failureDetail;
+
   /// When the last code was sent, for the resend countdown.
   final DateTime? codeSentAt;
 
@@ -75,7 +79,7 @@ class AuthState {
     AuthStep? step,
     TzPhone? phone,
     bool? busy,
-    AuthFailure? failure,
+    AuthError? error,
     DateTime? codeSentAt,
     bool clearFailure = false,
   }) =>
@@ -83,7 +87,9 @@ class AuthState {
         step: step ?? this.step,
         phone: phone ?? this.phone,
         busy: busy ?? this.busy,
-        failure: clearFailure ? null : (failure ?? this.failure),
+        failure: clearFailure ? null : (error?.kind ?? failure),
+        failureDetail:
+            clearFailure ? null : (error?.detail ?? failureDetail),
         codeSentAt: codeSentAt ?? this.codeSentAt,
       );
 
@@ -94,10 +100,12 @@ class AuthState {
       other.phone == phone &&
       other.busy == busy &&
       other.failure == failure &&
+      other.failureDetail == failureDetail &&
       other.codeSentAt == codeSentAt;
 
   @override
-  int get hashCode => Object.hash(step, phone, busy, failure, codeSentAt);
+  int get hashCode =>
+      Object.hash(step, phone, busy, failure, failureDetail, codeSentAt);
 }
 
 /// The current time.
@@ -158,7 +166,9 @@ class AuthController extends Notifier<AuthState> {
 
     final phone = TzPhone.tryParse(raw);
     if (phone == null) {
-      state = state.copyWith(failure: AuthFailure.invalidPhone);
+      state = state.copyWith(
+        error: const AuthError(AuthFailure.invalidPhone),
+      );
       return;
     }
 
@@ -180,7 +190,7 @@ class AuthController extends Notifier<AuthState> {
             codeSentAt: _now,
             clearFailure: true,
           )
-        : state.copyWith(busy: false, failure: failure);
+        : state.copyWith(busy: false, error: failure);
   }
 
   /// Sends the code again to the number already captured.
@@ -193,7 +203,7 @@ class AuthController extends Notifier<AuthState> {
     final failure = await _repository.sendCode(phone);
     state = failure == null
         ? state.copyWith(busy: false, codeSentAt: _now, clearFailure: true)
-        : state.copyWith(busy: false, failure: failure);
+        : state.copyWith(busy: false, error: failure);
   }
 
   /// Exchanges [code] for a session.
@@ -212,7 +222,7 @@ class AuthController extends Notifier<AuthState> {
         clearFailure: true,
       );
     } else {
-      state = state.copyWith(busy: false, failure: failure);
+      state = state.copyWith(busy: false, error: failure);
     }
   }
 

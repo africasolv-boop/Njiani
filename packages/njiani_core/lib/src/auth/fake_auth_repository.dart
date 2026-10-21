@@ -23,6 +23,9 @@ class FakeAuthRepository implements AuthRepository {
   /// Forced failure for [sendCode], for exercising an error state.
   AuthFailure? sendFailure;
 
+  /// Provider detail attached to a forced failure.
+  String? failureDetail;
+
   /// Forced failure for [verifyCode].
   AuthFailure? verifyFailure;
 
@@ -48,19 +51,23 @@ class FakeAuthRepository implements AuthRepository {
   Stream<bool> get signedInChanges => _signedIn.stream;
 
   @override
-  Future<AuthFailure?> sendCode(TzPhone phone) async {
+  Future<AuthError?> sendCode(TzPhone phone) async {
     if (delay > Duration.zero) await Future<void>.delayed(delay);
-    if (sendFailure != null) return sendFailure;
+    if (sendFailure != null) {
+      return AuthError(sendFailure!, detail: failureDetail);
+    }
     sent.add(phone);
     return null;
   }
 
   @override
-  Future<AuthFailure?> verifyCode(TzPhone phone, String submitted) async {
+  Future<AuthError?> verifyCode(TzPhone phone, String submitted) async {
     if (delay > Duration.zero) await Future<void>.delayed(delay);
     attempted.add(submitted);
-    if (verifyFailure != null) return verifyFailure;
-    if (submitted != code) return AuthFailure.wrongCode;
+    if (verifyFailure != null) {
+      return AuthError(verifyFailure!, detail: failureDetail);
+    }
+    if (submitted != code) return const AuthError(AuthFailure.wrongCode);
     _isSignedIn = true;
     _signedIn.add(true);
     return null;

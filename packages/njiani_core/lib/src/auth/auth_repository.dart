@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'auth_failure.dart';
@@ -20,10 +21,10 @@ abstract interface class AuthRepository {
   /// Asks the backend to send a code to [phone].
   ///
   /// Returns null on success, or why it failed.
-  Future<AuthFailure?> sendCode(TzPhone phone);
+  Future<AuthError?> sendCode(TzPhone phone);
 
   /// Exchanges [code] for a session.
-  Future<AuthFailure?> verifyCode(TzPhone phone, String code);
+  Future<AuthError?> verifyCode(TzPhone phone, String code);
 
   /// Ends the session.
   Future<void> signOut();
@@ -51,19 +52,19 @@ class SupabaseAuthRepository implements AuthRepository {
       _client.auth.onAuthStateChange.map((event) => event.session != null);
 
   @override
-  Future<AuthFailure?> sendCode(TzPhone phone) async {
+  Future<AuthError?> sendCode(TzPhone phone) async {
     try {
       await _client.auth.signInWithOtp(phone: phone.e164);
       return null;
     } on AuthException catch (error) {
-      return _classify(error);
-    } catch (_) {
-      return AuthFailure.offline;
+      return classifySend(error);
+    } catch (error) {
+      return AuthError(AuthFailure.offline, detail: error.toString());
     }
   }
 
   @override
-  Future<AuthFailure?> verifyCode(TzPhone phone, String code) async {
+  Future<AuthError?> verifyCode(TzPhone phone, String code) async {
     try {
       await _client.auth.verifyOTP(
         phone: phone.e164,
@@ -72,32 +73,67 @@ class SupabaseAuthRepository implements AuthRepository {
       );
       return null;
     } on AuthException catch (error) {
-      return _classify(error);
-    } catch (_) {
-      return AuthFailure.offline;
+      return classifyVerify(error);
+    } catch (error) {
+      return AuthError(AuthFailure.offline, detail: error.toString());
     }
   }
 
   @override
   Future<void> signOut() => _client.auth.signOut();
 
-  /// Maps a Supabase error onto something the screen can say in two languages.
+  /// Failures that can happen while **asking** for a code.
   ///
-  /// Matches on the status code first and the message only as a fallback,
-  /// because the wording is not part of anyone's API contract.
-  static AuthFailure _classify(AuthException error) {
-    if (error.statusCode == '429') return AuthFailure.rateLimited;
-
+  /// Deliberately narrow. The client has already checked the number, so a
+  /// failure here is the project's configuration, the rate limiter, or
+  /// something we have not seen before -- never the digit count. Guessing
+  /// "your number is wrong" from a message that merely contains the word
+  /// "phone" is what made a disabled provider look like a typo.
+  @visibleForTesting
+  static AuthError classifySend(AuthException error) {
     final message = error.message.toLowerCase();
-    if (message.contains('expired')) return AuthFailure.expiredCode;
-    if (message.contains('invalid') || message.contains('incorrect')) {
-      return AuthFailure.wrongCode;
+
+    if (error.statusCode == '429' ||
+        message.contains('rate limit') ||
+        message.contains('too many') ||
+        message.contains('security purposes')) {
+      return AuthError(AuthFailure.rateLimited, detail: error.message);
     }
-    if (message.contains('rate limit') || message.contains('too many')) {
-      return AuthFailure.rateLimited;
+
+    // Phone sign-in off, no SMS provider, or the hook rejecting the call.
+    if (message.contains('disabled') ||
+        message.contains('not enabled') ||
+        message.contains('unsupported') ||
+        message.contains('provider') ||
+        message.contains('sms') ||
+        message.contains('hook')) {
+      return AuthError(AuthFailure.providerDisabled, detail: error.message);
     }
-    if (message.contains('phone')) return AuthFailure.invalidPhone;
-    return AuthFailure.unknown;
+
+    return AuthError(AuthFailure.unknown, detail: error.message);
+  }
+
+  /// Failures that can happen while **submitting** a code.
+  @visibleForTesting
+  static AuthError classifyVerify(AuthException error) {
+    final message = error.message.toLowerCase();
+
+    if (error.statusCode == '429' ||
+        message.contains('rate limit') ||
+        message.contains('too many')) {
+      return AuthError(AuthFailure.rateLimited, detail: error.message);
+    }
+    if (message.contains('expired')) {
+      return AuthError(AuthFailure.expiredCode, detail: error.message);
+    }
+    // On this path "invalid" really does mean the token: the only thing being
+    // submitted is the code.
+    if (message.contains('invalid') ||
+        message.contains('incorrect') ||
+        message.contains('token')) {
+      return AuthError(AuthFailure.wrongCode, detail: error.message);
+    }
+    return AuthError(AuthFailure.unknown, detail: error.message);
   }
 }
 
@@ -118,12 +154,12 @@ class UnconfiguredAuthRepository implements AuthRepository {
   Stream<bool> get signedInChanges => const Stream<bool>.empty();
 
   @override
-  Future<AuthFailure?> sendCode(TzPhone phone) async =>
-      AuthFailure.notConfigured;
+  Future<AuthError?> sendCode(TzPhone phone) async =>
+      const AuthError(AuthFailure.notConfigured);
 
   @override
-  Future<AuthFailure?> verifyCode(TzPhone phone, String code) async =>
-      AuthFailure.notConfigured;
+  Future<AuthError?> verifyCode(TzPhone phone, String code) async =>
+      const AuthError(AuthFailure.notConfigured);
 
   @override
   Future<void> signOut() async {}

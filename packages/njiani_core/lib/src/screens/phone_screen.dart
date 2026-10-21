@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,10 +93,12 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
               autofocus: true,
               keyboardType: TextInputType.phone,
               textInputAction: TextInputAction.done,
-              // 13 allows a pasted +255 712 345 678 with its spaces; the value
-              // is normalised by TzPhone, so the limit only stops runaway
-              // input rather than defining the format.
-              maxLength: 13,
+              // Generous on purpose. "+255 712 345 678" is sixteen
+              // characters, and a tighter cap silently truncated a pasted
+              // number and left the button disabled with nothing to explain
+              // it. TzPhone decides what is valid; this only stops runaway
+              // input.
+              maxLength: 20,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s]')),
               ],
@@ -107,6 +110,23 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
               onSubmitted: (value) =>
                   complete ? controller.sendCode(value) : null,
             ),
+
+            // The provider's own words, in debug builds only. A classifier
+            // that hides the real message is a classifier nobody can fix:
+            // this screen once reported a disabled provider as "enter 9
+            // digits", which sent the user to correct a number that was
+            // already right.
+            if (kDebugMode && auth.failureDetail != null) ...[
+              const SizedBox(height: NjSpace.md),
+              Text(
+                'Server said: ${auth.failureDetail}',
+                style: context.njText.bodySmall?.copyWith(
+                  fontSize: 12,
+                  color: nj.muted,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
 
             const Spacer(),
             NjButton(
@@ -134,6 +154,7 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
         null => null,
         AuthFailure.invalidPhone => strings.phoneError,
         AuthFailure.rateLimited => strings.errRateLimited,
+        AuthFailure.providerDisabled => strings.errProviderDisabled,
         AuthFailure.offline => strings.errOffline,
         AuthFailure.notConfigured => strings.errNotConfigured,
         // A code problem belongs to the code screen, not this one.
