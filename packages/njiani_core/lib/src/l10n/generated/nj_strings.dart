@@ -180,6 +180,144 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'Component gallery'**
   String get openComponentGallery;
+
+  /// pPhone heading. Design spec C4.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your phone number'**
+  String get phoneTitle;
+
+  /// pPhone subheading.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll send you a code by SMS.'**
+  String get phoneSubtitle;
+
+  /// Label above the phone field.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone number'**
+  String get phoneLabel;
+
+  /// Placeholder. A sample national number, identical in both languages.
+  ///
+  /// In en, this message translates to:
+  /// **'712 345 678'**
+  String get phoneHint;
+
+  /// Shown under the field when the number is not nine digits. Names the leading zero because writing it is the most common local habit.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 9 digits, without the leading zero.'**
+  String get phoneError;
+
+  /// The only action on pPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Send code'**
+  String get sendCode;
+
+  /// Button label while the send is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get sendingCode;
+
+  /// Footnote under the send button. Says the SMS is not free, because it is not.
+  ///
+  /// In en, this message translates to:
+  /// **'By continuing you agree to the terms. Standard SMS rates apply.'**
+  String get phoneTerms;
+
+  /// pOtp heading. The digit count comes from kOtpLength, not from the copy.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the {digits}-digit code'**
+  String otpTitle(int digits);
+
+  /// Names the sender ID so the SMS is recognisable, and the number so a wrong one is obvious before waiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent to +255 {phone} by NJIANI'**
+  String otpSentTo(String phone);
+
+  /// Precedes the resend countdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Didn\'t get it?'**
+  String get otpDidntGet;
+
+  /// Countdown until a resend is allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend in {time}'**
+  String otpResendIn(String time);
+
+  /// Enabled once the countdown reaches zero.
+  ///
+  /// In en, this message translates to:
+  /// **'Resend code'**
+  String get otpResend;
+
+  /// Submits the code.
+  ///
+  /// In en, this message translates to:
+  /// **'Verify'**
+  String get otpVerify;
+
+  /// Returns to pPhone keeping the typed number.
+  ///
+  /// In en, this message translates to:
+  /// **'Wrong number? Change it'**
+  String get otpWrongNumber;
+
+  /// Generic back action.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
+  /// AuthFailure.wrongCode.
+  ///
+  /// In en, this message translates to:
+  /// **'That code is not right. Try again.'**
+  String get errWrongCode;
+
+  /// AuthFailure.expiredCode.
+  ///
+  /// In en, this message translates to:
+  /// **'That code expired. Ask for a new one.'**
+  String get errExpiredCode;
+
+  /// AuthFailure.rateLimited. Every send costs money, so the server caps it.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many codes. Try again in 15 minutes.'**
+  String get errRateLimited;
+
+  /// AuthFailure.offline.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection. Check your data and try again.'**
+  String get errOffline;
+
+  /// AuthFailure.notConfigured. Deliberately names the missing keys: a missing credential should look like a missing credential, not a broken server.
+  ///
+  /// In en, this message translates to:
+  /// **'This build has no backend yet. Add SUPABASE_URL and SUPABASE_ANON_KEY to .env.local.'**
+  String get errNotConfigured;
+
+  /// AuthFailure.unknown. Does not invent a cause.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get errUnknown;
+
+  /// Ends the session. On the placeholder while there is no Settings screen, so the sign-in flow can be re-walked without reinstalling.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

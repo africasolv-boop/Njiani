@@ -53,4 +53,81 @@ class NjStringsEn extends NjStrings {
 
   @override
   String get openComponentGallery => 'Component gallery';
+
+  @override
+  String get phoneTitle => 'Enter your phone number';
+
+  @override
+  String get phoneSubtitle => 'We\'ll send you a code by SMS.';
+
+  @override
+  String get phoneLabel => 'Phone number';
+
+  @override
+  String get phoneHint => '712 345 678';
+
+  @override
+  String get phoneError => 'Enter 9 digits, without the leading zero.';
+
+  @override
+  String get sendCode => 'Send code';
+
+  @override
+  String get sendingCode => 'Sending…';
+
+  @override
+  String get phoneTerms =>
+      'By continuing you agree to the terms. Standard SMS rates apply.';
+
+  @override
+  String otpTitle(int digits) {
+    return 'Enter the $digits-digit code';
+  }
+
+  @override
+  String otpSentTo(String phone) {
+    return 'Sent to +255 $phone by NJIANI';
+  }
+
+  @override
+  String get otpDidntGet => 'Didn\'t get it?';
+
+  @override
+  String otpResendIn(String time) {
+    return 'Resend in $time';
+  }
+
+  @override
+  String get otpResend => 'Resend code';
+
+  @override
+  String get otpVerify => 'Verify';
+
+  @override
+  String get otpWrongNumber => 'Wrong number? Change it';
+
+  @override
+  String get back => 'Back';
+
+  @override
+  String get errWrongCode => 'That code is not right. Try again.';
+
+  @override
+  String get errExpiredCode => 'That code expired. Ask for a new one.';
+
+  @override
+  String get errRateLimited => 'Too many codes. Try again in 15 minutes.';
+
+  @override
+  String get errOffline => 'No connection. Check your data and try again.';
+
+  @override
+  String get errNotConfigured =>
+      'This build has no backend yet. Add SUPABASE_URL and SUPABASE_ANON_KEY to .env.local.';
+
+  @override
+  String get errUnknown => 'Something went wrong. Try again.';
+
+  @override
+  String get signOut => 'Sign out';
 }

@@ -51,25 +51,55 @@ work and you need no hosted project until you want to test across two real phone
 
 ---
 
-## 2. SMS gateway — needed at C4
+## 2. SMS gateway — Beem Africa — needed at C4
 
-Recommended: **Beem Africa** (beem.africa) or **Africa's Talking** (africastalking.com).
+All four are **Supabase Edge Function secrets**, not app config. They are never
+compiled into the app.
+
+```sh
+supabase secrets set \
+  SMS_PROVIDER=console \
+  SEND_SMS_HOOK_SECRET='v1,whsec_...' \
+  BEEM_API_KEY='' \
+  BEEM_SECRET_KEY='' \
+  BEEM_SENDER_ID=NJIANI
+```
 
 | Key | Where to get it | Status |
 | --- | --- | --- |
-| `SMS_PROVIDER` | `beem` \| `africastalking` \| `twilio` \| `console` | 🟡 C4 |
-| `SMS_API_KEY` | Provider dashboard → API credentials | 🟡 C4 |
-| `SMS_SECRET_KEY` | same | 🟡 C4 |
-| `SMS_SENDER_ID` | Your registered alphanumeric sender, e.g. `NJIANI` | 🟡 C4 |
+| `SMS_PROVIDER` | `console` or `beem`. Defaults to `console` | ✅ no credential needed |
+| `SEND_SMS_HOOK_SECRET` | Dashboard → Authentication → Hooks → Send SMS hook. Shown as `v1,whsec_…` | 🟡 **needed to deploy the hook** |
+| `BEEM_API_KEY` | Beem dashboard → API credentials | 🟡 needed for real SMS |
+| `BEEM_SECRET_KEY` | same | 🟡 needed for real SMS |
+| `BEEM_SENDER_ID` | Your approved sender, `NJIANI` | ⏳ needs Beem approval |
 
-⏳ **Lead time — start now.** Registering an alphanumeric sender ID in Tanzania takes several
-business days and needs company documents. Apply at C0 so it is ready when C4 lands.
+**`SEND_SMS_HOOK_SECRET` is not optional.** The hook is deployed with
+`--no-verify-jwt`, because Supabase calls it before any user exists and there
+is no JWT to check. The Standard Webhooks signature is what authenticates the
+request instead, and the function refuses to send without it — otherwise anyone
+who learned the URL could spend Njiani's SMS credit.
 
-**No credential needed to test C4.** Set `SMS_PROVIDER=console` and the OTP prints to the
-Supabase function log instead of being sent. You can build and test the whole auth flow with
-zero SMS spend.
+**You can build and test all of C4 with no SMS credential at all.** With
+`SMS_PROVIDER=console` the code is written to the function log:
 
----
+```sh
+supabase functions logs send-sms-hook
+```
+
+⏳ **The `NJIANI` sender ID still gates real sending.** Beem rejects an
+unregistered `source_addr`, so `SMS_PROVIDER=beem` cannot work until it is
+approved. Nothing else in the build depends on it.
+
+### Supabase dashboard settings C4 needs
+
+- [ ] **Authentication → Providers → Phone**: enabled
+- [ ] **Authentication → Hooks → Send SMS hook**: pointed at the deployed
+      function, with the signing secret pasted
+- [ ] **Authentication → Rate limits**: set deliberately. Every send costs
+      money, and this is the only cap that cannot be bypassed by reinstalling
+      the app
+- [ ] **SMS OTP length**: leave at **6**. Supabase will not go below it — see
+      the note in `docs/BUILD_LOG.md` under C4
 
 ## 3. Firebase Cloud Messaging — needed at C13
 

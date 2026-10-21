@@ -28,6 +28,8 @@ dependencies:
   # Per-device preferences: chosen language, so a returning user is never
   # asked again. Anything that must survive a reinstall lives in Postgres.
   shared_preferences: ^2.3.3
+  # Auth, Postgres, Realtime and Storage in one client.
+  supabase_flutter: ^2.8.2
 
 dev_dependencies:
   flutter_test:

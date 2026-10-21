@@ -54,4 +54,83 @@ class NjStringsSw extends NjStrings {
 
   @override
   String get openComponentGallery => 'Vipengele';
+
+  @override
+  String get phoneTitle => 'Weka namba yako ya simu';
+
+  @override
+  String get phoneSubtitle => 'Tutakutumia namba ya uthibitisho kwa SMS.';
+
+  @override
+  String get phoneLabel => 'Namba ya simu';
+
+  @override
+  String get phoneHint => '712 345 678';
+
+  @override
+  String get phoneError => 'Weka tarakimu 9, bila sifuri ya mwanzo.';
+
+  @override
+  String get sendCode => 'Tuma namba';
+
+  @override
+  String get sendingCode => 'Inatuma…';
+
+  @override
+  String get phoneTerms =>
+      'Kwa kuendelea unakubali masharti. Gharama za kawaida za SMS zitatumika.';
+
+  @override
+  String otpTitle(int digits) {
+    return 'Weka tarakimu $digits ulizopokea';
+  }
+
+  @override
+  String otpSentTo(String phone) {
+    return 'Imetumwa kwa +255 $phone na NJIANI';
+  }
+
+  @override
+  String get otpDidntGet => 'Hujapokea?';
+
+  @override
+  String otpResendIn(String time) {
+    return 'Tuma tena baada ya $time';
+  }
+
+  @override
+  String get otpResend => 'Tuma namba tena';
+
+  @override
+  String get otpVerify => 'Thibitisha';
+
+  @override
+  String get otpWrongNumber => 'Namba si sahihi? Ibadilishe';
+
+  @override
+  String get back => 'Rudi';
+
+  @override
+  String get errWrongCode => 'Namba hiyo si sahihi. Jaribu tena.';
+
+  @override
+  String get errExpiredCode => 'Namba hiyo imepitwa na wakati. Omba nyingine.';
+
+  @override
+  String get errRateLimited =>
+      'Umeomba namba nyingi mno. Jaribu tena baada ya dakika 15.';
+
+  @override
+  String get errOffline =>
+      'Hakuna mtandao. Angalia data yako kisha ujaribu tena.';
+
+  @override
+  String get errNotConfigured =>
+      'Toleo hili halina seva. Weka SUPABASE_URL na SUPABASE_ANON_KEY kwenye .env.local.';
+
+  @override
+  String get errUnknown => 'Kitu hakikufanya kazi. Jaribu tena.';
+
+  @override
+  String get signOut => 'Toka';
 }

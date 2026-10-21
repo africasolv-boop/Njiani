@@ -34,7 +34,11 @@ enum NjButtonSize {
   primary(minHeight: 56, radius: NjRadius.button),
 
   /// 48pt. Actions inside a card, such as Pickup in the driver feed.
-  compact(minHeight: 48, radius: NjRadius.chip);
+  compact(minHeight: 48, radius: NjRadius.chip),
+
+  /// 44pt, the accessibility floor. Inline affordances that are not the
+  /// screen's action, such as Back on the code screen.
+  chip(minHeight: 44, radius: NjRadius.button);
 
   const NjButtonSize({required this.minHeight, required this.radius});
 
@@ -152,15 +156,13 @@ class NjButton extends StatelessWidget {
                         label,
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
-                        style: (size == NjButtonSize.compact
-                                ? context.njText.titleMedium
-                                : context.njText.labelLarge)
-                            ?.copyWith(
-                          color: fg,
-                          fontWeight: size == NjButtonSize.compact
-                              ? FontWeight.w800
-                              : FontWeight.w700,
-                        ),
+                        style: switch (size) {
+                          NjButtonSize.primary => context.njText.labelLarge,
+                          NjButtonSize.compact => context.njText.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                          NjButtonSize.chip => context.njText.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w700),
+                        }?.copyWith(color: fg),
                       ),
                     ),
                   ],

@@ -1,23 +1,40 @@
 {
   "@@locale": "sw",
-
   "appName": "Njiani",
   "tagline": "Usafiri unaoelekea njia yako.",
-
   "languageHeadingSw": "Chagua lugha",
   "languageHeadingEn": "Choose your language",
-
   "languageChangeLater": "Unaweza kubadilisha hii baadaye kwenye Mipangilio.",
-
   "languageSwahili": "Kiswahili",
   "languageSwahiliHint": "Chaguo la kwanza",
   "languageEnglish": "English",
   "languageEnglishHint": "Second language",
   "languageContinue": "Endelea · Continue",
-
   "nextComponentTitle": "Inayofuata: {component}",
   "nextComponentBody": "Skrini hii itakuja kwenye hatua inayofuata. Lugha uliyochagua imehifadhiwa.",
-
   "changeLanguage": "Badilisha lugha",
-  "openComponentGallery": "Vipengele"
+  "openComponentGallery": "Vipengele",
+  "phoneTitle": "Weka namba yako ya simu",
+  "phoneSubtitle": "Tutakutumia namba ya uthibitisho kwa SMS.",
+  "phoneLabel": "Namba ya simu",
+  "phoneHint": "712 345 678",
+  "phoneError": "Weka tarakimu 9, bila sifuri ya mwanzo.",
+  "sendCode": "Tuma namba",
+  "sendingCode": "Inatuma…",
+  "phoneTerms": "Kwa kuendelea unakubali masharti. Gharama za kawaida za SMS zitatumika.",
+  "otpTitle": "Weka tarakimu {digits} ulizopokea",
+  "otpSentTo": "Imetumwa kwa +255 {phone} na NJIANI",
+  "otpDidntGet": "Hujapokea?",
+  "otpResendIn": "Tuma tena baada ya {time}",
+  "otpResend": "Tuma namba tena",
+  "otpVerify": "Thibitisha",
+  "otpWrongNumber": "Namba si sahihi? Ibadilishe",
+  "back": "Rudi",
+  "errWrongCode": "Namba hiyo si sahihi. Jaribu tena.",
+  "errExpiredCode": "Namba hiyo imepitwa na wakati. Omba nyingine.",
+  "errRateLimited": "Umeomba namba nyingi mno. Jaribu tena baada ya dakika 15.",
+  "errOffline": "Hakuna mtandao. Angalia data yako kisha ujaribu tena.",
+  "errNotConfigured": "Toleo hili halina seva. Weka SUPABASE_URL na SUPABASE_ANON_KEY kwenye .env.local.",
+  "errUnknown": "Kitu hakikufanya kazi. Jaribu tena.",
+  "signOut": "Toka"
 }

@@ -43,13 +43,15 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D7 | Maps — C14 onward | **MapLibre GL + self-hosted Protomaps `.pmtiles`** | User's preferred direction. Tanzania OSM extract → one `.pmtiles` file on Cloudflare R2. Free forever, no API key, no rate limit, works offline. Swaps in behind `MapAdapter`. |
 | D8 | Routing / ETA | Haversine ÷ 18 km/h until C14, then **self-hosted OSRM** (Tanzania extract, ~$6/mo VPS) | The public OSRM demo server forbids production use. Self-hosting Tanzania is cheap and removes the dependency. |
 | D9 | Geocoding | **None in MVP.** Nominatim or Photon at v2 | Matching uses a fixed list of named stages, so there is nothing to geocode yet. (Note: OSRM does *not* do geocoding — it is a routing engine. Nominatim is the geocoder.) |
-| D10 | SMS / OTP | Supabase phone auth + **Send-SMS hook → Tanzanian gateway** (Beem Africa or Africa's Talking), Twilio as fallback | ~TSh 20–30/SMS vs international rates, better local delivery, and a branded `NJIANI` sender ID — which matters when asking a driver at a stage to trust a code. |
+| D10 | SMS / OTP | Supabase phone auth + **Send-SMS hook → Beem Africa** | ~TSh 20–30/SMS vs international rates, better local delivery, and a branded `NJIANI` sender ID — which matters when asking a driver at a stage to trust a code. |
 | D11 | Payments | **Cash / direct mobile money. App records the amount only.** | No wallet, no escrow, no aggregator licensing. Revisit when the weekly driver fee launches. See §11. |
 | D12 | Admin | Supabase Studio + SQL views → Flutter Web admin at C16 | Do not build a dashboard before there is data to put in it. |
 | D13 | Error tracking | **Sentry** | Better Flutter stack traces than Crashlytics; generous free tier. |
 | D14 | Source of visual truth | **The Claude Design project (`Njiani Apps.dc.html`)**, not the pitch deck | The pitch deck was a prototype, not a design. C1's first pass was built from its CSS and did not land. The design project supersedes it for every visual decision from here. |
 | D15 | Build unit after C1 | **One screen at a time**, not one component at a time | The redesign is organised as screens. Shared components are extracted into `njiani_core` as part of the revised C1, then screens are built on top, one per sign-off. |
 | D17 | Localisation | **ARB + `flutter gen-l10n`**, generated output committed and drift-guarded | A fresh clone analyses and tests with no codegen step. `tool/check.sh` regenerates and fails if the result moved, so the committed files cannot go stale. |
+| D19 | SMS code length | **6 digits, not the 4 in the design** | Supabase Auth will not issue an SMS code below 6 (range 6–10), so 4 boxes could never be filled by a code it sent. Six is also a million combinations against ten thousand, and the code is the only authentication factor. Held in one constant, `kOtpLength`. |
+| D20 | Who verifies the code | **Supabase Auth, never the app and never Beem** | Beem is pure transport. Its hosted OTP product would mean bridging Beem's verdict into a Supabase session by hand, which is home-made auth in a ride-hailing app. |
 | D18 | State management | **Riverpod without code generation** | `NotifierProvider` directly avoids a `build_runner` step in the build, which keeps `./tool/check.sh` the only thing a contributor has to run. |
 | D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
@@ -330,7 +332,7 @@ changes and test steps, and each waits for your local sign-off before the next b
 | C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | `pLang` + i18n (EN/SW), `go_router` guard, Riverpod, persistence | ✅ Flip language; restart and it is remembered |
 | C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 47 SQL assertions pass |
-| C4 | Phone + OTP auth (dev mode prints the code) | Log in on your own phone |
+| C4 | `pPhone` + `pOtp` — Supabase phone OTP, Beem delivery | ✅ Log in on your own phone |
 | C5 | Profile + session persistence | Kill the app, reopen, still logged in |
 | C6 | Driver signup, licence upload, pending screen, approval | Submit → approve in Studio → screen changes |
 | C7 | Driver direction picker, go online, route board, seat bar | Pick Kimara, go online |

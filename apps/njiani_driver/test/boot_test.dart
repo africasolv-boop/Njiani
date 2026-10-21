@@ -4,12 +4,18 @@ import 'package:njiani_core/njiani_core.dart';
 
 import 'package:njiani_driver/main.dart' as app;
 
-/// Pumps the real app root with this binary's identity and an in-memory store.
-Future<void> pumpApp(WidgetTester tester, {NjLocale? stored}) async {
+/// Pumps the real app root with this binary's identity and in-memory stores.
+Future<ProviderContainer> pumpApp(
+  WidgetTester tester, {
+  NjLocale? storedLocale,
+  AuthRepository? auth,
+}) async {
   final container = ProviderContainer(
     overrides: [
       njianiAppProvider.overrideWithValue(app.njianiApp),
-      languageStoreProvider.overrideWithValue(InMemoryLanguageStore(stored)),
+      languageStoreProvider
+          .overrideWithValue(InMemoryLanguageStore(storedLocale)),
+      authRepositoryProvider.overrideWithValue(auth ?? FakeAuthRepository()),
     ],
   );
   addTearDown(container.dispose);
@@ -22,6 +28,7 @@ Future<void> pumpApp(WidgetTester tester, {NjLocale? stored}) async {
     ),
   );
   await tester.pumpAndSettle();
+  return container;
 }
 
 void main() {
@@ -37,16 +44,31 @@ void main() {
     expect(find.byType(LanguageScreen), findsOneWidget);
   });
 
-  testWidgets('a returning user goes straight on', (tester) async {
-    await pumpApp(tester, stored: NjLocale.en);
+  testWidgets('a returning user with no session gets the phone screen',
+      (tester) async {
+    await pumpApp(tester, storedLocale: NjLocale.en);
+    expect(find.byType(PhoneScreen), findsOneWidget);
+  });
 
-    expect(find.byType(LanguageScreen), findsNothing);
-    // This app's own next component, not the other app's.
+  testWidgets('signing in reaches this app\'s own next component',
+      (tester) async {
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+    final container = await pumpApp(tester, storedLocale: NjLocale.en, auth: auth);
+
+    await container.read(authProvider.notifier).sendCode('712345678');
+    await tester.pumpAndSettle();
+    await container.read(authProvider.notifier).verifyCode(auth.code);
+    await tester.pumpAndSettle();
+
     expect(find.textContaining('C6'), findsOneWidget);
   });
 
   testWidgets('the component gallery stays reachable', (tester) async {
-    await pumpApp(tester, stored: NjLocale.en);
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+    await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+    await pumpApp(tester, storedLocale: NjLocale.en, auth: auth);
 
     await tester.tap(find.text('Component gallery'));
     await tester.pump();

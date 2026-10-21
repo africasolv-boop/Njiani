@@ -56,14 +56,23 @@ class _NjOtpFieldState extends State<NjOtpField> {
   void didUpdateWidget(NjOtpField oldWidget) {
     super.didUpdateWidget(oldWidget);
     // Spec: on a wrong code every box goes danger, the boxes clear, and focus
-    // returns to the first. Retyping over four stale digits on a small
-    // keyboard is exactly where people give up.
+    // returns to the first. Retyping over stale digits on a small keyboard is
+    // exactly where people give up.
+    //
+    // Deferred to after the frame, because didUpdateWidget runs during build
+    // and onChanged calls setState on the parent. Doing it synchronously
+    // threw "setState called during build" and blanked the screen -- so a
+    // wrong code crashed the thing meant to report it.
     if (widget.hasError && !oldWidget.hasError) {
-      for (final controller in _controllers) {
-        controller.clear();
-      }
-      widget.onChanged?.call('');
-      if (mounted) _nodes.first.requestFocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        for (final controller in _controllers) {
+          controller.clear();
+        }
+        widget.onChanged?.call('');
+        _nodes.first.requestFocus();
+        setState(() {});
+      });
     }
   }
 
@@ -80,7 +89,31 @@ class _NjOtpFieldState extends State<NjOtpField> {
 
   String get _code => _controllers.map((c) => c.text).join();
 
+  /// Spreads a pasted or autofilled string across the boxes.
+  ///
+  /// The spec requires a paste of the whole code to fill every box. Without
+  /// this, pasting from the SMS lands the entire code in box one, which looks
+  /// like the field is broken.
+  void _spread(int index, String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    for (var i = 0; i + index < widget.length && i < digits.length; i++) {
+      _controllers[index + i].text = digits[i];
+    }
+    final landed = index + digits.length;
+    final next = landed.clamp(0, widget.length - 1);
+    _nodes[next].requestFocus();
+    if (landed >= widget.length) _nodes[next].unfocus();
+  }
+
   void _onDigitChanged(int index, String value) {
+    if (value.length > 1) {
+      // A paste or an SMS autofill, not a keystroke.
+      _spread(index, value);
+      widget.onChanged?.call(_code);
+      if (_code.length == widget.length) widget.onCompleted(_code);
+      setState(() {});
+      return;
+    }
     if (value.isNotEmpty && index < widget.length - 1) {
       _nodes[index + 1].requestFocus();
     }
@@ -117,7 +150,7 @@ class _NjOtpFieldState extends State<NjOtpField> {
       child: Row(
         children: [
           for (var i = 0; i < widget.length; i++) ...[
-            if (i > 0) const SizedBox(width: NjSpace.sm + 2),
+            if (i > 0) SizedBox(width: widget.length > 4 ? NjSpace.sm : NjSpace.sm + 2),
             Expanded(
               child: Focus(
                 onKeyEvent: (_, event) => _onKey(i, event),
@@ -129,9 +162,17 @@ class _NjOtpFieldState extends State<NjOtpField> {
                     autofocus: widget.autofocus && i == 0,
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
-                    maxLength: 1,
                     cursorColor: nj.teal,
+                    // One box normally holds one digit, but a paste or an SMS
+                    // autofill arrives whole, so the limit is applied in
+                    // _onDigitChanged rather than by maxLength -- which would
+                    // silently truncate the code to its first digit.
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    // iOS offers the code from the SMS above the keyboard;
+                    // Android fills it via SMS Retriever.
+                    autofillHints: i == 0
+                        ? const [AutofillHints.oneTimeCode]
+                        : null,
                     onChanged: (value) => _onDigitChanged(i, value),
                     style: context.njText.headlineMedium,
                     decoration: InputDecoration(

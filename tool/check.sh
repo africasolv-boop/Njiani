@@ -70,28 +70,39 @@ fi
 #
 # The generated strings are committed so a fresh clone analyses and tests
 # without a codegen step. That only works if they stay in step with the .arb
-# files, so regenerate and fail if anything moved.
+# files, so regenerate and fail if the result differs from what is on disk.
+#
+# Compared before-and-after regeneration, NOT against git: a diff against HEAD
+# cannot tell a newly added string from a stale generated file, and would fail
+# every time a string is added.
 # --------------------------------------------------------------------------
 echo ""
 echo "==> localisations"
+GEN=packages/njiani_core/lib/src/l10n/generated
+SNAP=$(mktemp -d)
+trap 'rm -rf "$SNAP"' EXIT
+cp -r "$GEN"/. "$SNAP"/ 2>/dev/null || true
+
 (cd packages/njiani_core && flutter gen-l10n >/dev/null 2>&1) || {
   echo "    gen-l10n failed" >&2
   exit 1
 }
-if ! git diff --quiet -- packages/njiani_core/lib/src/l10n/generated 2>/dev/null; then
+
+if diff -rq "$SNAP" "$GEN" >/dev/null 2>&1; then
+  echo "    up to date"
+else
   if [ "$FIX" -eq 1 ]; then
-    echo "    regenerated (commit the result)"
+    echo "    regenerated from the .arb files (commit the result)"
   else
     echo "" >&2
-    echo "    Generated strings are out of date with the .arb files." >&2
-    echo "    They have just been regenerated -- review and commit:" >&2
+    echo "    Generated strings were stale and have been regenerated." >&2
+    echo "    Review and commit:" >&2
     echo "" >&2
-    git --no-pager diff --stat -- packages/njiani_core/lib/src/l10n/generated >&2
+    diff -rq "$SNAP" "$GEN" 2>&1 | sed 's/^/      /' >&2
     echo "" >&2
+    echo "    Or re-run:  ./tool/check.sh --fix" >&2
     exit 1
   fi
-else
-  echo "    up to date"
 fi
 
 echo ""
