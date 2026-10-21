@@ -1,56 +1,45 @@
 {
   "@@locale": "en",
-
   "appName": "Njiani",
   "@appName": {
     "description": "The product name. Never translated."
   },
-
   "tagline": "Rides going your way.",
   "@tagline": {
     "description": "One-line description under the wordmark."
   },
-
   "languageHeadingSw": "Chagua lugha",
   "@languageHeadingSw": {
     "description": "First line of the language screen heading. Deliberately identical in both .arb files: on this screen the user cannot yet reliably read either language, so the heading shows both regardless of locale."
   },
-
   "languageHeadingEn": "Choose your language",
   "@languageHeadingEn": {
     "description": "Second line of the bilingual language heading. Identical in both .arb files, for the reason given on languageHeadingSw."
   },
-
   "languageChangeLater": "You can change this later in Settings.",
   "@languageChangeLater": {
     "description": "Reassurance under the language heading. This one IS localised, and switches live as the user taps an option, so the choice is visibly demonstrated before it is confirmed."
   },
-
   "languageSwahili": "Kiswahili",
   "@languageSwahili": {
     "description": "Endonym. Always written in its own language, so identical in both .arb files."
   },
-
   "languageSwahiliHint": "Chaguo la kwanza",
   "@languageSwahiliHint": {
     "description": "Trailing note on the Kiswahili option, meaning 'first choice'. In Kiswahili in both files, as it labels the Kiswahili option."
   },
-
   "languageEnglish": "English",
   "@languageEnglish": {
     "description": "Endonym. Identical in both .arb files."
   },
-
   "languageEnglishHint": "Second language",
   "@languageEnglishHint": {
     "description": "Trailing note on the English option. In English in both files, as it labels the English option."
   },
-
   "languageContinue": "Endelea · Continue",
   "@languageContinue": {
     "description": "The only action on the language screen. Bilingual in both files: the user has not yet confirmed a language, so the button must be readable either way."
   },
-
   "nextComponentTitle": "Next: {component}",
   "@nextComponentTitle": {
     "description": "Placeholder heading for a screen not yet built.",
@@ -61,19 +50,126 @@
       }
     }
   },
-
   "nextComponentBody": "This screen arrives in the next component. Your language choice has been saved.",
   "@nextComponentBody": {
     "description": "Placeholder body for a screen not yet built."
   },
-
   "changeLanguage": "Change language",
   "@changeLanguage": {
     "description": "Returns to the language screen. Used from the placeholder while there is no Settings screen yet."
   },
-
   "openComponentGallery": "Component gallery",
   "@openComponentGallery": {
     "description": "Opens the development-only component gallery."
+  },
+  "phoneTitle": "Enter your phone number",
+  "@phoneTitle": {
+    "description": "pPhone heading. Design spec C4."
+  },
+  "phoneSubtitle": "We'll send you a code by SMS.",
+  "@phoneSubtitle": {
+    "description": "pPhone subheading."
+  },
+  "phoneLabel": "Phone number",
+  "@phoneLabel": {
+    "description": "Label above the phone field."
+  },
+  "phoneHint": "712 345 678",
+  "@phoneHint": {
+    "description": "Placeholder. A sample national number, identical in both languages."
+  },
+  "phoneError": "Enter 9 digits, without the leading zero.",
+  "@phoneError": {
+    "description": "Shown under the field when the number is not nine digits. Names the leading zero because writing it is the most common local habit."
+  },
+  "sendCode": "Send code",
+  "@sendCode": {
+    "description": "The only action on pPhone."
+  },
+  "sendingCode": "Sending…",
+  "@sendingCode": {
+    "description": "Button label while the send is in flight."
+  },
+  "phoneTerms": "By continuing you agree to the terms. Standard SMS rates apply.",
+  "@phoneTerms": {
+    "description": "Footnote under the send button. Says the SMS is not free, because it is not."
+  },
+  "otpTitle": "Enter the {digits}-digit code",
+  "@otpTitle": {
+    "description": "pOtp heading. The digit count comes from kOtpLength, not from the copy.",
+    "placeholders": {
+      "digits": {
+        "type": "int",
+        "example": "6"
+      }
+    }
+  },
+  "otpSentTo": "Sent to +255 {phone} by NJIANI",
+  "@otpSentTo": {
+    "description": "Names the sender ID so the SMS is recognisable, and the number so a wrong one is obvious before waiting.",
+    "placeholders": {
+      "phone": {
+        "type": "String",
+        "example": "712 345 678"
+      }
+    }
+  },
+  "otpDidntGet": "Didn't get it?",
+  "@otpDidntGet": {
+    "description": "Precedes the resend countdown."
+  },
+  "otpResendIn": "Resend in {time}",
+  "@otpResendIn": {
+    "description": "Countdown until a resend is allowed.",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "0:42"
+      }
+    }
+  },
+  "otpResend": "Resend code",
+  "@otpResend": {
+    "description": "Enabled once the countdown reaches zero."
+  },
+  "otpVerify": "Verify",
+  "@otpVerify": {
+    "description": "Submits the code."
+  },
+  "otpWrongNumber": "Wrong number? Change it",
+  "@otpWrongNumber": {
+    "description": "Returns to pPhone keeping the typed number."
+  },
+  "back": "Back",
+  "@back": {
+    "description": "Generic back action."
+  },
+  "errWrongCode": "That code is not right. Try again.",
+  "@errWrongCode": {
+    "description": "AuthFailure.wrongCode."
+  },
+  "errExpiredCode": "That code expired. Ask for a new one.",
+  "@errExpiredCode": {
+    "description": "AuthFailure.expiredCode."
+  },
+  "errRateLimited": "Too many codes. Try again in 15 minutes.",
+  "@errRateLimited": {
+    "description": "AuthFailure.rateLimited. Every send costs money, so the server caps it."
+  },
+  "errOffline": "No connection. Check your data and try again.",
+  "@errOffline": {
+    "description": "AuthFailure.offline."
+  },
+  "errNotConfigured": "This build has no backend yet. Add SUPABASE_URL and SUPABASE_ANON_KEY to .env.local.",
+  "@errNotConfigured": {
+    "description": "AuthFailure.notConfigured. Deliberately names the missing keys: a missing credential should look like a missing credential, not a broken server."
+  },
+  "errUnknown": "Something went wrong. Try again.",
+  "@errUnknown": {
+    "description": "AuthFailure.unknown. Does not invent a cause."
+  },
+  "signOut": "Sign out",
+  "@signOut": {
+    "description": "Ends the session. On the placeholder while there is no Settings screen, so the sign-in flow can be re-walked without reinstalling."
   }
 }

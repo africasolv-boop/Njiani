@@ -18,8 +18,8 @@
 | C0 | Monorepo scaffold + both app shells | ✅ | 2026-09-21 |
 | C1 | Design system (rev. 2, from the design project) | ✅ | 2026-09-21 |
 | C2 | `pLang` — language choice, i18n, routing | ✅ | 2026-09-22 |
-| C3 | Supabase schema + PostGIS + RLS + seed | 🧪 awaiting your test | |
-| C4 | Phone + OTP auth | 🔜 | |
+| C3 | Supabase schema + PostGIS + RLS + seed | ✅ | 2026-10-21 |
+| C4 | `pPhone` + `pOtp` — phone and SMS code | 🧪 awaiting your test | |
 | C5 | Profile + session persistence | 🔜 | |
 | C6 | Driver onboarding + verification | 🔜 | |
 | C7 | Driver direction + go online | 🔜 | |
@@ -686,7 +686,7 @@ Approved 2026-09-22.
 
 ---
 
-## C3 — Database: schema, PostGIS, RLS, seed · 🧪 awaiting your test
+## C3 — Database: schema, PostGIS, RLS, seed · ✅ signed off
 
 **Goal** — the schema the whole product runs on, including the two functions
 that *are* the product, with the security model that keeps passengers' data
@@ -850,6 +850,194 @@ on a one-minute cadence.
 | Storage bucket for licence photos not created | **C6** |
 | Only the Ubungo↔Kimara corridor is seeded | more routes post-pilot |
 | Boda price bands duplicate the bajaj ones | needs observed data |
+
+### Sign-off
+
+Approved 2026-10-21. Supabase credentials added.
+
+---
+
+## C4 — `pPhone` + `pOtp`, phone and SMS code · 🧪 awaiting your test
+
+**Goal** — a real session. Supabase Auth phone sign-in, with the code delivered
+through Beem Africa by a Send-SMS hook.
+
+**Credentials needed** — Supabase URL and key (you have these). **No SMS
+credential is required to test**: `SMS_PROVIDER=console` writes the code to the
+function log.
+
+### ⚠ One thing in the design cannot be built as drawn
+
+**The design shows 4 OTP boxes. Supabase Auth will not issue a code shorter
+than 6 digits** — its configurable range is 6 to 10. Four boxes could never be
+filled by a code it actually sent.
+
+I built it with **6**, as a single constant (`kOtpLength`), and the security
+side of that constraint happens to be the right way round: an SMS code is the
+only authentication factor in this app, and six digits is a million
+combinations against four digits' ten thousand.
+
+If you want 4 regardless, the only routes are self-hosting GoTrue or issuing
+codes ourselves in an Edge Function — the second means minting sessions by
+hand, which is the kind of home-made auth that should not exist in a
+ride-hailing app. **My recommendation is to keep 6 and update the design.**
+Changing it back is one constant either way.
+
+### How the pieces divide
+
+Supabase Auth **generates** the code, **decides** whether a submitted one is
+correct, **caps the attempts** and **issues the session**. The Edge Function
+only **delivers** the message. Beem never learns whether a code was accepted,
+and nothing in the app can authenticate anybody.
+
+Beem also sells a hosted OTP product that verifies codes itself. Using it would
+mean bridging Beem's verdict into a Supabase session by hand — so this uses
+Beem as pure transport instead.
+
+**The Beem request shape was confirmed against Beem's own client library, not
+from documentation:**
+
+```
+POST https://apisms.beem.africa/v1/send
+Authorization: Basic base64(api_key:secret_key)
+{ "source_addr": "NJIANI", "schedule_time": "", "encoding": 0,
+  "message": "...", "recipients": [{"recipient_id": 1,
+  "dest_addr": "255712345678"}] }
+```
+
+### Three real bugs the tests found
+
+**1. A wrong code crashed the screen.** `NjOtpField` cleared its boxes from
+`didUpdateWidget`, which runs during build, and the clear called `onChanged` →
+`setState` on the parent. That threw *"setState called during build"* and
+blanked the subtree — so entering a wrong code destroyed the screen that was
+meant to report it. The reset is now deferred to a post-frame callback.
+
+**2. The error wiped itself.** Clearing the boxes fired `onChanged('')`, which
+the screen treated as the user editing and used to clear the failure — in the
+same frame the message appeared. The user was told nothing about why their code
+failed. Only a keystroke clears it now.
+
+**3. Going back and re-sending burned a second SMS.** `sendCode` had no resend
+guard, so leaving the code screen and pressing Send again paid for another
+message. Re-sending to the *same* number inside the window now goes straight
+back to the code screen; a *different* number still sends, because that is a
+corrected typo.
+
+### Also added: an injectable clock
+
+`clockProvider` replaces direct `DateTime.now()` calls. It made the resend
+countdown testable without waiting a minute — and caught a real inconsistency:
+`OtpScreen` was computing the countdown from `DateTime.now()` while the
+controller stamped `codeSentAt` from the provider, so the display could
+disagree with the guard that actually gates the resend. C9's request expiry and
+C11's ETA need the same seam.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `lib/src/auth/tz_phone.dart` | The one place that decides `0712…`, `712…`, `+255 712…` and `255712…` are the same person |
+| `lib/src/auth/auth_failure.dart` | A closed set of reasons, because each needs different words in two languages |
+| `lib/src/auth/auth_repository.dart` | Interface, Supabase implementation, and an unconfigured one that names the missing key |
+| `lib/src/auth/fake_auth_repository.dart` | In `lib/`, not `test/`, so both apps and a dev build can walk the flow for free |
+| `lib/src/auth/auth_controller.dart` | The state machine, `kOtpLength`, `kResendWindow`, `clockProvider` |
+| `lib/src/data/supabase_client.dart` | Init that degrades instead of throwing when there are no credentials |
+| `lib/src/screens/phone_screen.dart` | **`pPhone`** |
+| `lib/src/screens/otp_screen.dart` | **`pOtp`** |
+| `supabase/functions/send-sms-hook/` | The Beem delivery hook + its README |
+
+**Changed** — `nj_router.dart` (the auth gate joins the language gate in one
+redirect), `nj_otp_field.dart` (paste, autofill, deferred reset), `nj_button.dart`
+(a 44pt chip size for the Back affordance), `placeholder_screen.dart` (sign out,
+so the flow can be re-walked without reinstalling), `tool/check.sh` (the l10n
+guard now compares before/after regeneration rather than against git — it was
+failing on every newly added string).
+
+**Tests added — 68 new, 221 total.**
+
+### How to test
+
+You can now deploy to iOS as well, so both platforms are in scope.
+
+```sh
+git pull
+flutter pub get
+./tool/check.sh --fix     # expect: 221 tests passing
+```
+
+**First, the Supabase side** (`supabase/functions/send-sms-hook/README.md` has
+the detail):
+
+1. Authentication → Providers → **Phone**: enable
+2. Authentication → Hooks → **Send SMS hook**: copy the signing secret
+3. ```sh
+   supabase secrets set SMS_PROVIDER=console SEND_SMS_HOOK_SECRET='v1,whsec_...'
+   supabase functions deploy send-sms-hook --no-verify-jwt
+   ```
+4. Point the hook at the deployed URL
+
+Then run the app:
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Launch, choose a language, continue | **The phone screen**, not the placeholder |
+| 2 | Look at the field | `+255` is fixed on the left and cannot be deleted |
+| 3 | Type 8 digits | Send code stays dimmed |
+| 4 | Type the 9th | It enables |
+| 5 | Clear it, type `0712345678` | Still enables — the leading zero is not a digit of the number |
+| 6 | Tap **Send code** | Spinner, then the code screen. Tapping twice must not send twice |
+| 7 | `supabase functions logs send-sms-hook` | A line with the 6-digit code |
+| 8 | Type a **wrong** code | All six boxes go red, **clear**, and the message stays visible. **The screen must not blank** |
+| 9 | Type the real code | Straight into the app |
+| 10 | Tap **Sign out**, then sign in again | Back to the phone screen and through again |
+| 11 | On the code screen, watch the countdown | `Resend in 0:59` ticking down, then a tappable **Resend code** |
+| 12 | Tap **Back** / **Wrong number?** | Phone screen, **with the number still filled in** |
+| 13 | Turn airplane mode on, tap Send code | "No connection", and the number is kept |
+
+**Step 8 is the one I most want confirmed** — it is where the crash was.
+
+### Switching to real SMS
+
+Only when the `NJIANI` sender ID is approved:
+
+```sh
+supabase secrets set SMS_PROVIDER=beem BEEM_API_KEY=... BEEM_SECRET_KEY=... \
+  BEEM_SENDER_ID=NJIANI
+```
+
+Set the rate limits in Authentication → Rate limits first. That is the only cap
+that cannot be bypassed by reinstalling the app, and every send costs money.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **221 tests**, including every state the design
+spec lists for both screens, phone normalisation across eight input forms, the
+paste-and-autofill path, and the resend countdown against an injected clock.
+
+**Not verified, and this is the significant gap for C4** — I have no Supabase
+project and no Beem account, so:
+
+- **The Send-SMS hook has never executed.** Its webhook-signature check, its
+  Beem request and its error handling are all unrun. The Beem payload shape is
+  confirmed from Beem's own client library, but confirmed-by-reading is not
+  the same as a 200 response.
+- **No real code has been sent or verified.** Every test uses
+  `FakeAuthRepository`; `SupabaseAuthRepository` is untested against real
+  Supabase, including how its error messages map onto `AuthFailure`. If a wrong
+  code shows "Something went wrong" instead of "That code is not right", the
+  classifier in `auth_repository.dart` is where to look — send me the message
+  text and I will match it.
+- Still no device build here, so nothing has been seen on a screen.
+
+### Known gaps — deliberate
+
+| Gap | Picked up by |
+| --- | --- |
+| `profiles.lang` is still not written from the device choice | **C5** |
+| No driver-approval gate in the redirect | **C6** |
+| The SMS body is bilingual in one message rather than per-profile language | needs `profiles.lang` from C5 |
+| No SMS cost dashboard; the function logs one line per send | **C16** |
 
 ### Sign-off
 

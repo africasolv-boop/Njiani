@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../auth/auth_controller.dart';
+import '../auth/auth_repository.dart';
 import '../config/app_identity.dart';
+import '../data/supabase_client.dart';
 import '../design/nj_theme.dart';
 import '../l10n/generated/nj_strings.dart';
 import '../locale/language_controller.dart';
@@ -25,20 +28,30 @@ class NjianiRoot extends ConsumerWidget {
   /// returning user never sees the language screen flash past on the way to
   /// the screen they expected.
   ///
-  /// [storeOverride] lets a test or a preview supply an in-memory store.
+  /// [storeOverride] and [authOverride] let a test or a preview supply
+  /// in-memory implementations.
   static Future<void> bootstrap(
     NjianiApp app, {
     LanguageStore? storeOverride,
+    AuthRepository? authOverride,
   }) async {
     WidgetsFlutterBinding.ensureInitialized();
 
     final store = storeOverride ??
         SharedPrefsLanguageStore(await SharedPreferences.getInstance());
 
+    // Null when this build has no credentials. The app then runs against the
+    // unconfigured repository, which says which key is missing rather than
+    // failing silently.
+    final client = authOverride == null ? await initSupabase() : null;
+
     final container = ProviderContainer(
       overrides: [
         njianiAppProvider.overrideWithValue(app),
         languageStoreProvider.overrideWithValue(store),
+        supabaseProvider.overrideWithValue(client),
+        if (authOverride != null)
+          authRepositoryProvider.overrideWithValue(authOverride),
       ],
     );
 

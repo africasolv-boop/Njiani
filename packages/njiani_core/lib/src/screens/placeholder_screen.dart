@@ -19,6 +19,7 @@ class PlaceholderScreen extends ConsumerWidget {
     super.key,
     required this.component,
     required this.onChangeLanguage,
+    this.onSignOut,
     this.onOpenGallery,
   });
 
@@ -27,6 +28,10 @@ class PlaceholderScreen extends ConsumerWidget {
 
   /// Reopens the language screen. Stands in for Settings until C5.
   final VoidCallback onChangeLanguage;
+
+  /// Ends the session, so the sign-in flow can be walked again without
+  /// reinstalling the app.
+  final VoidCallback? onSignOut;
 
   /// Opens the development-only component gallery.
   final VoidCallback? onOpenGallery;
@@ -77,6 +82,15 @@ class PlaceholderScreen extends ConsumerWidget {
               variant: NjButtonVariant.ghost,
               onPressed: onChangeLanguage,
             ),
+            if (onSignOut != null) ...[
+              const SizedBox(height: NjSpace.sm + 2),
+              NjButton(
+                label: strings.signOut,
+                variant: NjButtonVariant.dangerGhost,
+                size: NjButtonSize.compact,
+                onPressed: onSignOut,
+              ),
+            ],
             if (onOpenGallery != null) ...[
               const SizedBox(height: NjSpace.sm + 2),
               NjButton(
