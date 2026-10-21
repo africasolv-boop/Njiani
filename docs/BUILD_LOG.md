@@ -1076,6 +1076,48 @@ sending them to correct something that was already right.
 message contains "phone" must never render the digit-count error, and all
 three forms of a real number must enable the button.
 
+### Fix, 2026-10-21 (2) — `Gateway Timeout` from the SMS hook
+
+**Symptom.** With the debug line now working, the real cause showed:
+`Server said: {"message":"Gateway Timeout"}`.
+
+**What that means.** Supabase called the hook and got nothing back. It is not
+an app problem and not a phone-number problem.
+
+**Cause.** My Edge Function used two Node-isms that Deno does not guarantee:
+`import { createHmac, timingSafeEqual } from 'node:crypto'` and a bare
+`Buffer`, which **is not a global in Deno at all**. A module that fails to
+boot never answers, and Supabase reports an unanswered hook as
+`Gateway Timeout` — an error that says nothing about its own cause.
+
+**Fixes**
+
+1. **The function has no imports.** `crypto.subtle`, `atob`, `btoa`,
+   `TextEncoder`, `AbortSignal.timeout` — all Web standards present in Deno.
+   This removes the whole class of boot failure and keeps cold starts inside
+   the hook's short timeout.
+2. **A `GET` health check.** `curl https://<ref>.supabase.co/functions/v1/send-sms-hook`
+   reports the provider and which secrets are present, never their values.
+   **If that does not answer, the function is not deployed** — which is the
+   one thing no amount of looking at the app reveals.
+3. **The Beem call has a 4-second timeout**, under Supabase's hook limit, so a
+   slow gateway returns a real error instead of being cut off as another
+   timeless timeout.
+4. **Entry logging** so the logs show whether the function was reached at all.
+5. **Errors use the shape auth hooks expect** (`{error: {http_code, message}}`),
+   so Supabase can report them rather than treating the reply as malformed.
+
+**Verification.** The signature code is pure Web Crypto, which means it can be
+tested without Deno: `tool/check-sms-signature.mjs` checks it against an HMAC
+computed independently with Node's own `createHmac`. **11 checks**, now part
+of `./tool/check.sh` — correct signature accepted, rotation header accepted,
+wrong signature, tampered body, tampered timestamp, wrong version, empty
+header and malformed secret all rejected, and the compare is constant-time.
+
+Getting this wrong in either direction matters: too strict rejects real
+deliveries, too loose lets anyone who learns the URL spend Njiani's SMS
+credit.
+
 ### Sign-off
 
 _Awaiting your test._
