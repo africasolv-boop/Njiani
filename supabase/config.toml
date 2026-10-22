@@ -66,8 +66,33 @@ enable_confirmations = false
 # The whole of Njiani's authentication.
 enable_signup = true
 enable_confirmations = true
+# How long a code stays valid.
+#
+# The dashboard defaults to 60s, which is the same as our resend window --
+# so a code expires at the exact moment the user is offered a new one. Anyone
+# who switches to their SMS app, reads the code and comes back has a fair
+# chance of being too late. Five minutes costs nothing and removes a whole
+# class of "it says the code expired" reports.
+max_frequency = "60s"
+otp_exp = 300
+otp_length = 6
 # Do not let a test number bypass the real flow on a shared project.
 test_otp = {}
+
+[auth.hook.send_sms]
+# Routes every code through our own function instead of a built-in provider.
+#
+# IMPORTANT: when this hook is enabled, Supabase does NOT call the SMS
+# provider configured under Authentication → Providers → Phone, and the
+# "SMS Message" template there is unused — our function composes the message
+# itself, bilingually.
+#
+# The dashboard still makes the Providers form demand a provider and its
+# credentials, with no "none" option. See supabase/README.md for how to get
+# past that.
+enabled = true
+uri = "https://<project-ref>.supabase.co/functions/v1/send-sms-hook"
+secrets = "env(SEND_SMS_HOOK_SECRET)"
 
 # ---------------------------------------------------------------------------
 # NOT SET HERE — these live on the hosted project
