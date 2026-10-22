@@ -7,6 +7,10 @@
 -- makes Njiani not a ride-hailing app: the driver chooses a direction BEFORE
 -- seeing any request, and the feed is derived from this row.
 -- ---------------------------------------------------------------------------
+-- PostGIS lives in the `extensions` schema on Supabase, which is not on the
+-- default search_path. Without this, every `geography` below fails with
+-- `type "geography" does not exist`. See the extensions migration.
+set search_path = public, extensions;
 create table public.driver_sessions (
   id             uuid primary key default gen_random_uuid(),
   driver_id      uuid not null

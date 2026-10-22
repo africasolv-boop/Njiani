@@ -851,9 +851,51 @@ on a one-minute cadence.
 | Only the Ubungo↔Kimara corridor is seeded | more routes post-pilot |
 | Boda price bands duplicate the bajaj ones | needs observed data |
 
+### Fix, 2026-10-22 — the migrations failed on a real project
+
+**Symptom**, on `supabase db push`:
+
+```
+ERROR: type "geography" does not exist (SQLSTATE 42704)
+Hint: This type may be defined in a schema that's not in your search_path.
+```
+
+**Cause, and why my tests missed it.** Supabase installs extensions into an
+`extensions` schema, which is **not** on the default search_path. My local
+harness installed PostGIS into `public`, where a bare `geography(Point, 4326)`
+resolves fine. So the harness tested a layout no real project has, and the
+47 passing assertions said nothing about the thing that actually broke.
+
+That is the more useful lesson than the fix: **a local stand-in that differs
+from production in any way will eventually certify a bug.** The harness now
+installs PostGIS into `extensions` and creates the same three roles, so it
+mirrors a hosted project rather than a convenient one — and running it
+reproduced the failure immediately.
+
+**Fixes**
+
+1. Every migration, function, seed and test that touches PostGIS now begins
+   `set search_path = public, extensions;`. Chosen over schema-qualifying each
+   type because it keeps the DDL readable and works whichever schema the
+   extension ended up in.
+2. `supabase/config.toml` added — the CLI needs it to link or push at all, and
+   it was missing. It sets `extra_search_path = ["public", "extensions"]` so
+   PostgREST can read a `geography` column over the API: the same problem on
+   the other side, which would have bitten next.
+3. `verify_jwt = false` for `send-sms-hook` is now declared in config rather
+   than being a flag to remember on every deploy.
+4. The extensions migration creates the `extensions` schema explicitly and
+   grants the API roles usage on it.
+5. `./tool/check.sh` runs the SQL suite whenever `DATABASE_URL` is set, so the
+   database is checked by the same command as everything else.
+
+**Verified** — a fresh database built the way Supabase builds one: all 8
+migrations apply, the seed loads, **47 SQL assertions pass**.
+
 ### Sign-off
 
-Approved 2026-10-21. Supabase credentials added.
+Approved 2026-10-21. Supabase credentials added. Migrations corrected
+2026-10-22 for the `extensions` schema.
 
 ---
 

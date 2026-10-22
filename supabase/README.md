@@ -7,10 +7,37 @@ database by clicking in Supabase Studio.
 ## Layout
 
 ```
+config.toml     CLI project config. `supabase link` and `db push` need it
 migrations/     numbered SQL, applied in filename order
+functions/      Edge Functions
 seed.sql        the pilot corridor: Ubungo <-> Kimara, Morogoro Road
 tests/          SQL test suite, run with tests/run.sh
 ```
+
+## ⚠ PostGIS lives in `extensions`, not `public`
+
+Supabase installs extensions into an `extensions` schema which is **not** on
+the default search_path. A bare `geography(Point, 4326)` therefore fails on a
+real project:
+
+```
+ERROR: type "geography" does not exist (SQLSTATE 42704)
+```
+
+…while working perfectly on a plain Postgres where PostGIS landed in `public`.
+
+Every migration, function, seed and test that touches PostGIS begins with:
+
+```sql
+set search_path = public, extensions;
+```
+
+and `config.toml` sets `extra_search_path` so PostgREST can read a `geography`
+column over the API — the same problem, on the other side.
+
+**The local test harness installs PostGIS into `extensions` too**, so it
+mirrors a hosted project rather than a convenient one. An earlier version put
+it in `public`, which is exactly why this bug reached a real project.
 
 ## What is in here
 

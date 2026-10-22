@@ -123,6 +123,23 @@ if [ -f tool/check-sms-signature.mjs ] && command -v node >/dev/null 2>&1; then
   fi
 fi
 
+# --------------------------------------------------------------------------
+# Database.
+#
+# Only when a DATABASE_URL is present, because these need a real Postgres.
+# Point it at a DEV project -- the concurrency test writes and deletes rows.
+# --------------------------------------------------------------------------
+if [ -n "${DATABASE_URL:-}" ] && command -v psql >/dev/null 2>&1; then
+  echo ""
+  echo "==> database (SQL suite)"
+  if ./supabase/tests/run.sh > /tmp/njiani_sql.log 2>&1; then
+    grep -E "^(✓|All )" /tmp/njiani_sql.log | sed 's/^/    /'
+  else
+    cat /tmp/njiani_sql.log >&2
+    exit 1
+  fi
+fi
+
 echo ""
 echo "==> flutter analyze (whole workspace)"
 flutter analyze || exit 1
