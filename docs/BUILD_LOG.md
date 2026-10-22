@@ -1160,6 +1160,44 @@ Getting this wrong in either direction matters: too strict rejects real
 deliveries, too loose lets anyone who learns the URL spend Njiani's SMS
 credit.
 
+### Fix, 2026-10-22 (2) — a misconfiguration leaked a database password
+
+**Symptom.** `Server said: Invalid argument(s): Unsupported scheme
+'postgresql' in URI postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres/auth/v1/otp`
+
+**Cause.** `SUPABASE_URL` held the **database connection string** instead of
+the API URL. The client appended `/auth/v1/otp` to it and complained about the
+scheme — quoting the whole URI, password included, into a line that then
+travelled into a screenshot.
+
+Two separate failures, and the second is the serious one.
+
+**1. Nothing checked the value.** The dashboard offers two similar-looking
+strings and only one belongs in `SUPABASE_URL`. `AppConfig.supabaseUrlProblem`
+now rejects a `postgres://` scheme, a non-https URL, and any URL carrying a
+username and password — each with a message naming the setting and the fix.
+`initSupabase` refuses rather than handing a bad value to the SDK, and the
+reason is carried to the screen so a misconfiguration names itself.
+
+**2. A diagnostic printed a credential.** `redactSecrets` now masks
+user:password in any URI, JWTs, `sb_publishable_`/`sb_secret_` keys,
+`whsec_` signing secrets and bearer tokens — everywhere a provider message is
+shown or a config value is displayed. It **masks rather than hides**, so
+`postgresql://postgres:••••••@db…` still reveals the mistake while revealing
+nothing else. Hiding the value outright would have made the pasted connection
+string invisible, which is the very thing that needed seeing.
+
+**Also fixed: the SQL runner reported green on zero assertions.** Postgres was
+down during one run; psql's lowercase `psql: error:` slipped past a grep
+looking for `ERROR`, so four files that never executed were reported as
+passing. The runner now checks psql's exit code and **treats zero assertions
+as a failure** — an empty run means the file did not execute, and calling that
+green is worse than having no suite.
+
+**Tests added — 15**, covering redaction of every credential shape, that a
+correct API URL is shown in full, and that a pasted connection string shows
+its host and scheme but not its password.
+
 ### Sign-off
 
 _Awaiting your test._

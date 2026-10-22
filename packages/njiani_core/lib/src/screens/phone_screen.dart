@@ -9,6 +9,7 @@ import '../auth/tz_phone.dart';
 import '../design/nj_theme.dart';
 import '../design/nj_tokens.dart';
 import '../l10n/generated/nj_strings.dart';
+import '../util/redact.dart';
 import '../widgets/nj_button.dart';
 import '../widgets/nj_screen_body.dart';
 import '../widgets/nj_text_field.dart';
@@ -111,15 +112,20 @@ class _PhoneScreenState extends ConsumerState<PhoneScreen> {
                   complete ? controller.sendCode(value) : null,
             ),
 
-            // The provider's own words, in debug builds only. A classifier
-            // that hides the real message is a classifier nobody can fix:
-            // this screen once reported a disabled provider as "enter 9
-            // digits", which sent the user to correct a number that was
-            // already right.
-            if (kDebugMode && auth.failureDetail != null) ...[
+            // What the server actually said, with credentials masked.
+            //
+            // Shown always for a configuration problem -- no real user ever
+            // sees one, and it is the whole diagnosis -- and in debug builds
+            // otherwise. Redacted because an unredacted version of this line
+            // once put a live database password on screen: the project had a
+            // connection string where the API URL belongs, and the client
+            // echoed the whole URI back in its complaint.
+            if (auth.failureDetail != null &&
+                (kDebugMode ||
+                    auth.failure == AuthFailure.notConfigured)) ...[
               const SizedBox(height: NjSpace.md),
               Text(
-                'Server said: ${auth.failureDetail}',
+                redactSecrets(auth.failureDetail),
                 style: context.njText.bodySmall?.copyWith(
                   fontSize: 12,
                   color: nj.muted,

@@ -44,6 +44,7 @@ export 'src/screens/otp_screen.dart';
 export 'src/screens/phone_screen.dart';
 export 'src/screens/placeholder_screen.dart';
 export 'src/util/money.dart';
+export 'src/util/redact.dart';
 export 'src/widgets/nj_action_tile.dart';
 export 'src/widgets/nj_avatar.dart';
 export 'src/widgets/nj_badge.dart';

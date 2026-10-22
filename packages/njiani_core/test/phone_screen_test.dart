@@ -170,6 +170,34 @@ void main() {
       expect(find.textContaining('SUPABASE_URL'), findsOneWidget);
     });
 
+    testWidgets('a misconfiguration names itself, with the password masked',
+        (tester) async {
+      // The whole point of this path: a connection string pasted where the
+      // API URL belongs produced "Unsupported scheme 'postgresql' in URI
+      // postgresql://postgres:<password>@..." — which named neither the
+      // setting nor the fix, and carried a live password into a screenshot.
+      await pumpScreen(
+        tester,
+        const PhoneScreen(),
+        auth: const UnconfiguredAuthRepository(
+          reason: "Unsupported scheme 'postgresql' in URI "
+              'postgresql://postgres:Pa55wordExample@db.abc.supabase.co:5432/postgres',
+        ),
+        locale: NjLocale.en,
+      );
+
+      await tester.enterText(find.byType(TextField), '712345678');
+      await tester.pump();
+      await tester.tap(find.text('Send code'));
+      await tester.pumpAndSettle();
+
+      // The diagnosis is visible...
+      expect(find.textContaining('postgresql://'), findsOneWidget);
+      expect(find.textContaining('db.abc.supabase.co'), findsOneWidget);
+      // ...and the password is not.
+      expect(find.textContaining('Pa55wordExample'), findsNothing);
+    });
+
     testWidgets('the error clears as soon as the user edits the number',
         (tester) async {
       auth.sendFailure = AuthFailure.offline;

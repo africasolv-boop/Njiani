@@ -12,6 +12,8 @@
 /// See `docs/CREDENTIALS.md` for where each value comes from.
 library;
 
+import '../util/redact.dart';
+
 /// One configurable value and what it is for.
 class ConfigEntry {
   const ConfigEntry({
@@ -39,11 +41,17 @@ class ConfigEntry {
 
   bool get isSet => value.isNotEmpty;
 
-  /// Safe to show on screen: secrets collapse to a fingerprint.
+  /// Safe to show on screen.
+  ///
+  /// A key collapses to a fingerprint. Everything else is shown with
+  /// credentials masked rather than hidden outright, because seeing
+  /// `postgresql://postgres:••••••@db…` is what tells you the wrong string
+  /// was pasted — and hiding the value entirely would have left that
+  /// invisible.
   String get display {
     if (!isSet) return 'not set';
     if (secret) return '•••• set (${value.length} chars)';
-    return value;
+    return redactSecrets(value);
   }
 }
 
@@ -66,7 +74,46 @@ abstract final class AppConfig {
       String.fromEnvironment('APP_ENV', defaultValue: 'local');
 
   /// True once the app can actually reach a backend.
-  static bool get hasSupabase => supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+  static bool get hasSupabase =>
+      supabaseUrl.isNotEmpty && supabaseAnonKey.isNotEmpty;
+
+  /// What is wrong with [supabaseUrl], in plain words, or null if it is fine.
+  ///
+  /// Worth checking rather than trusting, because the dashboard offers two
+  /// very similar-looking strings and only one of them belongs here. Putting
+  /// the database connection string in produced
+  ///
+  ///     Unsupported scheme 'postgresql' in URI postgresql://postgres:…
+  ///
+  /// — an error that names neither the setting nor the fix, and that echoed a
+  /// live database password back into the UI on its way past.
+  static String? get supabaseUrlProblem {
+    if (supabaseUrl.isEmpty) return null;
+
+    final uri = Uri.tryParse(supabaseUrl);
+    if (uri == null || !uri.hasScheme) {
+      return 'SUPABASE_URL is not a URL. It should be '
+          'https://<project-ref>.supabase.co';
+    }
+    if (uri.scheme == 'postgres' || uri.scheme == 'postgresql') {
+      return 'SUPABASE_URL holds a database connection string. It needs the '
+          'API URL instead: Settings → API → Project URL, '
+          'https://<project-ref>.supabase.co. '
+          'The database string belongs in DATABASE_URL, for the SQL tests.';
+    }
+    if (uri.scheme != 'https') {
+      return 'SUPABASE_URL must start with https://';
+    }
+    if (uri.userInfo.isNotEmpty) {
+      return 'SUPABASE_URL contains a username and password. The API URL has '
+          'neither — check you have not pasted a connection string.';
+    }
+    if (uri.host.isEmpty) return 'SUPABASE_URL has no host.';
+    return null;
+  }
+
+  /// Whether the configuration is usable.
+  static bool get isUsable => hasSupabase && supabaseUrlProblem == null;
 
   /// Every configurable value, in the order components will need them.
   ///
@@ -77,7 +124,7 @@ abstract final class AppConfig {
           key: 'SUPABASE_URL',
           value: supabaseUrl,
           neededAt: 'C3',
-          purpose: 'Backend project URL',
+          purpose: 'Backend API URL, https://<ref>.supabase.co',
         ),
         ConfigEntry(
           key: 'SUPABASE_ANON_KEY',

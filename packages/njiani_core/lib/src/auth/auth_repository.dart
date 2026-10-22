@@ -142,7 +142,13 @@ class SupabaseAuthRepository implements AuthRepository {
 /// Reports [AuthFailure.notConfigured] rather than pretending to work, so the
 /// screen can say which key is missing instead of looking broken.
 class UnconfiguredAuthRepository implements AuthRepository {
-  const UnconfiguredAuthRepository();
+  const UnconfiguredAuthRepository({this.reason});
+
+  /// What specifically is wrong, when something is.
+  ///
+  /// Carried through to the screen so a misconfiguration names itself instead
+  /// of showing a generic "not configured".
+  final String? reason;
 
   @override
   bool get isSignedIn => false;
@@ -155,11 +161,11 @@ class UnconfiguredAuthRepository implements AuthRepository {
 
   @override
   Future<AuthError?> sendCode(TzPhone phone) async =>
-      const AuthError(AuthFailure.notConfigured);
+      AuthError(AuthFailure.notConfigured, detail: reason);
 
   @override
   Future<AuthError?> verifyCode(TzPhone phone, String code) async =>
-      const AuthError(AuthFailure.notConfigured);
+      AuthError(AuthFailure.notConfigured, detail: reason);
 
   @override
   Future<void> signOut() async {}

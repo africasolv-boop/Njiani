@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,6 +12,16 @@ import '../config/app_config.dart';
 /// missing credential, not like a broken backend.
 Future<SupabaseClient?> initSupabase() async {
   if (!AppConfig.hasSupabase) return null;
+
+  // Refuse a URL that is clearly not the API URL. Handing a database
+  // connection string to the SDK produces "Unsupported scheme 'postgresql'"
+  // from somewhere deep inside it, with the whole URI -- password included --
+  // in the message.
+  final problem = AppConfig.supabaseUrlProblem;
+  if (problem != null) {
+    debugPrint('[njiani] Supabase is not configured correctly: $problem');
+    return null;
+  }
 
   // `publishableKey` is the current name for what the dashboard still labels
   // the `anon` `public` key on older projects. The client accepts either, so
