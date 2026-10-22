@@ -129,15 +129,26 @@ fi
 # Only when a DATABASE_URL is present, because these need a real Postgres.
 # Point it at a DEV project -- the concurrency test writes and deletes rows.
 # --------------------------------------------------------------------------
-if [ -n "${DATABASE_URL:-}" ] && command -v psql >/dev/null 2>&1; then
-  echo ""
-  echo "==> database (SQL suite)"
-  if ./supabase/tests/run.sh > /tmp/njiani_sql.log 2>&1; then
-    grep -E "^(✓|All )" /tmp/njiani_sql.log | sed 's/^/    /'
-  else
-    cat /tmp/njiani_sql.log >&2
-    exit 1
-  fi
+sql_skipped=""
+echo ""
+echo "==> database (SQL suite)"
+if [ -z "${DATABASE_URL:-}" ]; then
+  sql_skipped="DATABASE_URL is not set"
+elif ! command -v psql >/dev/null 2>&1; then
+  sql_skipped="psql is not installed"
+fi
+
+if [ -n "$sql_skipped" ]; then
+  # Say so. A stage that is silently absent reads as a stage that passed, and
+  # the schema is where this project has had its worst bugs.
+  echo "    SKIPPED -- $sql_skipped"
+  echo "    The schema and both core functions are NOT verified by this run."
+  echo "    See supabase/README.md > Running the tests."
+elif ./supabase/tests/run.sh > /tmp/njiani_sql.log 2>&1; then
+  grep -E "^(✓|All )" /tmp/njiani_sql.log | sed 's/^/    /'
+else
+  cat /tmp/njiani_sql.log >&2
+  exit 1
 fi
 
 echo ""
@@ -154,7 +165,9 @@ for pkg in packages/njiani_core apps/njiani_rider apps/njiani_driver; do
 done
 
 echo ""
-if [ "$failed" -eq 0 ]; then
+if [ "$failed" -eq 0 ] && [ -n "$sql_skipped" ]; then
+  echo "All checks passed, except the SQL suite, which was skipped."
+elif [ "$failed" -eq 0 ]; then
   echo "All checks passed."
 else
   echo "Some tests failed." >&2

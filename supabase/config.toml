@@ -99,8 +99,11 @@ secrets = "env(SEND_SMS_HOOK_SECRET)"
 # ---------------------------------------------------------------------------
 #
 #   Authentication → Providers → Phone
-#       Enable it. Leave the built-in providers (Twilio, Vonage, …) off:
-#       delivery goes through our own Send SMS hook instead.
+#       Enable it. The form then demands one of its built-in providers and
+#       that provider's credentials, with no "none" option -- even though an
+#       enabled Send SMS hook means none of them is ever called. Push this
+#       file with `supabase config push` instead of fighting the form, or
+#       read the README section on it before typing placeholders in.
 #
 #   Authentication → Hooks → Send SMS hook
 #       Point at the deployed send-sms-hook URL and paste the signing secret.

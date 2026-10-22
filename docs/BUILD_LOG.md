@@ -1305,3 +1305,103 @@ first real exercise of both.
 ### Sign-off
 
 _Awaiting your test._
+
+---
+
+## Tooling, 2026-10-22 — the Providers form, and two false greens in the harness
+
+Not a component. Three things came out of your screenshot of
+Authentication → Providers → Phone.
+
+### The form demands an SMS provider that will never be called
+
+You are right that it cannot be saved without one: the dropdown has no "none"
+and the chosen provider's credential fields turn required. None of those
+credentials is ever read — an enabled Send SMS hook means Supabase hands the
+code to our own function and never touches the configured provider.
+
+`supabase/config.toml` now declares `[auth.hook.send_sms]`, so the hook, the
+OTP length, the expiry and the resend window can all be set with
+`supabase config push` instead of through a form that validates fields nothing
+will use. `supabase/README.md` documents that route and the placeholder-
+credentials alternative, including why the placeholders are only harmless
+while the hook stays enabled.
+
+**I could not verify which route Supabase intends.** supabase.com and the docs
+mirror are both DNS-blocked from this container, so what is written down is
+reasoning from the form's own behaviour plus our config, not a citation.
+
+Two settings in that form are worth changing while you are in it:
+
+| Field | Was | Set to | Why |
+| --- | --- | --- | --- |
+| SMS OTP Expiry | 60s | **300s** | 60s is identical to our resend window, so a code expires at the exact moment the app offers a new one. Anyone who switches to their SMS app, reads the code and comes back is racing it. |
+| SMS OTP Length | 6 | leave at 6 | Confirms D19. The platform will not go lower, which is why the app has six boxes and not the design's four. |
+
+**SMS Message** in that form is ignored while the hook is on — our function
+composes the message itself, in both languages. Noted in `config.toml` and the
+README so nobody edits it expecting an effect.
+
+### False green 1 — a skipped SQL suite reported as a pass
+
+`./tool/check.sh` ran the SQL suite only when `DATABASE_URL` was set, and said
+nothing at all when it was not. It then printed **All checks passed.** A run
+with no database verified no schema, no RLS, and neither core function, and
+looked identical to a run that verified all three.
+
+This is the same family as the bug fixed in `tests/run.sh` on 2026-09-30,
+where zero assertions counted as a pass. Fixed the same way — by making the
+absence loud:
+
+```
+==> database (SQL suite)
+    SKIPPED -- DATABASE_URL is not set
+    The schema and both core functions are NOT verified by this run.
+
+All checks passed, except the SQL suite, which was skipped.
+```
+
+### False green 2 — the local database was hand-built from memory
+
+The harness this container had been using was set up by hand, so it did not
+survive the container being rebuilt, and the SQL suite went from 47 assertions
+to skipped without anything being wrong with the SQL. Rebuilding it by hand
+also meant rebuilding the decision about **where PostGIS goes** — the decision
+that was wrong the first time, passed locally, and failed on your project with
+`type "geography" does not exist`.
+
+So it is a script now: `./tool/dev-db.sh`, with everything Supabase provides
+before our first migration runs in
+`tool/dev-db/supabase-prelude.sql` — PostGIS in `extensions`, the three roles,
+the table grants that let RLS rather than `permission denied` decide the
+answer, and `auth.users` with `auth.uid()`.
+
+That file is **not a migration** and says so at the top; Supabase already owns
+all of it. It has exactly one deliberate deviation, marked in place:
+`auth.uid()` also honours the `njiani.test_uid` GUC the suite uses to say who
+it is acting as. That one is unavoidable — impersonation on the real project
+comes from a signed JWT the suite cannot mint — so the JWT claim is read first
+and the test GUC only as a fallback.
+
+Rebuilt from scratch, the suite returns **47 assertions**, the same count as
+before, which is the evidence that the prelude reproduces what was there.
+
+### Files
+
+| File | Change |
+| --- | --- |
+| `supabase/config.toml` | `[auth.hook.send_sms]`; `otp_exp = 300`, `otp_length = 6`, `max_frequency = "60s"`; corrected the Providers note |
+| `supabase/README.md` | the Providers form, and how to build a local database the migrations apply to |
+| `tool/check.sh` | a skipped SQL suite now says so, in the stage and in the summary |
+| `tool/dev-db.sh` | **new** — reproducible local database |
+| `tool/dev-db/supabase-prelude.sql` | **new** — what Supabase provides, and the one deviation |
+| `docs/CREDENTIALS.md` | the OTP-expiry note |
+
+### Verified
+
+Analyze clean, **263 Flutter tests**, **47 SQL assertions**, 11 signature
+checks — with the database present, and the skip path checked separately by
+unsetting `DATABASE_URL`.
+
+Still unverified, unchanged from C4: the Edge Function has never executed
+against real Supabase or Beem.
