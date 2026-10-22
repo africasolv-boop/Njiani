@@ -96,7 +96,13 @@ approved. Nothing else in the build depends on it.
 
 ### Supabase dashboard settings C4 needs
 
-- [ ] **Authentication → Providers → Phone**: enabled
+- [ ] **Authentication → Providers → Phone**: enabled.
+      ⚠ The form demands an SMS provider with no "none" option, even though
+      the hook means it is never called. `supabase/README.md` has the two ways
+      through it.
+- [ ] **SMS OTP Expiry**: raise from 60s to **300s**. At 60s a code expires at
+      the same moment the app offers a resend, so anyone who leaves the app to
+      read the SMS is racing it
 - [ ] **Authentication → Hooks → Send SMS hook**: pointed at the deployed
       function, with the signing secret pasted
 - [ ] **Authentication → Rate limits**: set deliberately. Every send costs

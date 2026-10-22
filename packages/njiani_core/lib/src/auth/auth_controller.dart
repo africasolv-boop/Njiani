@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/app_config.dart';
 import '../data/supabase_client.dart';
 import 'auth_failure.dart';
 import 'auth_repository.dart';
@@ -121,9 +122,15 @@ final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);
 /// rather than crashing on a null client.
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   final client = ref.watch(supabaseProvider);
-  return client == null
-      ? const UnconfiguredAuthRepository()
-      : SupabaseAuthRepository(client);
+  if (client != null) return SupabaseAuthRepository(client);
+  return UnconfiguredAuthRepository(
+    // Names the actual problem when there is one, rather than leaving a
+    // mistyped URL looking the same as a missing one.
+    reason: AppConfig.supabaseUrlProblem ??
+        (AppConfig.hasSupabase
+            ? null
+            : 'SUPABASE_URL and SUPABASE_ANON_KEY are not set in this build.'),
+  );
 });
 
 /// Drives the phone and code screens.

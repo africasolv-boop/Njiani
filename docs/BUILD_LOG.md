@@ -20,7 +20,7 @@
 | C2 | `pLang` — language choice, i18n, routing | ✅ | 2026-09-22 |
 | C3 | Supabase schema + PostGIS + RLS + seed | ✅ | 2026-10-21 |
 | C4 | `pPhone` + `pOtp` — phone and SMS code | 🧪 awaiting your test | |
-| C5 | Profile + session persistence | 🔜 | |
+| C5 | Profile + `profiles.lang` + session persistence | 🧪 awaiting your test | |
 | C6 | Driver onboarding + verification | 🔜 | |
 | C7 | Driver direction + go online | 🔜 | |
 | C8 | Passenger request | 🔜 | |
@@ -1160,6 +1160,248 @@ Getting this wrong in either direction matters: too strict rejects real
 deliveries, too loose lets anyone who learns the URL spend Njiani's SMS
 credit.
 
+### Fix, 2026-10-22 (2) — a misconfiguration leaked a database password
+
+**Symptom.** `Server said: Invalid argument(s): Unsupported scheme
+'postgresql' in URI postgresql://postgres:<password>@db.<ref>.supabase.co:5432/postgres/auth/v1/otp`
+
+**Cause.** `SUPABASE_URL` held the **database connection string** instead of
+the API URL. The client appended `/auth/v1/otp` to it and complained about the
+scheme — quoting the whole URI, password included, into a line that then
+travelled into a screenshot.
+
+Two separate failures, and the second is the serious one.
+
+**1. Nothing checked the value.** The dashboard offers two similar-looking
+strings and only one belongs in `SUPABASE_URL`. `AppConfig.supabaseUrlProblem`
+now rejects a `postgres://` scheme, a non-https URL, and any URL carrying a
+username and password — each with a message naming the setting and the fix.
+`initSupabase` refuses rather than handing a bad value to the SDK, and the
+reason is carried to the screen so a misconfiguration names itself.
+
+**2. A diagnostic printed a credential.** `redactSecrets` now masks
+user:password in any URI, JWTs, `sb_publishable_`/`sb_secret_` keys,
+`whsec_` signing secrets and bearer tokens — everywhere a provider message is
+shown or a config value is displayed. It **masks rather than hides**, so
+`postgresql://postgres:••••••@db…` still reveals the mistake while revealing
+nothing else. Hiding the value outright would have made the pasted connection
+string invisible, which is the very thing that needed seeing.
+
+**Also fixed: the SQL runner reported green on zero assertions.** Postgres was
+down during one run; psql's lowercase `psql: error:` slipped past a grep
+looking for `ERROR`, so four files that never executed were reported as
+passing. The runner now checks psql's exit code and **treats zero assertions
+as a failure** — an empty run means the file did not execute, and calling that
+green is worse than having no suite.
+
+**Tests added — 15**, covering redaction of every credential shape, that a
+correct API URL is shown in full, and that a pasted connection string shows
+its host and scheme but not its password.
+
 ### Sign-off
 
 _Awaiting your test._
+
+---
+
+## C5 — Profile, account language, session persistence · 🧪 awaiting your test
+
+**Goal** — the account record behind a session: read it, keep its language in
+step with the device, and confirm the session survives a restart.
+
+**Credentials needed** — the Supabase ones from C3. No new ones.
+
+### Why `profiles.lang` exists at all
+
+The device already knows the language — it is chosen on the very first screen,
+before anyone signs in (C2). The account copy exists for the things composed
+**on the server**, where the device preference is not available: the SMS body
+and, at C13, push notifications.
+
+**The device wins.** It is the only choice that can be right at the moment it
+is needed, so sign-in mirrors it onto the account, and a later language change
+follows through. The account copy is never read back to override the device.
+
+Written only when the two actually differ — this runs on every sign-in, and a
+no-op round trip is still a round trip on a metered connection.
+
+### A race worth handling
+
+`handle_new_user` creates the `profiles` row on the auth server, so a client
+can out-race it by a few hundred milliseconds on a first sign-in. Failing
+there would send a brand-new user back to the phone screen for no reason, so
+the load retries. The retry policy is injectable (`ProfileLoadPolicy`) and
+turned off in tests.
+
+### A real leak the tests caught
+
+The first retry used `Future.delayed`, which left **a live timer running after
+the provider was disposed**. Flutter's test binding fails on that, and it is
+right to: a timer with no owner is work nobody is waiting for. In the app it
+would have been an invisible wake-up every time a signed-out user's profile
+provider was torn down.
+
+The wait is now a `Timer` cancelled on `ref.onDispose`, and the loop checks
+for disposal between attempts.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `lib/src/profile/profile.dart` | The account record. `fromRow` tolerates an unknown language rather than crashing a returning user out of the app |
+| `lib/src/profile/profile_repository.dart` | Interface, Supabase implementation, and an in-memory fake |
+| `lib/src/profile/profile_controller.dart` | Load, retry, language sync, `ProfileLoadPolicy` |
+
+**Changed** — `placeholder_screen.dart` now shows the account, so C5 is
+visible rather than merely claimed: the verified phone, the device language,
+and whether the account copy agrees (`✓` or `out of step`).
+
+**Tests added — 13**, covering the row mapping, the language mirror in both
+directions, that nothing is written when the two already agree, the
+trigger race, a failed sync leaving the session intact, and sign-out
+clearing the profile.
+
+### How to test
+
+```sh
+git pull
+./tool/check.sh --fix
+cd apps/njiani_rider && flutter run --dart-define-from-file=../../.env.local
+```
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Sign in | The placeholder shows your **verified phone number** |
+| 2 | Look at Device / Account | Both name the same language, with a **✓** |
+| 3 | Tap **Change language**, pick the other one, continue | Both rows change, still **✓** |
+| 4 | In Supabase → Table editor → `profiles` | Your row's `lang` matches what you picked |
+| 5 | **Force-close the app and reopen** | Straight back in. No phone screen, no code |
+| 6 | Tap **Sign out** | Phone screen. The account row stays in `profiles` |
+| 7 | Sign in again | Same profile, same phone number |
+
+**Step 5 is the one that matters** — it is session persistence, and the first
+time `supabase_flutter`'s own storage is exercised on a device rather than in
+a test.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **263 Flutter tests**, 47 SQL assertions, 11
+signature checks.
+
+**Not verified** — `SupabaseProfileRepository` has never run against a real
+database. Specifically untested: that the RLS policy lets a user update their
+own `lang` (the policy exists and is tested in SQL, but not through
+PostgREST), and that session restore works on a device. Steps 4 and 5 are the
+first real exercise of both.
+
+### Known gaps — deliberate
+
+| Gap | Picked up by |
+| --- | --- |
+| `display_name` is written but never set | **C6**, driver sign-up |
+| The SMS body is still bilingual rather than per-profile | needs the hook to read `profiles.lang` — a C6 follow-on |
+| No profile screen; the placeholder stands in | later |
+
+### Sign-off
+
+_Awaiting your test._
+
+---
+
+## Tooling, 2026-10-22 — the Providers form, and two false greens in the harness
+
+Not a component. Three things came out of your screenshot of
+Authentication → Providers → Phone.
+
+### The form demands an SMS provider that will never be called
+
+You are right that it cannot be saved without one: the dropdown has no "none"
+and the chosen provider's credential fields turn required. None of those
+credentials is ever read — an enabled Send SMS hook means Supabase hands the
+code to our own function and never touches the configured provider.
+
+`supabase/config.toml` now declares `[auth.hook.send_sms]`, so the hook, the
+OTP length, the expiry and the resend window can all be set with
+`supabase config push` instead of through a form that validates fields nothing
+will use. `supabase/README.md` documents that route and the placeholder-
+credentials alternative, including why the placeholders are only harmless
+while the hook stays enabled.
+
+**I could not verify which route Supabase intends.** supabase.com and the docs
+mirror are both DNS-blocked from this container, so what is written down is
+reasoning from the form's own behaviour plus our config, not a citation.
+
+Two settings in that form are worth changing while you are in it:
+
+| Field | Was | Set to | Why |
+| --- | --- | --- | --- |
+| SMS OTP Expiry | 60s | **300s** | 60s is identical to our resend window, so a code expires at the exact moment the app offers a new one. Anyone who switches to their SMS app, reads the code and comes back is racing it. |
+| SMS OTP Length | 6 | leave at 6 | Confirms D19. The platform will not go lower, which is why the app has six boxes and not the design's four. |
+
+**SMS Message** in that form is ignored while the hook is on — our function
+composes the message itself, in both languages. Noted in `config.toml` and the
+README so nobody edits it expecting an effect.
+
+### False green 1 — a skipped SQL suite reported as a pass
+
+`./tool/check.sh` ran the SQL suite only when `DATABASE_URL` was set, and said
+nothing at all when it was not. It then printed **All checks passed.** A run
+with no database verified no schema, no RLS, and neither core function, and
+looked identical to a run that verified all three.
+
+This is the same family as the bug fixed in `tests/run.sh` on 2026-09-30,
+where zero assertions counted as a pass. Fixed the same way — by making the
+absence loud:
+
+```
+==> database (SQL suite)
+    SKIPPED -- DATABASE_URL is not set
+    The schema and both core functions are NOT verified by this run.
+
+All checks passed, except the SQL suite, which was skipped.
+```
+
+### False green 2 — the local database was hand-built from memory
+
+The harness this container had been using was set up by hand, so it did not
+survive the container being rebuilt, and the SQL suite went from 47 assertions
+to skipped without anything being wrong with the SQL. Rebuilding it by hand
+also meant rebuilding the decision about **where PostGIS goes** — the decision
+that was wrong the first time, passed locally, and failed on your project with
+`type "geography" does not exist`.
+
+So it is a script now: `./tool/dev-db.sh`, with everything Supabase provides
+before our first migration runs in
+`tool/dev-db/supabase-prelude.sql` — PostGIS in `extensions`, the three roles,
+the table grants that let RLS rather than `permission denied` decide the
+answer, and `auth.users` with `auth.uid()`.
+
+That file is **not a migration** and says so at the top; Supabase already owns
+all of it. It has exactly one deliberate deviation, marked in place:
+`auth.uid()` also honours the `njiani.test_uid` GUC the suite uses to say who
+it is acting as. That one is unavoidable — impersonation on the real project
+comes from a signed JWT the suite cannot mint — so the JWT claim is read first
+and the test GUC only as a fallback.
+
+Rebuilt from scratch, the suite returns **47 assertions**, the same count as
+before, which is the evidence that the prelude reproduces what was there.
+
+### Files
+
+| File | Change |
+| --- | --- |
+| `supabase/config.toml` | `[auth.hook.send_sms]`; `otp_exp = 300`, `otp_length = 6`, `max_frequency = "60s"`; corrected the Providers note |
+| `supabase/README.md` | the Providers form, and how to build a local database the migrations apply to |
+| `tool/check.sh` | a skipped SQL suite now says so, in the stage and in the summary |
+| `tool/dev-db.sh` | **new** — reproducible local database |
+| `tool/dev-db/supabase-prelude.sql` | **new** — what Supabase provides, and the one deviation |
+| `docs/CREDENTIALS.md` | the OTP-expiry note |
+
+### Verified
+
+Analyze clean, **263 Flutter tests**, **47 SQL assertions**, 11 signature
+checks — with the database present, and the skip path checked separately by
+unsetting `DATABASE_URL`.
+
+Still unverified, unchanged from C4: the Edge Function has never executed
+against real Supabase or Beem.

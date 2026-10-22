@@ -85,16 +85,97 @@ supabase start          # prints a URL, an anon key, and a db port
 supabase db reset       # applies migrations + seed
 ```
 
-## Running the tests
+To run only the SQL suite, without Docker and without the rest of the
+Supabase stack, use `./tool/dev-db.sh` — see
+[Running the tests](#running-the-tests).
+
+## ⚠ The Providers form demands an SMS provider we never use
+
+Authentication → Providers → Phone has a provider dropdown — Twilio,
+MessageBird, Textlocal, Vonage, Twilio Verify — and no "none" or "custom"
+entry. Pick any of them and its credential fields turn required, in red. The
+form will not save until they are filled.
+
+None of those credentials is ever read. Njiani sends through the **Send SMS
+hook** (`supabase/functions/send-sms-hook/`), and when that hook is enabled
+Supabase hands the code to it and never touches the configured provider. The
+form is validating fields nothing will use.
+
+Two ways through it. Prefer the first.
+
+**Push the config instead of using the form.** `config.toml` in this directory
+declares the hook, so:
 
 ```sh
-DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:54322/postgres" \
-  ./supabase/tests/run.sh
+supabase link --project-ref <your-ref>
+supabase config push
 ```
 
-Against a hosted project, use its connection string from
-Dashboard → Settings → Database. **Use a dev project, never production** — the
-concurrency test writes and deletes rows.
+The hook, the OTP length, the expiry and the resend window all land from the
+file, which is also the record of what they are set to. This is the route the
+project is set up for.
+
+**Or save the form with placeholder Twilio credentials.** Any syntactically
+plausible values are accepted; nothing validates them against Twilio. This
+unblocks the form in a minute.
+
+It carries one risk worth knowing about: the placeholders only stay harmless
+while the hook stays enabled. If the hook is ever disabled, or its URL stops
+resolving, Supabase falls back to the configured provider — and the failure
+surfaces as a Twilio authentication error, which points at a Twilio account
+that does not exist rather than at the hook that actually broke. If you take
+this route, write in the credential fields themselves that they are unused
+(e.g. an Account SID of `unused-send-sms-hook-handles-delivery`) so the next
+person reading that error has a chance.
+
+Two other fields in the same form, for the record:
+
+| Field | Set it to | Why |
+| --- | --- | --- |
+| SMS OTP Length | 6 | Supabase will not go lower. The app's six boxes match it (ARCHITECTURE D19). |
+| SMS OTP Expiry | 300s | The 60s default equals our resend window, so a code expires exactly when a new one is offered. |
+| SMS Message | *(ignore)* | Unused while the hook is on. Our function composes the message, in both languages. |
+
+## Running the tests
+
+The suite is part of `./tool/check.sh`, but only when `DATABASE_URL` is set —
+it needs a real Postgres. Without one the stage prints `SKIPPED` and says so
+in the summary line, because a stage that is silently absent reads as a stage
+that passed.
+
+### A local database the migrations will apply to
+
+```sh
+./tool/dev-db.sh                 # set up and apply migrations + seed
+./tool/dev-db.sh --reset         # drop public and auth, rebuild from scratch
+```
+
+It prints the `DATABASE_URL` to export. Needs `postgresql-16`,
+`postgresql-16-postgis-3` and `postgresql-16-cron`.
+
+The script exists because a plain `createdb` is **not** close enough to
+Supabase to test against. Supabase provides, before our first migration runs:
+
+| | and ours needs it because |
+| --- | --- |
+| PostGIS in the `extensions` schema, not `public` | every geography column; see the warning at the top of this file |
+| roles `anon`, `authenticated`, `service_role` | the RLS policies name them |
+| full table grants to those roles, with RLS doing the real work | without the grants a policy raises `permission denied` instead of returning zero rows — a different outcome, and one that hides a missing policy |
+| `auth.users`, and `auth.uid()` | `profiles.id` is keyed to it, and every policy calls it |
+
+Those live in [`tool/dev-db/supabase-prelude.sql`](../tool/dev-db/supabase-prelude.sql),
+which is **not a migration** — Supabase already owns all of it. It has one
+deliberate deviation, marked in the file: `auth.uid()` also honours a
+`njiani.test_uid` GUC, which is how the suite says who it is acting as. There
+is no way around that one; impersonation on the real project comes from a
+signed JWT the suite cannot mint. Keep the rest faithful. A convenience added
+there that Supabase does not have is how the PostGIS-in-`public` bug came to
+be certified as passing.
+
+### Against a hosted project
+
+Use its connection string from Dashboard → Settings → Database. **Use a dev
+project, never production** — the concurrency test writes and deletes rows.
 
 Expected: **47 assertions passed.**
 

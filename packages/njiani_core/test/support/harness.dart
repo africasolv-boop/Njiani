@@ -19,6 +19,8 @@ Future<void> pumpScreen(
     ProviderScope(
       overrides: [
         authRepositoryProvider.overrideWithValue(auth),
+        profileLoadPolicyProvider
+            .overrideWithValue(ProfileLoadPolicy.immediate),
         languageStoreProvider.overrideWithValue(InMemoryLanguageStore(locale)),
         if (clock != null) clockProvider.overrideWithValue(clock),
       ],

@@ -16,6 +16,8 @@ Future<ProviderContainer> pumpApp(
       languageStoreProvider
           .overrideWithValue(InMemoryLanguageStore(storedLocale)),
       authRepositoryProvider.overrideWithValue(auth ?? FakeAuthRepository()),
+      profileLoadPolicyProvider
+          .overrideWithValue(ProfileLoadPolicy.immediate),
     ],
   );
   addTearDown(container.dispose);
