@@ -14,6 +14,10 @@
 -- comparison on the 0-1 fraction along that line. A single bidirectional
 -- geometry would need a heading vector and a dot product at every comparison.
 -- ---------------------------------------------------------------------------
+-- PostGIS lives in the `extensions` schema on Supabase, which is not on the
+-- default search_path. Without this, every `geography` below fails with
+-- `type "geography" does not exist`. See the extensions migration.
+set search_path = public, extensions;
 create table public.routes (
   id               uuid primary key default gen_random_uuid(),
   name             text not null,

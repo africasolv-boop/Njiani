@@ -39,6 +39,10 @@ flutter run --dart-define-from-file=../../.env.local
 (Database → Extensions): **postgis** and **pg_cron**. The schema will not
 apply without them.
 
+Supabase puts them in the `extensions` schema, which is not on the default
+search_path — the migrations handle that themselves, and `supabase/README.md`
+explains why it matters.
+
 `supabase/README.md` has the full apply-and-test procedure, including a
 no-Docker path for Windows.
 

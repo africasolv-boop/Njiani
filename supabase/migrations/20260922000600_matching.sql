@@ -22,6 +22,10 @@
 -- way a driver reads ride_requests. They hold no blanket read policy, so they
 -- cannot enumerate the table (ARCHITECTURE §8).
 -- ---------------------------------------------------------------------------
+-- PostGIS lives in the `extensions` schema on Supabase, which is not on the
+-- default search_path. Without this, every `geography` below fails with
+-- `type "geography" does not exist`. See the extensions migration.
+set search_path = public, extensions;
 create or replace function public.match_requests_for_session(p_session_id uuid)
 returns table (
   request_id      uuid,
@@ -36,7 +40,7 @@ returns table (
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   with session as (
     select
@@ -137,7 +141,7 @@ create or replace function public.accept_ride_request(
 returns table (ok boolean, reason text, seat_id uuid)
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_seats     smallint;
@@ -211,7 +215,7 @@ create or replace function public.release_trip_seat(
 returns table (ok boolean, reason text)
 language plpgsql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
 declare
   v_session uuid;
@@ -287,7 +291,7 @@ returns table (
 language sql
 stable
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   select
     de.id,
@@ -318,7 +322,7 @@ create or replace function public.expire_stale_requests()
 returns integer
 language sql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   with expired as (
     update public.ride_requests

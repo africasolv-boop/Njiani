@@ -6,6 +6,10 @@
 --   * a driver cannot write drivers.status, which is the verification gate.
 
 \set ON_ERROR_STOP on
+-- PostGIS lives in the `extensions` schema on Supabase. Without this the
+-- geography parameters below fail with `type "geography" does not exist`,
+-- exactly as the migrations did before the search_path was made explicit.
+set search_path = public, extensions;
 begin;
 
 create or replace function pg_temp.check(

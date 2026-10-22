@@ -24,7 +24,7 @@ create or replace function public.close_abandoned_sessions()
 returns integer
 language sql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   with closed as (
     update public.driver_sessions
@@ -48,7 +48,7 @@ create or replace function public.purge_old_positions()
 returns integer
 language sql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   with purged as (
     update public.driver_sessions

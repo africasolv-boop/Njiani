@@ -1,0 +1,104 @@
+# Supabase CLI project configuration.
+#
+# `supabase link` and `supabase db push` both need this file to exist; without
+# it the CLI has no project to talk about. Most values here only affect the
+# LOCAL stack (`supabase start`). Settings that live on the hosted project are
+# marked, with where to change them.
+
+# Must match your project ref: Dashboard → Settings → General → Reference ID.
+# `supabase link --project-ref <ref>` writes it here for you.
+project_id = "njiani"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+# PostgREST must be able to reach PostGIS, which Supabase installs into
+# `extensions`. Without `extensions` here, reading a `geography` column over
+# the API fails the same way the migrations did -- the type cannot be
+# resolved. This is the API-side half of the same problem.
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+# Match your hosted project: Dashboard → Settings → Infrastructure.
+# Only affects `supabase start`.
+major_version = 15
+
+[db.pooler]
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+# Catches outbound mail locally. Njiani does not send email, but the local
+# stack expects the section.
+enabled = true
+port = 54324
+
+[storage]
+enabled = true
+# Driver licence photos. The bucket itself is created at C6, private.
+file_size_limit = "10MiB"
+
+[auth]
+enabled = true
+# Used in links Supabase generates. Njiani is phone-only, so this matters
+# little, but an empty value makes the CLI complain.
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+jwt_expiry = 3600
+# A driver at a stage should not be signed out because they closed the app.
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+enable_signup = true
+enable_anonymous_sign_ins = false
+
+[auth.email]
+enable_signup = false
+enable_confirmations = false
+
+[auth.sms]
+# The whole of Njiani's authentication.
+enable_signup = true
+enable_confirmations = true
+# Do not let a test number bypass the real flow on a shared project.
+test_otp = {}
+
+# ---------------------------------------------------------------------------
+# NOT SET HERE — these live on the hosted project
+# ---------------------------------------------------------------------------
+#
+#   Authentication → Providers → Phone
+#       Enable it. Leave the built-in providers (Twilio, Vonage, …) off:
+#       delivery goes through our own Send SMS hook instead.
+#
+#   Authentication → Hooks → Send SMS hook
+#       Point at the deployed send-sms-hook URL and paste the signing secret.
+#       That secret is also set as SEND_SMS_HOOK_SECRET on the function.
+#
+#   Authentication → Rate limits
+#       Set deliberately. Every SMS costs money, and this is the only cap that
+#       cannot be bypassed by reinstalling the app.
+#
+#   SMS OTP length
+#       Leave at 6. Supabase will not go below it, which is why the app uses
+#       six boxes rather than the four in the design (ARCHITECTURE D19).
+#
+#   Database → Extensions
+#       postgis and pg_cron. The schema will not apply without them.
+#
+# ---------------------------------------------------------------------------
+
+[functions.send-sms-hook]
+# REQUIRED. Supabase Auth calls this hook before any user exists, so there is
+# no JWT to verify. The request is authenticated by its Standard Webhooks
+# signature, which the function checks itself and refuses without.
+verify_jwt = false
+
+[analytics]
+enabled = false
