@@ -5,6 +5,7 @@ import '../design/nj_theme.dart';
 import '../design/nj_tokens.dart';
 import '../l10n/generated/nj_strings.dart';
 import '../locale/language_controller.dart';
+import '../profile/profile_controller.dart';
 import '../widgets/nj_button.dart';
 import '../widgets/nj_card.dart';
 import '../widgets/nj_screen_body.dart';
@@ -41,6 +42,7 @@ class PlaceholderScreen extends ConsumerWidget {
     final nj = context.nj;
     final strings = NjStrings.of(context);
     final language = ref.watch(languageProvider);
+    final profile = ref.watch(profileProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -58,20 +60,37 @@ class PlaceholderScreen extends ConsumerWidget {
               style: context.njText.bodyMedium?.copyWith(color: nj.muted),
             ),
             const SizedBox(height: NjSpace.xl),
+            // The account, so C5 is visible rather than merely claimed: the
+            // phone that was verified, and whether the language reached the
+            // server copy that SMS and push are written from.
             NjCard(
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      language.locale.endonym,
-                      style: context.njText.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  _Row(
+                    label: strings.phoneLabel,
+                    value: profile.when(
+                      data: (p) => p?.phone?.formatted ?? '—',
+                      loading: () => '…',
+                      error: (_, _) => '—',
                     ),
                   ),
-                  Text(
-                    language.locale.code.toUpperCase(),
-                    style: context.njText.bodySmall?.copyWith(color: nj.muted),
+                  const SizedBox(height: NjSpace.sm),
+                  _Row(
+                    label: 'Device',
+                    value: language.locale.endonym,
+                  ),
+                  const SizedBox(height: NjSpace.sm),
+                  _Row(
+                    label: 'Account',
+                    value: profile.when(
+                      data: (p) => p == null
+                          ? 'no profile row'
+                          : '${p.lang.endonym}'
+                              '${p.lang == language.locale ? ' ✓' : ' (out of step)'}',
+                      loading: () => '…',
+                      error: (error, _) => 'could not load',
+                    ),
                   ),
                 ],
               ),
@@ -105,4 +124,31 @@ class PlaceholderScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _Row extends StatelessWidget {
+  const _Row({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: context.njText.bodySmall?.copyWith(color: context.nj.muted),
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: context.njText.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      );
 }

@@ -20,7 +20,7 @@
 | C2 | `pLang` — language choice, i18n, routing | ✅ | 2026-09-22 |
 | C3 | Supabase schema + PostGIS + RLS + seed | ✅ | 2026-10-21 |
 | C4 | `pPhone` + `pOtp` — phone and SMS code | 🧪 awaiting your test | |
-| C5 | Profile + session persistence | 🔜 | |
+| C5 | Profile + `profiles.lang` + session persistence | 🧪 awaiting your test | |
 | C6 | Driver onboarding + verification | 🔜 | |
 | C7 | Driver direction + go online | 🔜 | |
 | C8 | Passenger request | 🔜 | |
@@ -1197,6 +1197,110 @@ green is worse than having no suite.
 **Tests added — 15**, covering redaction of every credential shape, that a
 correct API URL is shown in full, and that a pasted connection string shows
 its host and scheme but not its password.
+
+### Sign-off
+
+_Awaiting your test._
+
+---
+
+## C5 — Profile, account language, session persistence · 🧪 awaiting your test
+
+**Goal** — the account record behind a session: read it, keep its language in
+step with the device, and confirm the session survives a restart.
+
+**Credentials needed** — the Supabase ones from C3. No new ones.
+
+### Why `profiles.lang` exists at all
+
+The device already knows the language — it is chosen on the very first screen,
+before anyone signs in (C2). The account copy exists for the things composed
+**on the server**, where the device preference is not available: the SMS body
+and, at C13, push notifications.
+
+**The device wins.** It is the only choice that can be right at the moment it
+is needed, so sign-in mirrors it onto the account, and a later language change
+follows through. The account copy is never read back to override the device.
+
+Written only when the two actually differ — this runs on every sign-in, and a
+no-op round trip is still a round trip on a metered connection.
+
+### A race worth handling
+
+`handle_new_user` creates the `profiles` row on the auth server, so a client
+can out-race it by a few hundred milliseconds on a first sign-in. Failing
+there would send a brand-new user back to the phone screen for no reason, so
+the load retries. The retry policy is injectable (`ProfileLoadPolicy`) and
+turned off in tests.
+
+### A real leak the tests caught
+
+The first retry used `Future.delayed`, which left **a live timer running after
+the provider was disposed**. Flutter's test binding fails on that, and it is
+right to: a timer with no owner is work nobody is waiting for. In the app it
+would have been an invisible wake-up every time a signed-out user's profile
+provider was torn down.
+
+The wait is now a `Timer` cancelled on `ref.onDispose`, and the loop checks
+for disposal between attempts.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `lib/src/profile/profile.dart` | The account record. `fromRow` tolerates an unknown language rather than crashing a returning user out of the app |
+| `lib/src/profile/profile_repository.dart` | Interface, Supabase implementation, and an in-memory fake |
+| `lib/src/profile/profile_controller.dart` | Load, retry, language sync, `ProfileLoadPolicy` |
+
+**Changed** — `placeholder_screen.dart` now shows the account, so C5 is
+visible rather than merely claimed: the verified phone, the device language,
+and whether the account copy agrees (`✓` or `out of step`).
+
+**Tests added — 13**, covering the row mapping, the language mirror in both
+directions, that nothing is written when the two already agree, the
+trigger race, a failed sync leaving the session intact, and sign-out
+clearing the profile.
+
+### How to test
+
+```sh
+git pull
+./tool/check.sh --fix
+cd apps/njiani_rider && flutter run --dart-define-from-file=../../.env.local
+```
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Sign in | The placeholder shows your **verified phone number** |
+| 2 | Look at Device / Account | Both name the same language, with a **✓** |
+| 3 | Tap **Change language**, pick the other one, continue | Both rows change, still **✓** |
+| 4 | In Supabase → Table editor → `profiles` | Your row's `lang` matches what you picked |
+| 5 | **Force-close the app and reopen** | Straight back in. No phone screen, no code |
+| 6 | Tap **Sign out** | Phone screen. The account row stays in `profiles` |
+| 7 | Sign in again | Same profile, same phone number |
+
+**Step 5 is the one that matters** — it is session persistence, and the first
+time `supabase_flutter`'s own storage is exercised on a device rather than in
+a test.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **263 Flutter tests**, 47 SQL assertions, 11
+signature checks.
+
+**Not verified** — `SupabaseProfileRepository` has never run against a real
+database. Specifically untested: that the RLS policy lets a user update their
+own `lang` (the policy exists and is tested in SQL, but not through
+PostgREST), and that session restore works on a device. Steps 4 and 5 are the
+first real exercise of both.
+
+### Known gaps — deliberate
+
+| Gap | Picked up by |
+| --- | --- |
+| `display_name` is written but never set | **C6**, driver sign-up |
+| The SMS body is still bilingual rather than per-profile | needs the hook to read `profiles.lang` — a C6 follow-on |
+| No profile screen; the placeholder stands in | later |
 
 ### Sign-off
 
