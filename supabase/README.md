@@ -51,6 +51,27 @@ it in `public`, which is exactly why this bug reached a real project.
 | `…000600_matching` | **the two functions that are the product** |
 | `…000700_rls` | row level security and column privileges |
 | `…000800_cron` | expiry, abandoned sessions, position purge |
+| `20261026000100_storage_licences` | the private licence bucket and its policies |
+| `20261026000200_driver_review` | `review_driver`, `resubmit_driver_licence`, realtime on `drivers` |
+
+### Storage
+
+One bucket, `licences`, created by `20261026000100_storage_licences.sql`.
+
+**Private.** Reads need a signed URL, and only the owner or an admin has a
+policy that permits one. The path is `<uid>/licence.<ext>` — the first folder
+segment is the owner, which is what makes "your own object" something an RLS
+policy can express; `storage.foldername(name)[1]` is how every policy here
+matches it. A flat `licence-<uuid>.jpg` would leave nothing to match on.
+
+Storage itself enforces a 5 MB cap and an image-only MIME allow-list, before a
+byte is written. The client caps the longest edge at 1600px on the way out,
+which is a kindness to a driver's data bundle rather than a limit.
+
+**There is no DELETE policy.** The photo is the evidence behind an approval
+decision, so a driver cannot erase it after the fact and an admin cannot do it
+by accident from the app. Deletion is a service-role job and belongs with the
+retention schedule at C17.
 
 ### The two functions
 
@@ -63,6 +84,30 @@ the driver along it*, and **(c)** not stopping past where the driver stops.
 drivers tapping Pickup on the same passenger is normal, not an edge case; one
 gets `ok` and the other gets `already_taken`, decided by the database rather
 than by the UI.
+
+### Driver verification (C6)
+
+`drivers.status` is held back from `authenticated` by GRANT, not by RLS — RLS
+cannot protect a single column. Two `security definer` functions in
+`20261026000200_driver_review.sql` are the only ways it moves:
+
+`review_driver(driver, status, reason)` — the admin decision. Requires an
+`admins` row for a signed-in caller; a caller with no JWT is the service role,
+which could do this with a plain UPDATE anyway and comes through here for the
+checks. **Every rejection needs a reason** — the table has a CHECK that
+enforces it, and this raises a sentence a person can read instead of a
+constraint name. Stamps `reviewed_at` and `reviewed_by`.
+
+`resubmit_driver_licence(path)` — the one transition a driver may make:
+`rejected` → `pending`, with a replaced photo. Scoped to a rejected row, since
+a pending driver can already replace the photo with a plain UPDATE. It refuses
+a path outside the caller's own folder; without that check a driver could
+point their row at another driver's photo and be approved on someone else's
+licence.
+
+`drivers` is in the `supabase_realtime` publication, so the pending screen is
+told about its own approval. RLS applies to realtime, so a driver is sent
+changes to their own row and nobody else's.
 
 ## Running it locally
 
@@ -162,6 +207,12 @@ Supabase to test against. Supabase provides, before our first migration runs:
 | roles `anon`, `authenticated`, `service_role` | the RLS policies name them |
 | full table grants to those roles, with RLS doing the real work | without the grants a policy raises `permission denied` instead of returning zero rows — a different outcome, and one that hides a missing policy |
 | `auth.users`, and `auth.uid()` | `profiles.id` is keyed to it, and every policy calls it |
+| the `storage` schema, with `buckets`, `objects` and `foldername()` | the licence bucket's policies are rows and RLS on `storage.objects` |
+
+The storage stub covers the policies and nothing else. Nothing local uploads a
+byte, signs a URL, or enforces the bucket's size and MIME limits — those live
+in the Storage service, not in Postgres. So the policies are tested here and
+the upload path is not, and is not claimed to be.
 
 Those live in [`tool/dev-db/supabase-prelude.sql`](../tool/dev-db/supabase-prelude.sql),
 which is **not a migration** — Supabase already owns all of it. It has one
@@ -177,7 +228,7 @@ be certified as passing.
 Use its connection string from Dashboard → Settings → Database. **Use a dev
 project, never production** — the concurrency test writes and deletes rows.
 
-Expected: **47 assertions passed.**
+Expected: **80 assertions passed.**
 
 | File | Covers |
 | --- | --- |
@@ -185,6 +236,7 @@ Expected: **47 assertions passed.**
 | `02_race_*.sql` | two real connections racing one passenger |
 | `03_rls_test.sql` | a driver cannot read requests or approve themselves; constraint guards |
 | `04_lifecycle_test.sql` | claim, release, re-claim, expiry, stage-mode demand, abandoned sessions |
+| `05_driver_review_test.sql` | the verification gate: a driver cannot approve themselves, a rejection needs a reason, re-submission keeps the other checks, the column grants, and the bucket's policies |
 
 Everything except the concurrency test runs in a transaction and rolls back.
 That one needs two separate connections, so it cleans up after itself.

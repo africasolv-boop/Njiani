@@ -52,6 +52,8 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D17 | Localisation | **ARB + `flutter gen-l10n`**, generated output committed and drift-guarded | A fresh clone analyses and tests with no codegen step. `tool/check.sh` regenerates and fails if the result moved, so the committed files cannot go stale. |
 | D19 | SMS code length | **6 digits, not the 4 in the design** | Supabase Auth will not issue an SMS code below 6 (range 6–10), so 4 boxes could never be filled by a code it sent. Six is also a million combinations against ten thousand, and the code is the only authentication factor. Held in one constant, `kOtpLength`. |
 | D20 | Who verifies the code | **Supabase Auth, never the app and never Beem** | Beem is pure transport. Its hosted OTP product would mean bridging Beem's verdict into a Supabase session by hand, which is home-made auth in a ride-hailing app. |
+| D21 | Licence photos | **Private Storage bucket, path `<uid>/licence.<ext>`, no delete policy** | The first folder segment being the owner is what makes "your own object" expressible as an RLS policy at all; a flat filename leaves no way to say it. No DELETE policy, deliberately: the photo is the evidence behind an approval decision, so neither a driver nor an admin can erase it from the app. Retention is a service-role job, with the schedule at C17. |
+| D22 | The one status transition a driver may make | **`resubmit_driver_licence()`, a `security definer` function, `rejected` → `pending` only** | The C3 grants hold `drivers.status` back from `authenticated` entirely, which is right and also means a rejected driver has no way back into the queue. A narrow definer function is exactly the audited hole that privilege needs. It refuses a path outside the caller's own folder — without that check a driver could point their row at someone else's photo and be approved on another person's licence. |
 | D18 | State management | **Riverpod without code generation** | `NotifierProvider` directly avoids a `build_runner` step in the build, which keeps `./tool/check.sh` the only thing a contributor has to run. |
 | D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
@@ -303,7 +305,15 @@ Every table has RLS enabled. Summary of intent (exact policies land in C3):
   policy; they read matches **only** through `match_requests_for_session()`, which is scoped to
   their own online session. A driver cannot enumerate the request table.
 - `trip_seats` — readable by the passenger on the seat and the driver holding it, nobody else.
-- `licence_path` files — private Storage bucket, signed URLs, admin-only read.
+- `licence_path` files — private `licences` bucket, signed URLs, read by the owner and by
+  admins and nobody else. The path is `<uid>/licence.<ext>`, so the owner is the first folder
+  segment and the policy can match on it. **No DELETE policy at all** (D21). Storage enforces a
+  5 MB cap and an image-only MIME allow-list before a byte is written, so those are limits
+  rather than client-side courtesies.
+- `drivers.status` — moved only by `review_driver()`, which requires a reason for every rejection
+  and stamps who decided it. A driver's single permitted transition is
+  `resubmit_driver_licence()` (D22), `rejected` → `pending`, which leaves the vehicle, plate and
+  colour untouched: re-submission does not reset the other checks.
 - Passenger phone numbers are revealed to a driver **only after** a seat is claimed, and only for
   that seat. Same in reverse.
 
@@ -331,10 +341,10 @@ changes and test steps, and each waits for your local sign-off before the next b
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
 | C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | `pLang` + i18n (EN/SW), `go_router` guard, Riverpod, persistence | ✅ Flip language; restart and it is remembered |
-| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 47 SQL assertions pass |
+| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 80 SQL assertions pass |
 | C4 | `pPhone` + `pOtp` — Supabase phone OTP, Beem delivery | ✅ Log in on your own phone |
-| C5 | Profile + session persistence | Kill the app, reopen, still logged in |
-| C6 | Driver signup, licence upload, pending screen, approval | Submit → approve in Studio → screen changes |
+| C5 | Profile + session persistence | ✅ Kill the app, reopen, still logged in |
+| C6 | Driver signup, licence upload, pending screen, approval | 🧪 Submit → approve in Studio → screen changes, with nothing tapped |
 | C7 | Driver direction picker, go online, route board, seat bar | Pick Kimara, go online |
 | C8 | Passenger request — destination, vehicle, price, hint band | Send a request |
 | C9 | **Live matching feed** — the PostGIS query + realtime | Request on phone A appears on phone B |

@@ -104,3 +104,62 @@ $$;
 
 grant usage on schema auth to anon, authenticated, service_role;
 grant select on auth.users to service_role;
+
+-- ---------------------------------------------------------------------------
+-- storage. Supabase Storage keeps its bucket registry and object index in a
+-- `storage` schema, and bucket access is expressed as RLS policies on
+-- `storage.objects`. C6's licence bucket needs both to exist before its
+-- migration will apply.
+--
+-- Only what our policies touch: `buckets`, `objects`, and `foldername()`,
+-- which is how "the first folder segment is the owner" becomes something a
+-- policy can say. The real tables carry a dozen more columns each and the
+-- real schema a dozen more functions; none of them appear in our SQL.
+--
+-- What this CANNOT stand in for: the storage API itself. Nothing here uploads
+-- a byte, signs a URL, or enforces the bucket's size and MIME limits -- those
+-- live in the Storage service, not in Postgres. The policies below are
+-- testable here; the upload path is not, and is not claimed to be.
+-- ---------------------------------------------------------------------------
+create schema if not exists storage;
+
+create table if not exists storage.buckets (
+  id                 text primary key,
+  name               text not null unique,
+  owner              uuid,
+  public             boolean not null default false,
+  file_size_limit    bigint,
+  allowed_mime_types text[],
+  created_at         timestamptz not null default now()
+);
+
+create table if not exists storage.objects (
+  id         uuid primary key default gen_random_uuid(),
+  bucket_id  text references storage.buckets (id),
+  name       text,
+  owner      uuid,
+  metadata   jsonb,
+  created_at timestamptz not null default now(),
+  unique (bucket_id, name)
+);
+
+alter table storage.objects enable row level security;
+
+-- Splits a path and drops the filename, so `<uid>/licence.jpg` yields
+-- `{<uid>}` and `[1]` is the owner. Matches Supabase's own definition.
+create or replace function storage.foldername(name text)
+returns text[]
+language plpgsql
+immutable
+as $$
+declare
+  parts text[];
+begin
+  select string_to_array(name, '/') into parts;
+  return parts[1:array_length(parts, 1) - 1];
+end
+$$;
+
+grant usage on schema storage to anon, authenticated, service_role;
+grant all on storage.buckets, storage.objects
+  to anon, authenticated, service_role;

@@ -41,5 +41,13 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- C6: the "Call Njiani" button, and the safety screen at C15.
+             Android 11+ hides other apps' intent filters unless they are
+             declared here, and without this canLaunchUrl reports false for a
+             dialler that is plainly installed. -->
+        <intent>
+            <action android:name="android.intent.action.DIAL"/>
+            <data android:scheme="tel"/>
+        </intent>
     </queries>
 </manifest>

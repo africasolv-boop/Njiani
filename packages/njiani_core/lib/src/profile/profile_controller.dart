@@ -148,12 +148,19 @@ class ProfileController extends AsyncNotifier<Profile?> {
   }
 
   /// Sets the display name. Used by driver sign-up at C6.
+  ///
+  /// The write goes first and is not conditional on the profile having
+  /// loaded. Driver sign-up can reach this while `build()` is still in
+  /// flight, and an early return there dropped the name silently -- which a
+  /// passenger would notice at C10, as an unnamed driver, long after there
+  /// was anything to connect it to.
   Future<void> setDisplayName(String name) async {
-    final current = state.valueOrNull;
-    if (current == null) return;
-
-    state = AsyncData(current.copyWith(displayName: name));
     await _repository.setDisplayName(name);
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(displayName: name));
+    }
   }
 
   /// Re-reads the profile from the server.

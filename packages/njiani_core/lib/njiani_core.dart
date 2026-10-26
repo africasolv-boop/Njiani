@@ -8,6 +8,7 @@
 /// analyzer requires directives to be alphabetical.
 ///
 ///   src/config/   build configuration and app identity
+///   src/driver/   the verification gate and the driver's own record
 ///   src/design/   colour tokens, spacing, typography, theme
 ///   src/widgets/  the design system
 ///   src/util/     formatters and helpers
@@ -33,6 +34,10 @@ export 'src/design/nj_colors.dart';
 export 'src/design/nj_theme.dart';
 export 'src/design/nj_tokens.dart';
 export 'src/design/nj_typography.dart';
+export 'src/driver/driver.dart';
+export 'src/driver/driver_controller.dart';
+export 'src/driver/driver_repository.dart';
+export 'src/driver/licence_camera.dart';
 export 'src/gallery/gallery_app.dart';
 export 'src/gallery/gallery_screen.dart';
 export 'src/l10n/generated/nj_strings.dart';
@@ -42,12 +47,16 @@ export 'src/locale/nj_locale.dart';
 export 'src/profile/profile.dart';
 export 'src/profile/profile_controller.dart';
 export 'src/profile/profile_repository.dart';
+export 'src/screens/driver_pending_screen.dart';
+export 'src/screens/driver_rejected_screen.dart';
+export 'src/screens/driver_signup_screen.dart';
 export 'src/screens/language_screen.dart';
 export 'src/screens/otp_screen.dart';
 export 'src/screens/phone_screen.dart';
 export 'src/screens/placeholder_screen.dart';
 export 'src/util/money.dart';
 export 'src/util/redact.dart';
+export 'src/util/support_call.dart';
 export 'src/widgets/nj_action_tile.dart';
 export 'src/widgets/nj_avatar.dart';
 export 'src/widgets/nj_badge.dart';

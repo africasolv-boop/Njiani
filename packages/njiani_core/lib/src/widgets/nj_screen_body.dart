@@ -17,6 +17,7 @@ class NjScreenBody extends StatelessWidget {
     required this.children,
     this.padding = EdgeInsets.zero,
     this.crossAxisAlignment = CrossAxisAlignment.stretch,
+    this.physics = const ClampingScrollPhysics(),
   });
 
   /// Column contents. A [Spacer] here behaves as it would in a [Column].
@@ -28,14 +29,22 @@ class NjScreenBody extends StatelessWidget {
   /// Horizontal alignment of the children.
   final CrossAxisAlignment crossAxisAlignment;
 
+  /// Scroll physics.
+  ///
+  /// The default does not overscroll, which is right for a screen whose
+  /// content usually fits. A screen wrapped in a [RefreshIndicator] needs
+  /// [AlwaysScrollableScrollPhysics] instead: without an overscroll there is
+  /// no gesture to recognise, so the pull would simply do nothing on exactly
+  /// the phones where the content fits.
+  final ScrollPhysics physics;
+
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
         return SingleChildScrollView(
           padding: padding,
-          // Nothing to scroll while the content fits; the column simply fills.
-          physics: const ClampingScrollPhysics(),
+          physics: physics,
           child: ConstrainedBox(
             constraints: BoxConstraints(
               minHeight:

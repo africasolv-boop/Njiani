@@ -111,7 +111,67 @@ approved. Nothing else in the build depends on it.
 - [ ] **SMS OTP length**: leave at **6**. Supabase will not go below it — see
       the note in `docs/BUILD_LOG.md` under C4
 
-## 3. Firebase Cloud Messaging — needed at C13
+## 3. Driver verification — needed at C6
+
+| Key | Where to get it | Status |
+| --- | --- | --- |
+| `SUPPORT_PHONE` | **You decide it.** The number behind every "Call Njiani" button | 🟡 **needed now** |
+
+Full international form, so the dialler works from any SIM:
+`SUPPORT_PHONE=+255XXXXXXXXX`. Not a secret — it goes on the vehicle stickers —
+but a build with the wrong one strands exactly the people who are already
+stuck. **Left blank, the button is hidden rather than dialling nothing.**
+
+### No credential, but C6 does not work without it
+
+- [ ] **Storage → the `licences` bucket** is created by
+      `20261026000100_storage_licences.sql`. Nothing to click: run
+      `supabase db push`. Check afterwards that Storage → licences shows
+      **Private**. A public bucket would mean every driver's licence photo is
+      readable by anyone who guesses a URL.
+- [ ] **An `admins` row for yourself**, or nothing can be approved.
+      `review_driver()` refuses a signed-in caller without one:
+      ```sql
+      insert into public.admins (profile_id)
+      select id from public.profiles where phone = '255XXXXXXXXX';
+      ```
+      Approving from the SQL editor works without this — that connection is
+      the service role — but the admin web at C16 will need it.
+
+### iOS: the camera prompt, and the one Xcode step
+
+`apps/njiani_driver/ios/Runner/Info.plist` carries
+`NSCameraUsageDescription` and `NSPhotoLibraryUsageDescription`. **These are
+not optional** — iOS terminates the app the instant the camera opens without
+them, which looks like a crash in the sign-up screen rather than a missing
+key. They are already committed.
+
+The Kiswahili versions are in
+`apps/njiani_driver/ios/Runner/sw.lproj/InfoPlist.strings`, with the English
+alongside in `en.lproj/`. **A `.lproj` folder only ships if it is a member of
+the `Runner` target**, which is a checkbox in Xcode rather than something a
+file on disk can do by itself:
+
+- [ ] Xcode → open `apps/njiani_driver/ios/Runner.xcworkspace` → drag
+      `en.lproj` and `sw.lproj` into the `Runner` group → tick **Runner** under
+      *Add to targets*.
+
+Until that is done the prompt appears in English for everyone. It is the one
+user-facing string in the project that is not covered by the both-languages
+rule from the Dart side, because iOS reads it from the bundle and not from our
+`.arb` files. Nothing crashes either way.
+
+### Android
+
+No permission is declared for the camera, and none is needed: `image_picker`
+uses the system camera app. Both manifests do declare a `<queries>` entry for
+`ACTION_DIAL`, without which Android 11+ reports that a dialler which is
+plainly installed cannot be opened. Already committed; the
+`platform_config_test.dart` in each app fails if either goes missing.
+
+---
+
+## 4. Firebase Cloud Messaging — needed at C13
 
 Only FCM is used. No Firestore, no Firebase Auth, no Firebase hosting.
 
@@ -133,7 +193,7 @@ All four config files are git-ignored.
 
 ---
 
-## 4. Maps and routing — needed at C14
+## 5. Maps and routing — needed at C14
 
 Nothing is required before C14. `flutter_map` runs on free tiles during development.
 
@@ -150,7 +210,7 @@ Nothing is required before C14. `flutter_map` runs on free tiles during developm
 
 ---
 
-## 5. Error tracking — needed at C17
+## 6. Error tracking — needed at C17
 
 | Key | Where to get it | Status |
 | --- | --- | --- |
@@ -160,7 +220,7 @@ Leave blank and Sentry stays disabled — the app runs normally without it.
 
 ---
 
-## 6. Android release signing — needed at C18
+## 7. Android release signing — needed at C18
 
 | File / key | Where to get it | Status |
 | --- | --- | --- |
@@ -172,7 +232,7 @@ Both keystore and `key.properties` are git-ignored. C18 documents the `keytool` 
 
 ---
 
-## 7. iOS release — needed at C18
+## 8. iOS release — needed at C18
 
 | Item | Where to get it | Status |
 | --- | --- | --- |
@@ -188,7 +248,7 @@ that needs the paid Apple account early.
 
 ---
 
-## 8. Optional
+## 9. Optional
 
 | Key | Purpose | Status |
 | --- | --- | --- |

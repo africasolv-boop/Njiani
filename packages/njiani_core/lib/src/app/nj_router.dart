@@ -4,8 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../auth/auth_controller.dart';
 import '../config/app_identity.dart';
+import '../driver/driver_controller.dart';
 import '../gallery/gallery_screen.dart';
 import '../locale/language_controller.dart';
+import '../screens/driver_pending_screen.dart';
+import '../screens/driver_rejected_screen.dart';
+import '../screens/driver_signup_screen.dart';
 import '../screens/language_screen.dart';
 import '../screens/otp_screen.dart';
 import '../screens/phone_screen.dart';
@@ -18,18 +22,24 @@ import 'nj_routes.dart';
 /// would only run on an explicit navigation, so verifying a code would leave
 /// the user sitting on the code screen.
 class _ProviderRefresh extends ChangeNotifier {
-  _ProviderRefresh(Ref ref) {
+  _ProviderRefresh(Ref ref, NjianiApp app) {
     ref.listen(languageProvider, (_, _) => notifyListeners());
     ref.listen(authProvider, (_, _) => notifyListeners());
+    // Only the driver app has a third gate, and listening to driverProvider
+    // in the rider app would build it -- opening a realtime subscription on a
+    // table no passenger has any business watching.
+    if (app.isDriver) {
+      ref.listen(driverProvider, (_, _) => notifyListeners());
+    }
   }
 }
 
 /// Builds the router for [app].
 ///
 /// One redirect holds every gate, in the order a new user meets them:
-/// language, then a session. The driver-approval gate joins it at C6.
+/// language, then a session, then -- in the driver app only -- verification.
 GoRouter buildRouter(Ref ref, NjianiApp app) {
-  final refresh = _ProviderRefresh(ref);
+  final refresh = _ProviderRefresh(ref, app);
   ref.onDispose(refresh.dispose);
 
   return GoRouter(
@@ -59,7 +69,30 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       if (wanted != null) return here == wanted ? null : wanted;
 
       // Signed in: onboarding routes are behind the user now.
-      return NjRoutes.onboarding.contains(here) ? NjRoutes.home : null;
+      if (NjRoutes.onboarding.contains(here)) return NjRoutes.home;
+
+      // 3. Verification, in the driver app only. A passenger has no such gate,
+      //    and the rider binary never reads the drivers table.
+      if (app.isDriver) {
+        final gate = driverGateFor(ref.read(driverProvider));
+        final wantedGate = switch (gate) {
+          // Nothing read yet, or a failed read. Hold position: sending a
+          // driver whose data dropped out at a stage back to a blank sign-up
+          // form is the worst outcome available here.
+          DriverGate.unknown => here,
+          DriverGate.signUp => NjRoutes.driverSignup,
+          DriverGate.pending || DriverGate.suspended => NjRoutes.driverPending,
+          DriverGate.rejected => NjRoutes.driverRejected,
+          // Approved. Off all three gate screens, which is also what makes
+          // the design's "no back navigation" true without suppressing a
+          // single pop: the screens stop existing.
+          DriverGate.cleared =>
+            NjRoutes.driverGate.contains(here) ? NjRoutes.home : here,
+        };
+        if (wantedGate != here) return wantedGate;
+      }
+
+      return null;
     },
     routes: [
       GoRoute(
@@ -81,7 +114,9 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       GoRoute(
         path: NjRoutes.home,
         builder: (context, state) => PlaceholderScreen(
-          component: app.isRider ? 'C8 — Request a ride' : 'C6 — Driver sign up',
+          component: app.isRider
+              ? 'C8 — Request a ride'
+              : 'C7 — Pick a direction',
           onChangeLanguage: () {
             ref.read(languageProvider.notifier).reopen();
             context.go(NjRoutes.language);
@@ -89,6 +124,23 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
           onSignOut: () => ref.read(authProvider.notifier).signOut(),
           onOpenGallery: () => context.push(NjRoutes.gallery),
         ),
+      ),
+      GoRoute(
+        path: NjRoutes.driverSignup,
+        builder: (context, state) => const DriverSignupScreen(),
+      ),
+      GoRoute(
+        path: NjRoutes.driverPending,
+        builder: (context, state) => DriverPendingScreen(
+          // Same screen, different words. The two states differ in what has
+          // happened, not in what the driver can do about it from here.
+          suspended: driverGateFor(ref.read(driverProvider)) ==
+              DriverGate.suspended,
+        ),
+      ),
+      GoRoute(
+        path: NjRoutes.driverRejected,
+        builder: (context, state) => const DriverRejectedScreen(),
       ),
       GoRoute(
         path: NjRoutes.gallery,

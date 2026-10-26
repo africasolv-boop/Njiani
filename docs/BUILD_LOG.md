@@ -1405,3 +1405,319 @@ unsetting `DATABASE_URL`.
 
 Still unverified, unchanged from C4: the Edge Function has never executed
 against real Supabase or Beem.
+
+---
+
+## C6 — Driver sign-up, licence upload, review, approval · 🧪 awaiting your test
+
+Three screens — `dSignup`, `dPending`, `dRejected` — plus the gate that decides
+which of them a driver sees, and the two SQL functions that are the only ways
+`drivers.status` moves.
+
+### Credentials
+
+| Key | Needed for | Status |
+| --- | --- | --- |
+| `SUPPORT_PHONE` | the "Call Njiani" buttons | **blank — you add it** |
+
+Full international form: `SUPPORT_PHONE=+255XXXXXXXXX`. **Left blank the button
+is hidden, not broken** — a button that dials nothing is worse than no button
+to a driver who has just been told they cannot work.
+
+Nothing else. The bucket is created by a migration, and the camera needs no
+key.
+
+### The gate, and why it is one function
+
+`drivers.status` is the only thing standing between an unchecked licence and a
+passenger getting into a stranger's vehicle. C3 already held the column back
+from `authenticated` by GRANT — RLS cannot protect a single column — and the
+SQL suite asserts it:
+
+```
+✓ a driver cannot approve themselves           42501
+✓ a driver cannot file an application for someone else
+✓ a driver cannot review anyone
+✓ a driver can still correct their own plate   (null -- allowed)
+```
+
+If the first of those ever passes the other way, every other check in the file
+is decoration. It is written as an exact SQLSTATE rather than "was it
+refused?", so it cannot go green because something unrelated broke.
+
+The client side of the same question is `driverGateFor()` — one function, so
+the router's redirect and the pending screen cannot disagree about what
+`suspended` means. Its most important case is the dull one:
+
+```dart
+AsyncError() => DriverGate.unknown,
+```
+
+A failed read holds position. Sending an approved driver back to a blank
+sign-up form because their data dropped out at a stage is the worst outcome
+available on this screen, so an error waits rather than guessing.
+
+`DriverStatus.parse` leans the same way: an unrecognised status reads as
+`pending`, never `approved`. If a future release adds a state, an old binary
+says "under review" — wrong, but safe.
+
+### What a rejected driver can do, and what they cannot
+
+The design promises: *"Replace the photo and you go back in the queue — you
+don't start again."* That promise needs a status transition the driver is not
+allowed to make, so it gets a `security definer` function —
+`resubmit_driver_licence()`, `rejected` → `pending`, nothing else:
+
+- Scoped to a **rejected** row. A pending driver can already replace the photo
+  with a plain UPDATE, since `licence_path` is in the C3 update grant, and does
+  not need a privileged function to do it.
+- **Refuses a path outside the caller's own folder.** Without that check a
+  driver could point their row at another driver's photo and be approved on
+  someone else's licence.
+- Leaves the vehicle, plate and colour exactly as they were, which is what
+  makes the rejection screen's checklist — phone **Verified**, vehicle
+  **Accepted**, photo **Rejected** — a true statement rather than a decoration.
+
+`review_driver()` is the other half: the admin decision, with the reason
+required. The table has a CHECK that enforces it; the function raises a
+sentence a person can read instead of a constraint name. It also refuses
+`pending` as a target, so the admin path and the driver path cannot be
+confused for each other.
+
+### The licence bucket
+
+Private, 5 MB cap, image-only MIME allow-list — all three enforced by Storage
+before a byte is written, so they are limits rather than client-side
+courtesies. The path shape is the load-bearing part:
+
+```
+<auth.uid()>/licence.jpg
+```
+
+The first folder segment **is** the owner, which is what makes "your own
+object" expressible as an RLS policy at all —
+`(storage.foldername(name))[1] = auth.uid()::text`. A flat
+`licence-<uuid>.jpg` would leave nothing for a policy to match on.
+
+**No DELETE policy, deliberately.** The photo is the evidence behind an
+approval decision, so a driver cannot erase it after the fact and an admin
+cannot do it by accident from the app. Deletion is a retention job, with the
+service role, and belongs at C17.
+
+A fixed filename with upsert rather than a timestamp: a driver who retakes the
+photo four times leaves one object, not four. Nothing points at an old
+version, so keeping them would only mean more of a licence photo sitting in a
+bucket than necessary.
+
+### The upload goes first, on its own
+
+From the design: *"upload failed → 'Photo didn't upload. Your details are
+saved.' — retry only the photo."* So the photo uploads before Submit is ever
+enabled, as its own step, and a failure sets the upload box to `failed` while
+leaving the typed details untouched. The test asserts exactly that:
+
+```dart
+expect(find.text('Juma Hassan'), findsOneWidget);
+expect(find.text('T 999 ZZZ'), findsOneWidget);
+```
+
+Three states that are easy to collapse into one and should not be:
+
+| What happened | What the box says |
+| --- | --- |
+| Upload failed | "Photo didn't upload. Your details are saved." |
+| Photo too large, or not an image | "That photo was too large or not a picture. Take a new one with the camera." |
+| Driver backed out of the camera | nothing — returns to empty, or stays done |
+
+The middle one needs its own wording because "didn't upload" tells a driver to
+try again with the same photo, which will fail again. The third is not a
+failure, so nothing says it is.
+
+The camera caps the longest edge at 1600px on the way out. A modern phone
+produces 4–6 MB a shot, over the bucket's limit as often as not, and every
+byte is on a driver's own data bundle. 1600px is far more than a person needs
+to read a licence number.
+
+### A third, from reading my own diff
+
+The pending screen had a `RefreshIndicator` wrapped around `NjScreenBody`,
+which is always a `SingleChildScrollView` — so it compiled, looked right, and
+would have done nothing. `NjScreenBody` used `ClampingScrollPhysics`, and
+without an overscroll there is no gesture for a `RefreshIndicator` to
+recognise. The pull would have worked only on a phone small enough for the
+content to overflow, which is the opposite of useful.
+
+`NjScreenBody` takes `physics` now, and this screen passes
+`AlwaysScrollableScrollPhysics`. The test flings the screen rather than
+tapping anything, because tapping would have passed either way.
+
+### And a fourth, which the database found
+
+`SupabaseDriverRepository.submit()` used `upsert`, which is the obvious call
+and is wrong here. PostgREST builds an upsert as
+
+```sql
+on conflict (profile_id) do update set profile_id = excluded.profile_id, ...
+```
+
+— the conflict target goes in the SET list, and `profile_id` is deliberately
+not in C3's update grant. So the moment a row already existed it failed with
+`permission denied for table drivers`, which is precisely the retry case:
+submit wrote the row, the reply never came back, the driver taps Submit again.
+
+It is an insert, then an update of the mutable columns if the row is already
+there. The tempting alternative was to add `profile_id` to the update grant —
+widening a grant on a primary key to save one round trip — so there is now an
+assertion whose whole job is to stop that:
+
+```
+✓ a PostgREST-style upsert is refused, which is why the client does not use one
+✓ the update the client does instead is allowed
+```
+
+I found this by running what PostgREST would send against the local database,
+rather than by reading the client's docs. Nothing in the Dart tests could have
+caught it: the fake repository has no column privileges to violate.
+
+### Two bugs the tests found
+
+**The display name was being dropped.** `ProfileController.setDisplayName`
+returned early when the profile had not loaded yet — and driver sign-up can
+reach it while `build()` is still in flight. The write now goes first and the
+local state update second, which is the right order anyway: the write is the
+point, the optimistic update is the optimisation. Symptom if it had shipped: a
+passenger seeing an unnamed driver at C10, long after there was anything to
+connect it to.
+
+**A returning driver saw a blank phone number.** `AuthState.phone` is only set
+by typing a number in the current session, so a driver who signed in
+yesterday, closed the app and came back to finish signing up had a session and
+no number to show. It reads `profiles.phone` first now — the durable record —
+and falls back to the auth state for the few hundred milliseconds on a
+brand-new account before that row is readable.
+
+Neither was reachable from the screens as designed; both are reachable in a
+week of real use.
+
+### What you have to add to Xcode once
+
+`Info.plist` carries the English camera prompts and is committed. The
+Kiswahili ones are in `ios/Runner/sw.lproj/InfoPlist.strings`, and **a
+`.lproj` folder only ships if it is a member of the `Runner` target** — a
+checkbox, not something a file on disk can do by itself.
+
+Open `apps/njiani_driver/ios/Runner.xcworkspace`, drag `en.lproj` and
+`sw.lproj` into the `Runner` group, tick **Runner** under *Add to targets*.
+
+Until then the permission prompt is English for everyone. It is the one
+user-facing string in the project the both-languages rule does not reach from
+the Dart side, because iOS reads it from the bundle rather than from our
+`.arb`. Nothing crashes either way.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `supabase/migrations/20261026000100_storage_licences.sql` | the private bucket and its policies |
+| `supabase/migrations/20261026000200_driver_review.sql` | `review_driver`, `resubmit_driver_licence`, realtime on `drivers` |
+| `supabase/tests/05_driver_review_test.sql` | 33 assertions on the gate, the grants and the bucket |
+| `packages/njiani_core/lib/src/driver/driver.dart` | `Driver`, `DriverApplication`, `VehicleType`, `VehicleColour`, `DriverStatus` |
+| `packages/njiani_core/lib/src/driver/driver_repository.dart` | the table, the bucket, the RPC, and a fake |
+| `packages/njiani_core/lib/src/driver/driver_controller.dart` | the row, the realtime subscription, and `driverGateFor` |
+| `packages/njiani_core/lib/src/driver/licence_camera.dart` | `image_picker` behind an interface, plus a fake |
+| `packages/njiani_core/lib/src/screens/driver_signup_screen.dart` | `dSignup` |
+| `packages/njiani_core/lib/src/screens/driver_pending_screen.dart` | `dPending`, and the suspended state |
+| `packages/njiani_core/lib/src/screens/driver_rejected_screen.dart` | `dRejected` |
+| `packages/njiani_core/lib/src/util/support_call.dart` | the `tel:` link |
+| `packages/njiani_core/test/driver_test.dart` | 40 tests across the three screens and the models |
+| `apps/njiani_driver/test/platform_config_test.dart` | the plist and manifest keys Dart cannot reach |
+| `apps/njiani_rider/test/platform_config_test.dart` | the same, mostly as negative assertions |
+| `apps/njiani_driver/ios/Runner/{en,sw}.lproj/InfoPlist.strings` | the camera prompt, both languages |
+
+### Files changed
+
+| File | Change |
+| --- | --- |
+| `packages/njiani_core/lib/src/app/nj_router.dart` | the third gate, driver app only |
+| `packages/njiani_core/lib/src/app/nj_routes.dart` | three routes and the `driverGate` set |
+| `packages/njiani_core/lib/src/profile/profile_controller.dart` | `setDisplayName` writes before it checks state |
+| `packages/njiani_core/lib/src/widgets/nj_screen_body.dart` | a `physics` parameter, so pull-to-refresh is not a dead gesture |
+| `packages/njiani_core/lib/src/config/app_config.dart` | `SUPPORT_PHONE` |
+| `packages/njiani_core/lib/src/l10n/arb/nj_{en,sw}.arb` | 45 strings, both languages |
+| `packages/njiani_core/pubspec.yaml` | `image_picker`, `url_launcher` |
+| `apps/njiani_{rider,driver}/ios/Runner/Info.plist` | `tel:`, localisations; camera keys on the driver only |
+| `apps/njiani_{rider,driver}/android/.../AndroidManifest.xml` | the `ACTION_DIAL` query |
+| `supabase/tests/run.sh` | every `*_test.sql`, not a hardcoded list of numbers |
+| `tool/dev-db.sh`, `tool/dev-db/supabase-prelude.sql` | the `storage` schema stub; a repeat run explains itself |
+| `docs/ARCHITECTURE.md` | D21, D22, and §8 rewritten for the bucket |
+| `.env.example`, `docs/CREDENTIALS.md` | `SUPPORT_PHONE`, the bucket, the Xcode step |
+
+### How to test
+
+```sh
+# 1. Fill in SUPPORT_PHONE in .env.local (and the Supabase keys, from C3).
+# 2. Apply the two new migrations.
+supabase db push
+
+# 3. Make yourself an admin, so C16 will work later. Optional for this test:
+#    the SQL editor is the service role and can approve without it.
+#    insert into public.admins (profile_id)
+#      select id from public.profiles where phone = '255XXXXXXXXX';
+
+./tool/check.sh
+cd apps/njiani_driver && flutter run --dart-define-from-file=../../.env.local
+```
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Sign in on the **driver** app | **Drive with Njiani**, not the landing screen |
+| 2 | Look at the phone field | Your verified number, `+255 …`, not editable |
+| 3 | Type a name, leave the photo | **Submit for review** stays greyed out |
+| 4 | Tap the upload box → **Take a photo** | Camera opens. iOS asks for permission, naming the licence |
+| 5 | Take the photo | Box turns teal, Submit enables |
+| 6 | Turn airplane mode on, tap the box, retake | "Photo didn't upload. Your details are saved." — **and your name and plate are still there** |
+| 7 | Airplane mode off, tap the box again | Teal again. One object in the bucket, not two |
+| 8 | Submit | Replaced by **We're checking your documents**, showing your plate. No back button |
+| 9 | **Force-close the app and reopen** | Straight back to the review screen |
+| 10 | Supabase → Storage → licences | **Private**. One folder, named with your user id |
+| 11 | In the SQL editor: `select public.review_driver('<your uuid>', 'rejected', 'Glare across the number.');` | **Without touching the phone**, the screen becomes the rejection, with that sentence on it |
+| 12 | Read the checklist | Phone **Verified**, vehicle **Accepted**, licence **Rejected** |
+| 13 | **Take the photo again** | Back to **We're checking your documents** |
+| 14 | In the SQL editor: `select public.review_driver('<your uuid>', 'approved');` | The gate opens by itself — C7's placeholder |
+| 15 | `select public.review_driver('<your uuid>', 'rejected');` | **Refused**: `a rejection must say what to fix` |
+| 16 | On the rejection screen, tap **Call Njiani** | Your dialler, with `SUPPORT_PHONE` in it |
+
+**Steps 11 and 14 are the ones that matter.** They are the realtime
+subscription, and the design's rule that a driver should never have to
+reinstall to discover they were approved. Nothing is tapped on the phone.
+
+Step 6 is the second one: it is the only failure path on this screen that
+costs a driver anything if it is wrong.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **320 Flutter tests** (300 core, 12 driver, 8
+rider), **80 SQL assertions**, 11 signature checks.
+
+**Not verified, and it is the same gap as C4 and C5 —** none of this has run
+against real Supabase Storage. Specifically untested:
+
+- that an upload actually lands in the bucket, and that the bucket's size and
+  MIME limits reject what they should. The local harness stubs
+  `storage.objects` so the **policies** can be tested; it does not run the
+  Storage service, so nothing local uploads a byte or signs a URL.
+- that `SupabaseDriverRepository.watch()` delivers an approval over a real
+  socket. The realtime path is exercised in tests through a fake stream.
+- that the iOS camera prompt appears, in either language.
+
+Steps 4–7, 10, 11 and 14 are the first real exercise of all three.
+
+### Known gaps — deliberate
+
+| Gap | Why, and what picks it up |
+| --- | --- |
+| **A rejection reason is free text, so it ships in whatever language the admin typed** | The column is free text by design — "written by a person and required". Making it bilingual needs a short reason list with codes, and the UI that sets them is the admin web at **C16**. Flagging it rather than guessing at a code list now |
+| No approval SMS | The design wants one from the `NJIANI` sender ID. The hook composes bilingually from `profiles.lang` already; sending on an approval needs a database webhook, which is **C13** territory |
+| Licence photos are never deleted | Deliberate (D21). The retention schedule is **C17** |
+| An admin can only approve from the SQL editor | **C16**, the admin web. `review_driver()` is already the function it will call |
+| `dStage` is not here | §13.1, after C7 |

@@ -62,7 +62,12 @@ report() {
   fi
 }
 
-for f in supabase/tests/0[134]*_test.sql; do
+# Every *_test.sql file, rather than a list of numbers. The race files are
+# named 02_race_* and are driven by hand below, so they fall outside this
+# glob on purpose -- and a new test file is picked up by existing, instead of
+# being silently left out until someone notices the assertion count did not
+# move.
+for f in supabase/tests/*_test.sql; do
   name=$(basename "$f" .sql)
   out=$(run "$f") && status=0 || status=$?
   report "$name" "$out" "$status"
