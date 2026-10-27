@@ -66,5 +66,27 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- C6 — driving licence photo.
+	     REQUIRED. iOS terminates the app the moment the camera or the photo
+	     library is opened without a usage description, which looks like a
+	     crash in the sign-up screen rather than a missing key.
+
+	     English here because Info.plist carries the development language.
+	     The Kiswahili versions are in sw.lproj/InfoPlist.strings -- see
+	     docs/CREDENTIALS.md for the one Xcode step that makes them ship. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Njiani Driver uses the camera to photograph your driving licence, so our team can check it before you start carrying passengers.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Njiani Driver needs access to your photos so you can choose a picture of your driving licence you have already taken.</string>
+	<!-- C6 and C15 — the "Call Njiani" buttons. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+	</array>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>sw</string>
+	</array>
 </dict>
 </plist>

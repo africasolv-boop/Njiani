@@ -1,0 +1,10 @@
+/* Kiswahili permission prompts. Component C6.
+   Both languages, always -- a permission prompt is a user-facing string, and
+   a driver reading it at a stage is exactly who the rule is for.
+
+   NOT SHIPPED UNTIL THIS FOLDER IS ADDED TO THE Runner TARGET IN XCODE.
+   Info.plist carries the English text, so an unadded folder means an
+   English-only prompt, not a crash. See docs/CREDENTIALS.md. */
+
+"NSCameraUsageDescription" = "Njiani Driver inatumia kamera kupiga picha ya leseni yako ya udereva, ili timu yetu iihakiki kabla uanze kuchukua abiria.";
+"NSPhotoLibraryUsageDescription" = "Njiani Driver inahitaji ruhusa ya picha zako ili uchague picha ya leseni yako ya udereva ambayo umekwisha kuipiga.";

@@ -65,6 +65,22 @@ psql -q -v ON_ERROR_STOP=1 "$URL" -f tool/dev-db/supabase-prelude.sql
 # Migrations in filename order, then the seed -- the same order `supabase db
 # push` uses.
 # ---------------------------------------------------------------------------
+# Migrations are not written to be re-runnable -- `create type` has no
+# `if not exists` -- so a second plain run would fail on the first one and
+# look like a broken migration rather than an already-built database.
+if [ "${1:-}" != "--reset" ] \
+   && psql -tAq "$URL" -c "select to_regclass('public.drivers') is not null" \
+      2>/dev/null | grep -q '^t$'; then
+  echo ""
+  echo "Already applied. Rebuild from scratch with:"
+  echo ""
+  echo "    ./tool/dev-db.sh --reset"
+  echo ""
+  echo "    export DATABASE_URL=\"$URL\""
+  echo ""
+  exit 0
+fi
+
 say "migrations"
 for f in supabase/migrations/*.sql; do
   printf '    %s\n' "$(basename "$f")"

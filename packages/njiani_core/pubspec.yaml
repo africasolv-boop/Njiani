@@ -30,6 +30,22 @@ dependencies:
   shared_preferences: ^2.3.3
   # Auth, Postgres, Realtime and Storage in one client.
   supabase_flutter: ^2.8.2
+  # Camera and gallery, for the driving licence photo at C6. Behind
+  # LicenceCamera, so tests and the fake backend never touch the plugin --
+  # and so swapping it later is a one-file change.
+  #
+  # NEEDS PLATFORM CONFIG: iOS requires NSCameraUsageDescription and
+  # NSPhotoLibraryUsageDescription in Info.plist, or the app is terminated
+  # the moment the camera opens. See docs/CREDENTIALS.md.
+  image_picker: ^1.2.4
+  # `tel:` links, for every "Call Njiani" button -- C6's rejection and
+  # suspension screens, and the safety screen at C15. Flutter-team plugin, no
+  # native code of our own to maintain.
+  #
+  # NEEDS PLATFORM CONFIG on Android 11+: a <queries> entry for ACTION_DIAL,
+  # or canLaunchUrl reports false for a dialler that is plainly installed.
+  # Both app manifests carry it.
+  url_launcher: ^6.3.3
 
 dev_dependencies:
   flutter_test:

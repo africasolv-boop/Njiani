@@ -8,6 +8,7 @@ Future<ProviderContainer> pumpApp(
   NjianiApp app = NjianiApp.rider,
   NjLocale? storedLocale,
   AuthRepository? auth,
+  DriverRepository? driver,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -17,6 +18,8 @@ Future<ProviderContainer> pumpApp(
       authRepositoryProvider.overrideWithValue(auth ?? FakeAuthRepository()),
       profileLoadPolicyProvider
           .overrideWithValue(ProfileLoadPolicy.immediate),
+      if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
+      licenceCameraProvider.overrideWithValue(FakeLicenceCamera()),
     ],
   );
   addTearDown(container.dispose);
@@ -128,7 +131,7 @@ void main() {
       expect(find.textContaining('C8'), findsOneWidget);
     });
 
-    testWidgets('the driver app points at driver sign up next',
+    testWidgets('the driver app opens the verification gate, not the app',
         (tester) async {
       final auth = FakeAuthRepository();
       addTearDown(auth.dispose);
@@ -136,7 +139,140 @@ void main() {
       await pumpApp(tester,
           app: NjianiApp.driver, storedLocale: NjLocale.en, auth: auth);
 
-      expect(find.textContaining('C6'), findsOneWidget);
+      // A signed-in driver with no application on file gets sign-up, not the
+      // landing screen. Asserted on the screen type rather than on text: the
+      // component label on the placeholder moves every time the roadmap does.
+      expect(find.byType(DriverSignupScreen), findsOneWidget);
+      expect(find.byType(PlaceholderScreen), findsNothing);
+    });
+  });
+
+  // =========================================================================
+  // The third gate: verification. Driver app only.
+  // =========================================================================
+  group('the driver verification gate', () {
+    /// Signs a driver in and pumps the driver app over [row].
+    Future<ProviderContainer> pumpDriver(
+      WidgetTester tester, {
+      Driver? row,
+    }) async {
+      final auth = FakeAuthRepository();
+      addTearDown(auth.dispose);
+      await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+      final repository = FakeDriverRepository(driver: row);
+      addTearDown(repository.dispose);
+
+      return pumpApp(
+        tester,
+        app: NjianiApp.driver,
+        storedLocale: NjLocale.en,
+        auth: auth,
+        driver: repository,
+      );
+    }
+
+    Driver rowWith(DriverStatus status, {String? reason}) => Driver(
+          profileId: 'driver-1',
+          vehicleType: VehicleType.bajaj,
+          plate: 'T 123 ABC',
+          colour: 'Green',
+          status: status,
+          licencePath: 'driver-1/licence.jpg',
+          rejectionReason: reason,
+        );
+
+    testWidgets('no application on file opens sign up', (tester) async {
+      await pumpDriver(tester);
+      expect(find.byType(DriverSignupScreen), findsOneWidget);
+    });
+
+    testWidgets('pending holds at the review screen', (tester) async {
+      await pumpDriver(tester, row: rowWith(DriverStatus.pending));
+      expect(find.byType(DriverPendingScreen), findsOneWidget);
+      expect(find.byType(PlaceholderScreen), findsNothing);
+    });
+
+    testWidgets('rejected opens the rejection, with the reason',
+        (tester) async {
+      await pumpDriver(
+        tester,
+        row: rowWith(DriverStatus.rejected, reason: 'Glare across the number.'),
+      );
+
+      expect(find.byType(DriverRejectedScreen), findsOneWidget);
+      expect(find.text('Glare across the number.'), findsOneWidget);
+    });
+
+    testWidgets('suspended uses the pending screen, in its own words',
+        (tester) async {
+      await pumpDriver(tester, row: rowWith(DriverStatus.suspended));
+
+      final screen =
+          tester.widget<DriverPendingScreen>(find.byType(DriverPendingScreen));
+      expect(screen.suspended, isTrue);
+      expect(find.text('Your account is on hold'), findsOneWidget);
+      expect(find.text("We're checking your documents"), findsNothing);
+    });
+
+    testWidgets('approved is let through to the app', (tester) async {
+      await pumpDriver(tester, row: rowWith(DriverStatus.approved));
+
+      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(DriverPendingScreen), findsNothing);
+    });
+
+    // The one the design insists on: a driver who submitted at a stage and
+    // closed the app must not have to reinstall to discover they were
+    // approved. Nothing is tapped here.
+    testWidgets('an approval arrives without the driver doing anything',
+        (tester) async {
+      final auth = FakeAuthRepository();
+      addTearDown(auth.dispose);
+      await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+      final repository =
+          FakeDriverRepository(driver: rowWith(DriverStatus.pending));
+      addTearDown(repository.dispose);
+
+      await pumpApp(
+        tester,
+        app: NjianiApp.driver,
+        storedLocale: NjLocale.en,
+        auth: auth,
+        driver: repository,
+      );
+      expect(find.byType(DriverPendingScreen), findsOneWidget);
+
+      // An admin approves, somewhere else entirely.
+      repository.review(DriverStatus.approved);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DriverPendingScreen), findsNothing);
+      expect(find.byType(PlaceholderScreen), findsOneWidget);
+    });
+
+    testWidgets('a rider app never builds the driver gate', (tester) async {
+      final auth = FakeAuthRepository();
+      addTearDown(auth.dispose);
+      await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+      final repository =
+          FakeDriverRepository(driver: rowWith(DriverStatus.pending));
+      addTearDown(repository.dispose);
+
+      final container = await pumpApp(
+        tester,
+        storedLocale: NjLocale.en,
+        auth: auth,
+        driver: repository,
+      );
+
+      // A passenger with a pending driver row -- which happens, a driver can
+      // also be a passenger -- is not held at any gate in this binary, and
+      // the binary does not read the table at all.
+      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(container.exists(driverProvider), isFalse);
     });
   });
 

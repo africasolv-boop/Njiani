@@ -14,6 +14,9 @@ Future<void> pumpScreen(
   required AuthRepository auth,
   NjLocale locale = NjLocale.sw,
   DateTime Function()? clock,
+  DriverRepository? driver,
+  LicenceCamera? camera,
+  ProfileRepository? profile,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -23,6 +26,12 @@ Future<void> pumpScreen(
             .overrideWithValue(ProfileLoadPolicy.immediate),
         languageStoreProvider.overrideWithValue(InMemoryLanguageStore(locale)),
         if (clock != null) clockProvider.overrideWithValue(clock),
+        if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
+        if (profile != null) profileRepositoryProvider.overrideWithValue(profile),
+        // Always overridden, never defaulted: the real one opens a camera,
+        // and a widget test that reaches a plugin fails in a way that looks
+        // like the screen is broken.
+        licenceCameraProvider.overrideWithValue(camera ?? FakeLicenceCamera()),
       ],
       child: MaterialApp(
         theme: NjTheme.light,
@@ -46,4 +55,16 @@ AuthState authStateOf(WidgetTester tester, Finder of) {
 AuthController authControllerOf(WidgetTester tester, Finder of) {
   final element = tester.element(of);
   return ProviderScope.containerOf(element).read(authProvider.notifier);
+}
+
+/// Reads the driver controller out of a pumped tree.
+DriverController driverControllerOf(WidgetTester tester, Finder of) {
+  final element = tester.element(of);
+  return ProviderScope.containerOf(element).read(driverProvider.notifier);
+}
+
+/// Reads the live driver state out of a pumped tree.
+AsyncValue<Driver?> driverStateOf(WidgetTester tester, Finder of) {
+  final element = tester.element(of);
+  return ProviderScope.containerOf(element).read(driverProvider);
 }

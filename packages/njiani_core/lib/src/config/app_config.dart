@@ -62,6 +62,14 @@ abstract final class AppConfig {
   static const String supabaseAnonKey =
       String.fromEnvironment('SUPABASE_ANON_KEY');
 
+  // --- Support line (C6) -----------------------------------------------
+  //
+  // The number behind every "Call Njiani" button. Not a secret -- it is
+  // printed on the vehicle stickers -- but it is deployment configuration,
+  // and a build with a wrong one strands exactly the people who are already
+  // stuck. Blank hides the button rather than dialling nothing.
+  static const String supportPhone = String.fromEnvironment('SUPPORT_PHONE');
+
   // --- Maps and routing (C14) ------------------------------------------
   static const String mapTileUrl = String.fromEnvironment('MAP_TILE_URL');
   static const String osrmBaseUrl = String.fromEnvironment('OSRM_BASE_URL');
@@ -112,6 +120,13 @@ abstract final class AppConfig {
     return null;
   }
 
+  /// True when there is a support number to dial.
+  ///
+  /// The rejection screen hides its Call button when there is not. A button
+  /// that does nothing is worse than no button to a driver who has just been
+  /// told they cannot work.
+  static bool get hasSupportPhone => supportPhone.trim().isNotEmpty;
+
   /// Whether the configuration is usable.
   static bool get isUsable => hasSupabase && supabaseUrlProblem == null;
 
@@ -132,6 +147,12 @@ abstract final class AppConfig {
           neededAt: 'C3',
           purpose: 'Public API key',
           secret: true,
+        ),
+        ConfigEntry(
+          key: 'SUPPORT_PHONE',
+          value: supportPhone,
+          neededAt: 'C6',
+          purpose: 'The number behind "Call Njiani"',
         ),
         ConfigEntry(
           key: 'MAP_TILE_URL',

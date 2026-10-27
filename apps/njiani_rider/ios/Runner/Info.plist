@@ -66,5 +66,18 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- C15 — the "Call Njiani" and 112 buttons on the safety screen.
+	     No camera keys here: the rider app never photographs a document, and
+	     asking for a permission the binary does not use is something App
+	     Review rejects for. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>tel</string>
+	</array>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>sw</string>
+	</array>
 </dict>
 </plist>

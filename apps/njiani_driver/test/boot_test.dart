@@ -9,6 +9,7 @@ Future<ProviderContainer> pumpApp(
   WidgetTester tester, {
   NjLocale? storedLocale,
   AuthRepository? auth,
+  DriverRepository? driver,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -18,6 +19,8 @@ Future<ProviderContainer> pumpApp(
       authRepositoryProvider.overrideWithValue(auth ?? FakeAuthRepository()),
       profileLoadPolicyProvider
           .overrideWithValue(ProfileLoadPolicy.immediate),
+      if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
+      licenceCameraProvider.overrideWithValue(FakeLicenceCamera()),
     ],
   );
   addTearDown(container.dispose);
@@ -63,14 +66,38 @@ void main() {
     await container.read(authProvider.notifier).verifyCode(auth.code);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('C6'), findsOneWidget);
+    // A signed-in driver with no application on file meets the verification
+    // gate, not the app. From C6 this is what the driver binary does
+    // differently from the rider binary, so it is asserted on the screen
+    // type -- a text match would move with every roadmap label.
+    expect(find.byType(DriverSignupScreen), findsOneWidget);
   });
 
   testWidgets('the component gallery stays reachable', (tester) async {
     final auth = FakeAuthRepository();
     addTearDown(auth.dispose);
     await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
-    await pumpApp(tester, storedLocale: NjLocale.en, auth: auth);
+
+    // An approved driver, because the gallery link lives on the landing
+    // screen and the gate holds an unapproved one before it.
+    final driver = FakeDriverRepository(
+      driver: const Driver(
+        profileId: 'driver-1',
+        vehicleType: VehicleType.bajaj,
+        plate: 'T 123 ABC',
+        colour: 'Green',
+        status: DriverStatus.approved,
+        licencePath: 'driver-1/licence.jpg',
+      ),
+    );
+    addTearDown(driver.dispose);
+
+    await pumpApp(
+      tester,
+      storedLocale: NjLocale.en,
+      auth: auth,
+      driver: driver,
+    );
 
     await tester.tap(find.text('Component gallery'));
     await tester.pump();

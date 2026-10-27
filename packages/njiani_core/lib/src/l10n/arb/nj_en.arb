@@ -175,5 +175,185 @@
   "errProviderDisabled": "Phone sign-in is not switched on for this project yet. Enable Authentication → Providers → Phone, and wire up the Send SMS hook.",
   "@errProviderDisabled": {
     "description": "AuthFailure.providerDisabled. A project configuration problem, not a user error, so the message names the dashboard setting to change rather than blaming the number."
+  },
+  "dSignupTitle": "Drive with Njiani",
+  "@dSignupTitle": {
+    "description": "dSignup heading."
+  },
+  "dSignupSubtitle": "No commission during the pilot. We check every driver before they go live.",
+  "@dSignupSubtitle": {
+    "description": "dSignup. Says the thing a driver actually wants to know first, and that a person checks them."
+  },
+  "dNameLabel": "Full name",
+  "@dNameLabel": {
+    "description": "dSignup field label."
+  },
+  "dNameHint": "As on your licence",
+  "@dNameHint": {
+    "description": "dSignup. The name has to match the document a person will be comparing it against."
+  },
+  "dVehicleLabel": "Vehicle",
+  "@dVehicleLabel": {
+    "description": "dSignup. Screen-reader label for the bajaj/boda toggle."
+  },
+  "dVehicleBajaj": "Bajaj · 3 seats",
+  "@dVehicleBajaj": {
+    "description": "dSignup. Seats are part of the label because the number is a physical fact, not a setting."
+  },
+  "dVehicleBoda": "Boda · 1 seat",
+  "@dVehicleBoda": {
+    "description": "dSignup vehicle option."
+  },
+  "dPlateLabel": "Plate number",
+  "@dPlateLabel": {
+    "description": "dSignup field label."
+  },
+  "dPlateHintBajaj": "T 123 ABC",
+  "@dPlateHintBajaj": {
+    "description": "dSignup placeholder. A plate is not translated."
+  },
+  "dPlateHintBoda": "MC 123 AB",
+  "@dPlateHintBoda": {
+    "description": "dSignup placeholder for a motorcycle plate."
+  },
+  "dColourLabel": "Colour",
+  "@dColourLabel": {
+    "description": "dSignup field label."
+  },
+  "colourBlue": "Blue",
+  "@colourBlue": {
+    "description": "Vehicle colour."
+  },
+  "colourRed": "Red",
+  "@colourRed": {
+    "description": "Vehicle colour."
+  },
+  "colourGreen": "Green",
+  "@colourGreen": {
+    "description": "Vehicle colour."
+  },
+  "colourYellow": "Yellow",
+  "@colourYellow": {
+    "description": "Vehicle colour."
+  },
+  "colourBlack": "Black",
+  "@colourBlack": {
+    "description": "Vehicle colour."
+  },
+  "colourWhite": "White",
+  "@colourWhite": {
+    "description": "Vehicle colour."
+  },
+  "dLicenceLabel": "Driving licence photo",
+  "@dLicenceLabel": {
+    "description": "dSignup field label."
+  },
+  "dLicencePrompt": "Add a photo of your licence",
+  "@dLicencePrompt": {
+    "description": "dSignup. The upload box before anything is attached."
+  },
+  "dLicenceDone": "Licence photo attached",
+  "@dLicenceDone": {
+    "description": "dSignup. The upload box once the photo is in the bucket."
+  },
+  "dLicenceUploading": "Sending the photo…",
+  "@dLicenceUploading": {
+    "description": "dSignup. Submit stays disabled while this shows."
+  },
+  "dLicenceFailed": "Photo didn't upload. Your details are saved.",
+  "@dLicenceFailed": {
+    "description": "dSignup. The design requires this wording: it says what was KEPT, not just what broke, so the driver retries the photo and not the form."
+  },
+  "dLicencePrivate": "Stored in a private bucket. Only the Njiani team can open it.",
+  "@dLicencePrivate": {
+    "description": "dSignup. A promise the storage policies in 20261026000100_storage_licences.sql have to keep."
+  },
+  "dTakePhoto": "Take a photo",
+  "@dTakePhoto": {
+    "description": "dSignup camera choice."
+  },
+  "dChoosePhoto": "Choose a photo",
+  "@dChoosePhoto": {
+    "description": "dSignup gallery choice, for a driver who photographed the licence earlier."
+  },
+  "dSubmitForReview": "Submit for review",
+  "@dSubmitForReview": {
+    "description": "dSignup primary action."
+  },
+  "dSubmitting": "Submitting…",
+  "@dSubmitting": {
+    "description": "dSignup, while the row is being filed."
+  },
+  "dPendingTitle": "We're checking your documents",
+  "@dPendingTitle": {
+    "description": "dPending heading."
+  },
+  "dPendingBody": "Usually less than a day. We'll send an SMS when you're approved. You can close the app.",
+  "@dPendingBody": {
+    "description": "dPending. The last sentence matters: a driver waiting at a stage should not keep the app open."
+  },
+  "dSubmittedLabel": "Submitted",
+  "@dSubmittedLabel": {
+    "description": "dPending. Heading of the card showing what is under review."
+  },
+  "dCheckAgain": "Check again",
+  "@dCheckAgain": {
+    "description": "dPending. Re-reads the row, for a driver who does not trust that the screen is live."
+  },
+  "dSuspendedTitle": "Your account is on hold",
+  "@dSuspendedTitle": {
+    "description": "dPending in its suspended state. Same layout, different words, support number prominent."
+  },
+  "dSuspendedBody": "You can't take passengers right now. Call Njiani and we'll tell you why and what happens next.",
+  "@dSuspendedBody": {
+    "description": "dPending, suspended. Never leaves a suspended driver without a next step."
+  },
+  "dCallNjiani": "Call Njiani",
+  "@dCallNjiani": {
+    "description": "Dials SUPPORT_PHONE. Hidden when that is not configured."
+  },
+  "dRejectedReasonTitle": "We couldn't accept your licence photo",
+  "@dRejectedReasonTitle": {
+    "description": "dRejected. Heading above the reason a person wrote."
+  },
+  "dRejectedTitle": "One thing to fix",
+  "@dRejectedTitle": {
+    "description": "dRejected heading. Almost every rejection at this size is a bad photo, not a bad driver."
+  },
+  "dRejectedBody": "Everything else checked out. Replace the photo and you go back in the queue — you don't start again.",
+  "@dRejectedBody": {
+    "description": "dRejected. The promise that resubmit_driver_licence() keeps."
+  },
+  "dCheckVehicle": "Vehicle and plate",
+  "@dCheckVehicle": {
+    "description": "dRejected checklist row."
+  },
+  "dCheckLicence": "Licence photo",
+  "@dCheckLicence": {
+    "description": "dRejected checklist row."
+  },
+  "dStatusVerified": "Verified",
+  "@dStatusVerified": {
+    "description": "dRejected checklist outcome."
+  },
+  "dStatusAccepted": "Accepted",
+  "@dStatusAccepted": {
+    "description": "dRejected checklist outcome."
+  },
+  "dStatusRejected": "Rejected",
+  "@dStatusRejected": {
+    "description": "dRejected checklist outcome."
+  },
+  "dRetakePhoto": "Take the photo again",
+  "@dRetakePhoto": {
+    "description": "dRejected primary action. Replaces only the photo."
+  },
+  "errPhotoRejected": "That photo was too large or not a picture. Take a new one with the camera.",
+  "@errPhotoRejected": {
+    "description": "DriverFailure.photoRejected. The bucket enforces a 5 MB cap and an image allow-list, so this comes from the server."
+  },
+  "errDriverStale": "Your application has changed. Checking again…",
+  "@errDriverStale": {
+    "description": "DriverFailure.staleState. The row moved underneath the screen -- usually an admin got there first."
   }
 }
