@@ -10,6 +10,7 @@ Future<ProviderContainer> pumpApp(
   NjLocale? storedLocale,
   AuthRepository? auth,
   DriverRepository? driver,
+  SessionRepository? session,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -20,7 +21,11 @@ Future<ProviderContainer> pumpApp(
       profileLoadPolicyProvider
           .overrideWithValue(ProfileLoadPolicy.immediate),
       if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
+      if (session != null)
+        sessionRepositoryProvider.overrideWithValue(session),
       licenceCameraProvider.overrideWithValue(FakeLicenceCamera()),
+      driverLocationProvider.overrideWithValue(FakeDriverLocation()),
+      placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
     ],
   );
   addTearDown(container.dispose);
@@ -78,8 +83,9 @@ void main() {
     addTearDown(auth.dispose);
     await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
 
-    // An approved driver, because the gallery link lives on the landing
-    // screen and the gate holds an unapproved one before it.
+    // An approved driver who is already online, because the gallery link
+    // lives on the landing screen and two gates stand before it: C6's
+    // verification, and C7's "say where you are going first".
     final driver = FakeDriverRepository(
       driver: const Driver(
         profileId: 'driver-1',
@@ -97,6 +103,18 @@ void main() {
       storedLocale: NjLocale.en,
       auth: auth,
       driver: driver,
+      session: FakeSessionRepository(
+        session: const DriverSession(
+          id: 'session-1',
+          driverId: 'driver-1',
+          routeId: 'route-west',
+          destStageId: 'west-9',
+          vehicleType: VehicleType.bajaj,
+          seatsTotal: 3,
+          seatsFree: 3,
+          online: true,
+        ),
+      ),
     );
 
     await tester.tap(find.text('Component gallery'));

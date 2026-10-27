@@ -355,5 +355,130 @@
   "errDriverStale": "Your application has changed. Checking again…",
   "@errDriverStale": {
     "description": "DriverFailure.staleState. The row moved underneath the screen -- usually an admin got there first."
+  },
+  "errNotApproved": "Your account isn't approved to drive yet.",
+  "@errNotApproved": {
+    "description": "DriverFailure.notApproved. go_online refused because drivers.status is not 'approved'. The router should have prevented it, so this means the screen and the row disagree -- and the row is right."
+  },
+  "dDirectionTitle": "Where are you heading?",
+  "@dDirectionTitle": {
+    "description": "dDirection heading."
+  },
+  "dDirectionSubtitle": "You'll only see passengers going the same way.",
+  "@dDirectionSubtitle": {
+    "description": "dDirection. The whole product in one sentence: a heading is declared before a single request is seen."
+  },
+  "dStartingFrom": "Starting from your location",
+  "@dStartingFrom": {
+    "description": "dDirection. Label above the stage GPS resolved to."
+  },
+  "dStartingFromPicked": "Starting from",
+  "@dStartingFromPicked": {
+    "description": "dDirection. Label above a stage the driver named by hand."
+  },
+  "dFindingYou": "Finding where you are…",
+  "@dFindingYou": {
+    "description": "dDirection, while the GPS fix is in flight."
+  },
+  "dPickStartStage": "Choose where you are",
+  "@dPickStartStage": {
+    "description": "dDirection. Opens the stage list, the no-GPS fallback."
+  },
+  "dChangeStartStage": "Not here?",
+  "@dChangeStartStage": {
+    "description": "dDirection. Corrects a GPS fix that landed on the wrong stage."
+  },
+  "dLocationDenied": "Njiani needs your location to know which passengers are ahead of you. You can choose your stage instead.",
+  "@dLocationDenied": {
+    "description": "dDirection. LocationProblem.denied — says WHY before asking again, and names the way round it."
+  },
+  "dLocationBlocked": "Location is blocked for Njiani. Turn it on in Settings, or choose your stage below.",
+  "@dLocationBlocked": {
+    "description": "dDirection. LocationProblem.deniedForever — only Settings can undo it, so this does not offer to ask again."
+  },
+  "dLocationOff": "Location is switched off on this phone. Turn it on, or choose your stage below.",
+  "@dLocationOff": {
+    "description": "dDirection. LocationProblem.serviceOff."
+  },
+  "dLocationSlow": "Couldn't find you — too many buildings, maybe. Choose your stage below.",
+  "@dLocationSlow": {
+    "description": "dDirection. LocationProblem.timedOut. Names a cause a driver at Ubungo will recognise rather than blaming the phone."
+  },
+  "dTryLocationAgain": "Try again",
+  "@dTryLocationAgain": {
+    "description": "dDirection. Re-asks for a fix."
+  },
+  "dHeadingWest": "Towards {dest}",
+  "@dHeadingWest": {
+    "description": "dDirection. Group heading over the stages in one direction. {dest} is the far end of that route.",
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "dNoDestinations": "No stages ahead of you on this road.",
+  "@dNoDestinations": {
+    "description": "dDirection. Reached at the end of a route in both directions, which on a two-route corridor means the driver is off it."
+  },
+  "dSeatsFree": "{count} free",
+  "@dSeatsFree": {
+    "description": "dDirection. How many seats this session will offer.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dSeatsNote": "Passengers already with you? Take them first, then add them from the On board tab.",
+  "@dSeatsNote": {
+    "description": "dDirection. From the design. The MVP has the driver reconcile by hand; C11 brings the On board tab."
+  },
+  "dGoOnline": "Go online · heading to {dest}",
+  "@dGoOnline": {
+    "description": "dDirection primary action. Names the destination so a mis-tap is visible before it costs anything.",
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "dGoingOnline": "Going online…",
+  "@dGoingOnline": {
+    "description": "dDirection, while go_online runs."
+  },
+  "dChangeHeading": "Change · heading to {dest}",
+  "@dChangeHeading": {
+    "description": "dDirection when a session is already open. The design: 'already online → Returning here shows Change, not Go online'.",
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "dOnlineNow": "You're online",
+  "@dOnlineNow": {
+    "description": "dDirection. Shown on the open session's banner."
+  },
+  "dGoOffline": "Go offline",
+  "@dGoOffline": {
+    "description": "dDirection. Ends the session. Does not cancel anyone already claimed."
+  },
+  "dPickDestination": "Pick where you're going",
+  "@dPickDestination": {
+    "description": "dDirection. Shown in place of the action while nothing is selected."
+  },
+  "dStagesTitle": "Where are you now?",
+  "@dStagesTitle": {
+    "description": "dDirection. Title of the stage picker sheet."
+  },
+  "dKmAway": "{km} km",
+  "@dKmAway": {
+    "description": "dDirection. Distance to a destination along the road.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
   }
 }

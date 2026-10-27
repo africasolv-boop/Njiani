@@ -9,6 +9,7 @@ Future<ProviderContainer> pumpApp(
   NjLocale? storedLocale,
   AuthRepository? auth,
   DriverRepository? driver,
+  SessionRepository? session,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -19,7 +20,13 @@ Future<ProviderContainer> pumpApp(
       profileLoadPolicyProvider
           .overrideWithValue(ProfileLoadPolicy.immediate),
       if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
+      if (session != null)
+        sessionRepositoryProvider.overrideWithValue(session),
       licenceCameraProvider.overrideWithValue(FakeLicenceCamera()),
+      // Never the real one: it opens a GPS request, and a widget test that
+      // reaches a plugin fails in a way that looks like the screen is broken.
+      driverLocationProvider.overrideWithValue(FakeDriverLocation()),
+      placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
     ],
   );
   addTearDown(container.dispose);
@@ -155,6 +162,7 @@ void main() {
     Future<ProviderContainer> pumpDriver(
       WidgetTester tester, {
       Driver? row,
+      SessionRepository? session,
     }) async {
       final auth = FakeAuthRepository();
       addTearDown(auth.dispose);
@@ -169,8 +177,23 @@ void main() {
         storedLocale: NjLocale.en,
         auth: auth,
         driver: repository,
+        session: session,
       );
     }
+
+    /// A session repository that already has the driver online.
+    FakeSessionRepository onlineSession() => FakeSessionRepository(
+          session: const DriverSession(
+            id: 'session-1',
+            driverId: 'driver-1',
+            routeId: 'route-west',
+            destStageId: 'west-9',
+            vehicleType: VehicleType.bajaj,
+            seatsTotal: 3,
+            seatsFree: 3,
+            online: true,
+          ),
+        );
 
     Driver rowWith(DriverStatus status, {String? reason}) => Driver(
           profileId: 'driver-1',
@@ -215,11 +238,27 @@ void main() {
       expect(find.text("We're checking your documents"), findsNothing);
     });
 
-    testWidgets('approved is let through to the app', (tester) async {
+    testWidgets('approved, but offline, picks a direction first',
+        (tester) async {
+      // The declaration is the product: a driver who has not said where they
+      // are going has nothing to be shown, so they do not reach the feed.
       await pumpDriver(tester, row: rowWith(DriverStatus.approved));
 
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(DriverDirectionScreen), findsOneWidget);
+      expect(find.byType(PlaceholderScreen), findsNothing);
       expect(find.byType(DriverPendingScreen), findsNothing);
+    });
+
+    testWidgets('approved and online is let through to the feed',
+        (tester) async {
+      await pumpDriver(
+        tester,
+        row: rowWith(DriverStatus.approved),
+        session: onlineSession(),
+      );
+
+      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(DriverDirectionScreen), findsNothing);
     });
 
     // The one the design insists on: a driver who submitted at a stage and
@@ -249,7 +288,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DriverPendingScreen), findsNothing);
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      // Through the C6 gate and straight on to the C7 one: approved, but
+      // with nowhere declared yet.
+      expect(find.byType(DriverDirectionScreen), findsOneWidget);
     });
 
     testWidgets('a rider app never builds the driver gate', (tester) async {

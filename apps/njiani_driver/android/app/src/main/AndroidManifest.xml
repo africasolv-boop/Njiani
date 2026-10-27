@@ -1,4 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- C7 — the direction picker needs to know which passengers are ahead
+         of the driver, which is a question about where they are.
+
+         Foreground only. There is no ACCESS_BACKGROUND_LOCATION here and
+         there should not be one: Njiani has no reason to know where a driver
+         is with the app closed, and asking would be both a Play Console
+         declaration to justify and a promise we would not be keeping. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="Njiani Driver"
         android:name="${applicationName}"

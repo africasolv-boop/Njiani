@@ -3,11 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:njiani_core/njiani_core.dart';
 
-/// Pumps [child] with the real theme, real localisations and an in-memory
-/// auth repository.
+/// Pumps [child] with the real theme, real localisations and in-memory
+/// stores.
 ///
 /// Localisations are real, not stubbed, so a test that asserts on wording is
 /// asserting on the same `.arb` the app ships.
+///
+/// [locale] is applied to `MaterialApp` AND loaded into `languageProvider`,
+/// so the two cannot disagree. They did once, and the screen reading the
+/// provider rather than `Localizations.localeOf` drew English chrome around
+/// a Kiswahili place name.
 Future<void> pumpScreen(
   WidgetTester tester,
   Widget child, {
@@ -17,22 +22,44 @@ Future<void> pumpScreen(
   DriverRepository? driver,
   LicenceCamera? camera,
   ProfileRepository? profile,
+  SessionRepository? session,
+  PlacesRepository? places,
+  DriverLocation? location,
 }) async {
+  final container = ProviderContainer(
+    overrides: [
+      authRepositoryProvider.overrideWithValue(auth),
+      profileLoadPolicyProvider
+          .overrideWithValue(ProfileLoadPolicy.immediate),
+      languageStoreProvider.overrideWithValue(InMemoryLanguageStore(locale)),
+      if (clock != null) clockProvider.overrideWithValue(clock),
+      if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
+      if (profile != null) profileRepositoryProvider.overrideWithValue(profile),
+      // Always overridden, never defaulted: the real one opens a camera,
+      // and a widget test that reaches a plugin fails in a way that looks
+      // like the screen is broken.
+      licenceCameraProvider.overrideWithValue(camera ?? FakeLicenceCamera()),
+      if (session != null)
+        sessionRepositoryProvider.overrideWithValue(session),
+      placesRepositoryProvider
+          .overrideWithValue(places ?? FakePlacesRepository()),
+      // Always overridden, for the same reason as the camera: the real one
+      // asks the OS for a GPS fix.
+      driverLocationProvider
+        .overrideWithValue(location ?? FakeDriverLocation()),
+    ],
+  );
+  addTearDown(container.dispose);
+
+  // The provider and the MaterialApp locale are set from the same value, and
+  // the provider is actually loaded. Skipping this left `languageProvider`
+  // on its default while the strings came back in the requested language --
+  // two sources of truth, disagreeing, in the harness every screen test uses.
+  await container.read(languageProvider.notifier).load();
+
   await tester.pumpWidget(
-    ProviderScope(
-      overrides: [
-        authRepositoryProvider.overrideWithValue(auth),
-        profileLoadPolicyProvider
-            .overrideWithValue(ProfileLoadPolicy.immediate),
-        languageStoreProvider.overrideWithValue(InMemoryLanguageStore(locale)),
-        if (clock != null) clockProvider.overrideWithValue(clock),
-        if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
-        if (profile != null) profileRepositoryProvider.overrideWithValue(profile),
-        // Always overridden, never defaulted: the real one opens a camera,
-        // and a widget test that reaches a plugin fails in a way that looks
-        // like the screen is broken.
-        licenceCameraProvider.overrideWithValue(camera ?? FakeLicenceCamera()),
-      ],
+    UncontrolledProviderScope(
+      container: container,
       child: MaterialApp(
         theme: NjTheme.light,
         locale: locale.locale,
@@ -67,4 +94,10 @@ DriverController driverControllerOf(WidgetTester tester, Finder of) {
 AsyncValue<Driver?> driverStateOf(WidgetTester tester, Finder of) {
   final element = tester.element(of);
   return ProviderScope.containerOf(element).read(driverProvider);
+}
+
+/// Reads the session controller out of a pumped tree.
+SessionController sessionControllerOf(WidgetTester tester, Finder of) {
+  final element = tester.element(of);
+  return ProviderScope.containerOf(element).read(sessionProvider.notifier);
 }

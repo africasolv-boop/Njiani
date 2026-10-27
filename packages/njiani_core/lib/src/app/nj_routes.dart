@@ -26,6 +26,14 @@ abstract final class NjRoutes {
   /// Rejected, with the one thing to fix.
   static const String driverRejected = '/driver/rejected';
 
+  /// The direction picker. Driver app only.
+  ///
+  /// Not part of [driverGate]: an approved driver is sent here when they have
+  /// no session, and is free to come back to it afterwards to change
+  /// direction or go offline. The gate screens are the ones they cannot
+  /// leave.
+  static const String driverDirection = '/driver/direction';
+
   /// Development-only component gallery. Removed from release builds at C18.
   static const String gallery = '/gallery';
 

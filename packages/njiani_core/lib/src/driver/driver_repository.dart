@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../l10n/generated/nj_strings.dart';
 import 'driver.dart';
 
 /// Why a driver application could not be filed.
@@ -25,6 +26,11 @@ enum DriverFailure {
   /// The row moved underneath the screen -- re-submitting something that is
   /// no longer rejected, most likely because an admin got there first.
   staleState,
+
+  /// The verification gate said no. Raised by `go_online` when a driver who
+  /// is not approved reaches it -- which the router should have prevented, so
+  /// seeing this means the screen and the row disagree and the row wins.
+  notApproved,
 
   /// No connection.
   offline,
@@ -378,3 +384,21 @@ class FakeDriverRepository implements DriverRepository {
 
   void dispose() => _changes.close();
 }
+
+/// The sentence a driver sees for [failure].
+///
+/// One map rather than one per screen. Sign-up, rejection and the direction
+/// picker all surface the same failures, and three copies of this switch is
+/// three places for a new case to be forgotten -- which the compiler only
+/// catches while they all stay exhaustive.
+String driverFailureMessage(DriverFailure failure, NjStrings strings) =>
+    switch (failure) {
+      DriverFailure.uploadFailed => strings.dLicenceFailed,
+      DriverFailure.photoRejected => strings.errPhotoRejected,
+      DriverFailure.notConfigured => strings.errNotConfigured,
+      DriverFailure.offline => strings.errOffline,
+      DriverFailure.staleState => strings.errDriverStale,
+      DriverFailure.notApproved => strings.errNotApproved,
+      DriverFailure.notSignedIn => strings.errUnknown,
+      DriverFailure.unknown => strings.errUnknown,
+    };

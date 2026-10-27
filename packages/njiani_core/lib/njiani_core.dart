@@ -8,7 +8,8 @@
 /// analyzer requires directives to be alphabetical.
 ///
 ///   src/config/   build configuration and app identity
-///   src/driver/   the verification gate and the driver's own record
+///   src/driver/   the verification gate, the driver's record, the session
+///   src/places/   routes, stages, and what is ahead on the road
 ///   src/design/   colour tokens, spacing, typography, theme
 ///   src/widgets/  the design system
 ///   src/util/     formatters and helpers
@@ -36,17 +37,24 @@ export 'src/design/nj_tokens.dart';
 export 'src/design/nj_typography.dart';
 export 'src/driver/driver.dart';
 export 'src/driver/driver_controller.dart';
+export 'src/driver/driver_location.dart';
 export 'src/driver/driver_repository.dart';
+export 'src/driver/driver_session.dart';
 export 'src/driver/licence_camera.dart';
+export 'src/driver/session_controller.dart';
+export 'src/driver/session_repository.dart';
 export 'src/gallery/gallery_app.dart';
 export 'src/gallery/gallery_screen.dart';
 export 'src/l10n/generated/nj_strings.dart';
 export 'src/locale/language_controller.dart';
 export 'src/locale/language_store.dart';
 export 'src/locale/nj_locale.dart';
+export 'src/places/place.dart';
+export 'src/places/places_repository.dart';
 export 'src/profile/profile.dart';
 export 'src/profile/profile_controller.dart';
 export 'src/profile/profile_repository.dart';
+export 'src/screens/driver_direction_screen.dart';
 export 'src/screens/driver_pending_screen.dart';
 export 'src/screens/driver_rejected_screen.dart';
 export 'src/screens/driver_signup_screen.dart';

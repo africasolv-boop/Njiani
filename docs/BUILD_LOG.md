@@ -1790,3 +1790,254 @@ put into each state deliberately.
 | `supabase/migrations/20261026000100_storage_licences.sql` | policies drop-then-create, so a half-finished push can be re-run |
 | `supabase/README.md` | `db push` is the way, not one of two ways; a troubleshooting section for this error |
 | `docs/CREDENTIALS.md` | points at it from the C6 checklist, where the push happens |
+
+---
+
+## C7 — Pick a direction, and go online · 🧪 awaiting your test
+
+One screen, `dDirection`, and the five SQL functions behind it. This is the
+screen the design calls "the one that makes Njiani not a ride-hailing app":
+the driver declares where they are going **before** seeing a single request,
+and the feed at C9 is derived from that declaration rather than from a radius
+around them.
+
+### Credentials
+
+**None.** Two pieces of platform configuration, both committed and both
+guarded by a test: `NSLocationWhenInUseUsageDescription` (and its Kiswahili
+twin) on iOS, `ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION` on Android,
+driver app only.
+
+**When-in-use, on both, deliberately.** No `ACCESS_BACKGROUND_LOCATION`, no
+`NSLocationAlways…`. Njiani has no reason to know where a driver is with the
+app closed; asking would mean a Play Console declaration and an App Review
+conversation for a promise the product does not need to make. The tests assert
+those keys are *absent* as well as asserting the others are present.
+
+### Choosing a destination chooses the direction
+
+The thing I most expected to need a compass for turned out not to.
+
+Ubungo→Kimara and Kimara→Ubungo are two route rows over the same tarmac, so a
+driver's point sits inside both corridors. But any given stage is ahead on
+exactly one of them. `destinations_ahead(point)` returns both routes' stages
+with their distance along the road, and picking one settles the heading:
+
+```
+ direction_label |        name         |  m
+-----------------+---------------------+------
+ Eastbound       | Ubungo Bus Terminal |  807
+ Westbound       | Shekilango          |  883
+ Westbound       | Ubungo Maji         | 1765
+ …
+ Westbound       | Kimara Mwisho       | 8006
+```
+
+One question, and the one a driver already knows the answer to. The screen
+heads each group with where that road *ends* — "Towards Kimara Mwisho" —
+because nobody standing at a stage thinks in compass points.
+
+Two details in that query that are not decoration. The stage the driver is
+standing at is excluded (`p_min_ahead_m`, 400m, comfortably under the ~800m
+gap between stages here) — it is not a destination, and the slack also
+forgives a fix that landed just past it. And the ordering is by `seq`, in the
+direction of travel, asserted in SQL: a list that puts Kimara Mwisho above
+Shekilango is a list nobody can read at a stage.
+
+### A hole in the schema, found while writing the function
+
+`driver_sessions` had a CHECK tying `seats_total` to `vehicle_type`, and
+**nothing tying either of them to the driver's own record**. A boda rider
+could have opened a bajaj session with three seats and been offered
+three-seat work. The RLS policy `sessions_own` is `for all`, so a hand-rolled
+insert was all it took.
+
+`go_online()` closes it by not asking the client. It reads `vehicle_type` and
+the seat count from `drivers`, and `insert`/`update` are now revoked from
+`authenticated` on that table except for `last_pos` and `last_pos_at` — the
+one thing a client legitimately writes:
+
+```
+✓ a driver cannot insert a session by hand                  42501
+✓ a driver cannot hand themselves more free seats           42501
+✓ a driver CAN report their position                        (allowed)
+✓ a boda session has one seat, whatever the client would like
+```
+
+It also enforces the C6 approval gate. The router already holds an unapproved
+driver at the C6 screens, but a gate in the UI is not a gate:
+
+```
+✓ an unapproved driver cannot go online                     42501
+✓ someone with no application cannot go online              P0002
+```
+
+### Changing direction without selling a seat twice
+
+The design says: *"Changing direction ends the session and starts a new one.
+Claimed seats survive."* Both halves matter, and the second one has a trap in
+it. If the new session opened with a full vehicle, a driver carrying two
+passengers would be offered three more seats.
+
+So `go_online` counts the seats still held — `claimed` or `aboard` — and opens
+with `seats_total` minus those:
+
+```
+✓ the claimed seat survives the change
+✓ the new session offers only the seats that are genuinely free   2/3
+```
+
+`go_offline()` ends the session and touches nothing else. A claimed seat is a
+passenger who is waiting or already in the vehicle, and closing an app is not
+a cancellation — the driver still owes them the trip. Cancelling is
+`release_trip_seat`, a separate deliberate act.
+
+### No GPS is a state, not an error
+
+A driver between buildings at Ubungo may never get a fix. The screen asks,
+waits 8 seconds, and then offers the stage list — and every message names the
+way round as well as the problem:
+
+| What happened | What it says |
+| --- | --- |
+| Denied | "Njiani needs your location to know which passengers are ahead of you. You can choose your stage instead." + **Try again** |
+| Denied forever | "Location is blocked for Njiani. Turn it on in Settings, or choose your stage below." — **no Try again**, because only Settings can undo it and the button would be a lie |
+| Switched off | "Location is switched off on this phone." |
+| Timed out | "Couldn't find you — too many buildings, maybe." |
+
+Picking a stage by hand runs the same query from that stage's coordinates,
+resolved on the server. `go_online` then takes the stage id instead of a
+point: a session with no position is treated as being at the *start* of the
+route, which for a driver already halfway along it is a feed full of
+passengers behind them.
+
+### Four bugs, and where each came from
+
+**The layout one, from the first test run.** `_DestinationTile` sized itself
+from a `LayoutBuilder` so two would fit per row. `NjScreenBody` wraps its
+column in an `IntrinsicHeight`, which asks children for a dry layout, and a
+`LayoutBuilder` cannot give one: `_RenderLayoutBuilder does not support dry
+layout`, the instant the screen was pumped. It is rows of two `Expanded`
+tiles now, which needs no such question asked.
+
+**The stage sheet could not be tapped.** The list was a `shrinkWrap` ListView
+inside a `MainAxisSize.min` column, so with ten stages it sized itself past
+the bottom of the sheet — and entries past the edge are not merely hidden,
+they receive no taps. Bounded to half the screen height and scrolling inside
+that. The test scrolls to the stage before tapping, which is also what a
+driver does.
+
+**No tap feedback in that sheet.** `NjSheet`'s background is a plain decorated
+box, so a `ListTile` inside it painted its ink splash behind that box.
+Flutter says so out loud — *"ListTile background color or ink splashes may be
+invisible"* — but only once a test pumped it. Its own transparent `Material`
+now.
+
+**English chrome around a Kiswahili place name.** The screen read
+`languageProvider` to pick which name to show, while the strings came from
+`Localizations`. Those answer different questions — the provider is the
+*first router gate*, "has a language been confirmed" — and in a test that set
+one without the other they disagreed. There is an `NjLocale.of(context)` now
+(D25), reading the same locale the strings came from, and the shared test
+harness loads the provider so the two cannot drift apart again. **This is the
+second time that harness gap has bitten**; at C5 it made a test assert against
+the wrong language. Fixed at the source this time, in both places.
+
+### Also: one enum fewer
+
+`NjVehicleType` was a C1 design-system enum carrying seats and a label in each
+language. `VehicleType` arrived at C6 with the database's own codes and the
+same seat counts. Nothing outside its own test ever used the C1 one, and two
+enums owning "a bajaj has three seats" is one more than can stay true. Its
+test coverage moved to `driver_test.dart` with the fact.
+
+The same fact in SQL is `seats_for(vehicle_type)` now, and a test asserts it
+agrees with the `seats_match_vehicle` CHECK — if those two ever disagree,
+every `go_online` is refused by the constraint and nobody can work.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `supabase/migrations/20261027000100_going_online.sql` | `seats_for`, `nearest_stage`, `destinations_ahead`, `destinations_from_stage`, `go_online`, `go_offline`, `report_position`, and the session grants |
+| `supabase/tests/06_going_online_test.sql` | 30 assertions |
+| `packages/njiani_core/lib/src/places/place.dart` | `NjRoute`, `Stage`, `Destination`, `LatLng` |
+| `packages/njiani_core/lib/src/places/places_repository.dart` | the stage list, what is ahead, and `wktPoint` |
+| `packages/njiani_core/lib/src/driver/driver_session.dart` | `DriverSession` |
+| `packages/njiani_core/lib/src/driver/session_repository.dart` | the C7 functions, and a fake |
+| `packages/njiani_core/lib/src/driver/session_controller.dart` | the session, and `directionOptionsProvider` |
+| `packages/njiani_core/lib/src/driver/driver_location.dart` | `geolocator` behind an interface, plus a fake |
+| `packages/njiani_core/lib/src/screens/driver_direction_screen.dart` | `dDirection` |
+| `packages/njiani_core/test/direction_test.dart` | 25 tests |
+
+### Files changed
+
+| File | Change |
+| --- | --- |
+| `packages/njiani_core/lib/src/app/nj_router.dart` | the fourth gate: approved, but no heading declared |
+| `packages/njiani_core/lib/src/locale/nj_locale.dart` | `NjLocale.of(context)` (D25) |
+| `packages/njiani_core/lib/src/widgets/nj_seat_indicator.dart` | `NjVehicleType` retired |
+| `packages/njiani_core/lib/src/driver/driver_repository.dart` | `DriverFailure.notApproved`, and one `driverFailureMessage` instead of a copy per screen |
+| `packages/njiani_core/test/support/harness.dart` | loads `languageProvider`, so it cannot disagree with `MaterialApp` |
+| `apps/njiani_driver/ios`, `android` | the location keys, both languages |
+| `apps/njiani_{driver,rider}/test/platform_config_test.dart` | location present / background absent; matched on the XML element so a comment cannot fail the assertion |
+| `docs/ARCHITECTURE.md` | D23, D24, D25; §8 rewritten for the session grants |
+
+### How to test
+
+```sh
+supabase db push          # one new migration
+./tool/check.sh
+cd apps/njiani_driver && flutter run --dart-define-from-file=../../.env.local
+```
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Open the driver app, already approved | **Where are you heading?** — not the feed |
+| 2 | Allow location when asked | The prompt names the licence… no: it names *passengers ahead of you*. Then your nearest stage under **Starting from your location** |
+| 3 | Read the destination list | Two groups, headed **Towards Kimara Mwisho** and **Towards Ubungo Bus Terminal**. The stage you are standing at is not in either |
+| 4 | Check the order inside a group | Nearest first, in road order — not alphabetical |
+| 5 | Tap a destination | Turns bajaj-yellow; the button becomes **Go online · heading to <that stage>** |
+| 6 | Tap it | The screen is replaced by the C9 placeholder |
+| 7 | Come back to this screen | A yellow **You're online** banner, and the button now says **Change · heading to …** |
+| 8 | Pick a different destination and tap Change | Still exactly one session. In Supabase → `driver_sessions`, the old row is `offline` with an `ended_at`, not deleted |
+| 9 | Tap **Go offline**, then reopen the app | Straight back to this screen — no session, so nothing to show in a feed |
+| 10 | Deny location, or turn it off, and reopen | A sentence saying **why** it was asking, plus **Choose where you are** |
+| 11 | Tap that and pick your stage | The same destination list, headed **Starting from** |
+| 12 | Go online from there, then check `driver_sessions` | `last_pos` is set — from the stage you named, not null |
+| 13 | Switch the phone to Kiswahili and reopen | **Unaelekea wapi?**, and the stage names in Kiswahili too |
+
+**Steps 3 and 4 are the product.** If the list ever shows a stage behind you,
+or sorts alphabetically, the thing that makes Njiani different is broken.
+
+**Step 12 matters more than it looks.** A session with no position is treated
+as being at the start of the route, so a driver at Kimara Suka would get a
+feed full of passengers back at Ubungo.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **347 Flutter tests** (324 core, 14 driver, 9
+rider), **110 SQL assertions**, 11 signature checks.
+
+**Not verified** — the same gap as C4, C5 and C6, plus one new one:
+
+- No part of this has run against real Supabase. `go_online` and the
+  destination query are exercised against a local Postgres that mirrors the
+  hosted schema, but `SupabaseSessionRepository` and
+  `SupabasePlacesRepository` have never spoken to PostgREST. In particular
+  **the `geography` parameters are passed as WKT strings** (`POINT(lng lat)`),
+  which Postgres casts correctly — I checked — but which PostgREST has to
+  hand over unmangled first. Steps 2, 11 and 12 are the first test of that.
+- The GPS path is a fake in every test. Step 2 is the first real fix.
+- `wktPoint` puts longitude first. There is a test pinning it, because
+  swapping them puts a driver in Dar es Salaam off the coast of Somalia —
+  close enough to look plausible, far enough that nothing ever matches.
+
+### Known gaps — deliberate
+
+| Gap | Why, and what picks it up |
+| --- | --- |
+| **No continuous position tracking** | `report_position` exists and is tested; nothing calls it on a timer yet. Throttling it properly is a battery and data decision that belongs with the feed, where a stale position actually costs something — **C9** |
+| `dStage`, "I'm parked · show me where demand is" | The design puts it at **§13.1**, not C7. `demand_near()` already exists from C3, so it is a screen rather than a feature |
+| The route board and seat bar in the roadmap line | Those are the feed's chrome at **C9 / C10**, not this screen's. The session carries the seat counts they will read |
+| A driver with every seat taken cannot change direction | `go_online` refuses with "every seat is already taken". Correct for now — there is nowhere to put anyone — but it also blocks a legitimate re-heading. Revisit at **C11**, when dropping a passenger exists |

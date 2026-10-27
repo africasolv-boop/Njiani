@@ -1,4 +1,4 @@
-import 'dart:ui' show Locale;
+import 'package:flutter/widgets.dart';
 
 /// The languages Njiani ships in.
 ///
@@ -25,6 +25,20 @@ enum NjLocale {
 
   /// A Flutter [Locale] for [MaterialApp.locale].
   Locale get locale => Locale(code);
+
+  /// The language the widget tree is currently rendering in.
+  ///
+  /// **Read this, not `languageProvider`, to label a widget.** The provider
+  /// answers a different question — has the user confirmed a language yet,
+  /// which is the first gate in the router — and a screen that reads it for
+  /// rendering has two sources of truth that can disagree. They did: a test
+  /// that set the locale on `MaterialApp` without also loading the provider
+  /// drew English chrome around a Kiswahili place name, and the bug was in
+  /// the screen rather than in the test.
+  ///
+  /// [Localizations.localeOf] is the one the strings themselves came from.
+  static NjLocale of(BuildContext context) =>
+      tryParse(Localizations.localeOf(context).languageCode) ?? fallback;
 
   /// Parses a stored or platform code, falling back to [fallback].
   ///

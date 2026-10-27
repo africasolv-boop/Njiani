@@ -5,8 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../auth/auth_controller.dart';
 import '../config/app_identity.dart';
 import '../driver/driver_controller.dart';
+import '../driver/session_controller.dart';
 import '../gallery/gallery_screen.dart';
 import '../locale/language_controller.dart';
+import '../screens/driver_direction_screen.dart';
 import '../screens/driver_pending_screen.dart';
 import '../screens/driver_rejected_screen.dart';
 import '../screens/driver_signup_screen.dart';
@@ -30,6 +32,7 @@ class _ProviderRefresh extends ChangeNotifier {
     // table no passenger has any business watching.
     if (app.isDriver) {
       ref.listen(driverProvider, (_, _) => notifyListeners());
+      ref.listen(sessionProvider, (_, _) => notifyListeners());
     }
   }
 }
@@ -90,6 +93,19 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
             NjRoutes.driverGate.contains(here) ? NjRoutes.home : here,
         };
         if (wantedGate != here) return wantedGate;
+
+        // 4. A heading, before any request is seen. The declaration is the
+        //    product (ARCHITECTURE §6.1), so an approved driver with no
+        //    session lands on the picker rather than on an empty feed.
+        //
+        //    One-way only: once there is a session the driver may come back
+        //    here to change direction or go offline, so this does not push
+        //    them off it.
+        if (gate == DriverGate.cleared && here != NjRoutes.driverDirection) {
+          final session = ref.read(sessionProvider);
+          final offline = session is AsyncData && session.value == null;
+          if (offline) return NjRoutes.driverDirection;
+        }
       }
 
       return null;
@@ -116,7 +132,7 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
         builder: (context, state) => PlaceholderScreen(
           component: app.isRider
               ? 'C8 — Request a ride'
-              : 'C7 — Pick a direction',
+              : 'C9 — Live requests',
           onChangeLanguage: () {
             ref.read(languageProvider.notifier).reopen();
             context.go(NjRoutes.language);
@@ -141,6 +157,10 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       GoRoute(
         path: NjRoutes.driverRejected,
         builder: (context, state) => const DriverRejectedScreen(),
+      ),
+      GoRoute(
+        path: NjRoutes.driverDirection,
+        builder: (context, state) => const DriverDirectionScreen(),
       ),
       GoRoute(
         path: NjRoutes.gallery,

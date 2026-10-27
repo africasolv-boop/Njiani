@@ -132,7 +132,7 @@ class _DriverRejectedScreenState extends ConsumerState<DriverRejectedScreen> {
             if (_error != null) ...[
               const SizedBox(height: NjSpace.md),
               Text(
-                _messageFor(_error!.failure, strings),
+                driverFailureMessage(_error!.failure, strings),
                 style: context.njText.bodySmall?.copyWith(color: nj.danger),
               ),
               if (kDebugMode && _error!.detail != null)
@@ -171,16 +171,6 @@ class _DriverRejectedScreenState extends ConsumerState<DriverRejectedScreen> {
     );
   }
 
-  static String _messageFor(DriverFailure failure, NjStrings strings) =>
-      switch (failure) {
-        DriverFailure.uploadFailed => strings.dLicenceFailed,
-        DriverFailure.photoRejected => strings.errPhotoRejected,
-        DriverFailure.notConfigured => strings.errNotConfigured,
-        DriverFailure.offline => strings.errOffline,
-        DriverFailure.staleState => strings.errDriverStale,
-        DriverFailure.notSignedIn => strings.errUnknown,
-        DriverFailure.unknown => strings.errUnknown,
-      };
 }
 
 /// The hairline between checklist rows.

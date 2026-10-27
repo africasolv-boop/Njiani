@@ -177,7 +177,31 @@ plainly installed cannot be opened. Already committed; the
 
 ---
 
-## 4. Firebase Cloud Messaging — needed at C13
+## 4. Direction picker — needed at C7
+
+No credential. Two pieces of platform configuration, both already committed,
+both guarded by `platform_config_test.dart`:
+
+- **iOS** — `NSLocationWhenInUseUsageDescription` in the driver app's
+  `Info.plist`, with the Kiswahili version in `sw.lproj`. **The same Xcode
+  step as C6 applies**: the `.lproj` folders must be members of the `Runner`
+  target or the prompt ships in English only.
+- **Android** — `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` in the
+  driver app's manifest.
+
+**When-in-use only, on both.** There is no `ACCESS_BACKGROUND_LOCATION` and no
+`NSLocationAlways…`, deliberately: Njiani has no reason to know where a driver
+is with the app closed. Adding either means a Play Console declaration and an
+App Review conversation, for a promise the product does not need to make. The
+tests assert their absence as well as the others' presence.
+
+The rider app asks for no location at all yet. A passenger picks a stage from
+a list at C8; location arrives at C14 with the map, and asking before anything
+uses it is a permission prompt with no answer to "why?".
+
+---
+
+## 5. Firebase Cloud Messaging — needed at C13
 
 Only FCM is used. No Firestore, no Firebase Auth, no Firebase hosting.
 
@@ -199,7 +223,7 @@ All four config files are git-ignored.
 
 ---
 
-## 5. Maps and routing — needed at C14
+## 6. Maps and routing — needed at C14
 
 Nothing is required before C14. `flutter_map` runs on free tiles during development.
 
@@ -216,7 +240,7 @@ Nothing is required before C14. `flutter_map` runs on free tiles during developm
 
 ---
 
-## 6. Error tracking — needed at C17
+## 7. Error tracking — needed at C17
 
 | Key | Where to get it | Status |
 | --- | --- | --- |
@@ -226,7 +250,7 @@ Leave blank and Sentry stays disabled — the app runs normally without it.
 
 ---
 
-## 7. Android release signing — needed at C18
+## 8. Android release signing — needed at C18
 
 | File / key | Where to get it | Status |
 | --- | --- | --- |
@@ -238,7 +262,7 @@ Both keystore and `key.properties` are git-ignored. C18 documents the `keytool` 
 
 ---
 
-## 8. iOS release — needed at C18
+## 9. iOS release — needed at C18
 
 | Item | Where to get it | Status |
 | --- | --- | --- |
@@ -254,7 +278,7 @@ that needs the paid Apple account early.
 
 ---
 
-## 9. Optional
+## 10. Optional
 
 | Key | Purpose | Status |
 | --- | --- | --- |

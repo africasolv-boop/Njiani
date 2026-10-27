@@ -50,12 +50,24 @@ void main() {
     // the question to ask is which screen needs a camera and why -- not how
     // to make the assertion pass.
     final plist = file('ios/Runner/Info.plist').readAsStringSync();
-    expect(plist, isNot(contains('NSCameraUsageDescription')));
-    expect(plist, isNot(contains('NSPhotoLibraryUsageDescription')));
+    expect(plist, isNot(contains('<key>NSCameraUsageDescription</key>')));
+    expect(plist, isNot(contains('<key>NSPhotoLibraryUsageDescription</key>')));
 
     final manifest =
         file('android/app/src/main/AndroidManifest.xml').readAsStringSync();
-    expect(manifest, isNot(contains('android.permission.CAMERA')));
+    expect(manifest, isNot(contains('<uses-permission')));
+  });
+
+  test('the rider app asks for no location access yet', () {
+    // The passenger picks a stage from a list at C8. Location arrives at C14
+    // with the map, and asking for it before anything uses it is a
+    // permission prompt with no answer to "why?".
+    final plist = file('ios/Runner/Info.plist').readAsStringSync();
+    expect(plist, isNot(contains('<key>NSLocation')));
+
+    final manifest =
+        file('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    expect(manifest, isNot(contains('<uses-permission')));
   });
 
   test('both languages are declared', () {

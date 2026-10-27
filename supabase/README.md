@@ -54,6 +54,7 @@ it in `public`, which is exactly why this bug reached a real project.
 | `…000800_cron` | expiry, abandoned sessions, position purge |
 | `20261026000100_storage_licences` | the private licence bucket and its policies |
 | `20261026000200_driver_review` | `review_driver`, `resubmit_driver_licence`, realtime on `drivers` |
+| `20261027000100_going_online` | `seats_for`, `destinations_ahead`, `go_online`, `go_offline`, `report_position` |
 
 ### Storage
 
@@ -109,6 +110,36 @@ licence.
 `drivers` is in the `supabase_realtime` publication, so the pending screen is
 told about its own approval. RLS applies to realtime, so a driver is sent
 changes to their own row and nobody else's.
+
+### Going online (C7)
+
+`driver_sessions` is not a table a driver writes. `insert` and `update` are
+revoked from `authenticated` apart from `last_pos` and `last_pos_at`, and
+everything structural goes through
+`20261027000100_going_online.sql`:
+
+`go_online(route, dest, pos, from_stage)` — ends any session already open and
+starts a new one, which is also how changing direction works;
+`driver_sessions_one_online_idx` makes being online twice impossible, so there
+is no second path. It enforces the C6 approval gate, reads `vehicle_type` and
+`seats_total` from the driver's own row, refuses a destination that is not a
+stage on the declared route, and opens with the seats that are genuinely free
+— a driver changing direction mid-trip keeps the passengers already with them,
+and the new session must not sell those seats again.
+
+`go_offline()` — ends the session and nothing else. A claimed seat is a
+passenger who is waiting or already aboard, and closing an app is not a
+cancellation; that is `release_trip_seat`, a separate deliberate act.
+
+`destinations_ahead(point)` and `destinations_from_stage(stage)` — the
+destination list, and the directional logic in miniature. A stage counts only
+if it is further along the route than the driver, by the same
+`ST_LineLocatePoint` fraction the matching query uses. That is also what picks
+the direction: a point on this corridor sits in both routes' corridors, but
+any given stage is ahead on exactly one of them.
+
+`report_position(point)` — the one thing about a session a client writes, and
+the only reason `last_pos` is still in the update grant.
 
 ## Running it locally
 
@@ -288,7 +319,7 @@ be certified as passing.
 Use its connection string from Dashboard → Settings → Database. **Use a dev
 project, never production** — the concurrency test writes and deletes rows.
 
-Expected: **80 assertions passed.**
+Expected: **110 assertions passed.**
 
 | File | Covers |
 | --- | --- |
@@ -297,6 +328,7 @@ Expected: **80 assertions passed.**
 | `03_rls_test.sql` | a driver cannot read requests or approve themselves; constraint guards |
 | `04_lifecycle_test.sql` | claim, release, re-claim, expiry, stage-mode demand, abandoned sessions |
 | `05_driver_review_test.sql` | the verification gate: a driver cannot approve themselves, a rejection needs a reason, re-submission keeps the other checks, the column grants, and the bucket's policies |
+| `06_going_online_test.sql` | what is ahead and what is behind, a session built from the driver's record rather than the client's, and a claimed seat surviving a direction change without being sold twice |
 
 Everything except the concurrency test runs in a transaction and rolls back.
 That one needs two separate connections, so it cleans up after itself.
