@@ -1721,3 +1721,72 @@ Steps 4–7, 10, 11 and 14 are the first real exercise of all three.
 | Licence photos are never deleted | Deliberate (D21). The retention schedule is **C17** |
 | An admin can only approve from the SQL editor | **C16**, the admin web. `review_driver()` is already the function it will call |
 | `dStage` is not here | §13.1, after C7 |
+
+---
+
+### Fix, 2026-10-27 — `db push` replaying migrations that had already run
+
+```
+Applying migration 20260922000200_enums.sql...
+ERROR: type "vehicle_type" already exists (SQLSTATE 42710)
+```
+
+Neither the migration nor the database was broken. Two things have to agree
+and only one of them is the schema: the objects, and
+`supabase_migrations.schema_migrations`, which is the CLI's own record of
+which files it has applied. The objects were all there; the history was empty,
+so `db push` started from the top and stopped at the first statement that
+cannot run twice.
+
+**This one is mine.** `supabase/README.md` offered the Studio SQL editor as an
+equal alternative to `db push` for applying migrations:
+
+> Apply the migrations in filename order, then `seed.sql`, via the SQL editor
+> — or with the CLI
+
+Those are not alternatives. Pasting the files in creates every object and
+tells the CLI nothing, and the bill arrives at the next push. The README now
+says to use `db push`, and says why the other way is not a second option.
+`seed.sql` still goes in the editor, because it is reference data rather than
+schema and `db push` does not run it.
+
+**What to run.** `supabase/checks/migration-state.sql` — paste it into the SQL
+editor or `psql -f` it. It reads only catalogues, writes nothing, and probes
+for one object per migration that only that migration creates:
+
+```
+ 20260922000200_enums            | present | NOT RECORDED | repair: mark applied
+ 20261026000100_storage_licences | MISSING | NOT RECORDED | will be applied by db push
+ RUN THIS                        |         |              | npx supabase migration repair --status applied …
+```
+
+The last row is the command, assembled from what is actually there, so it
+names the right versions rather than all ten. `migration repair --status
+applied` writes the history rows without running the SQL; `db push` then
+applies only what is genuinely left.
+
+**What I did not do: make the migrations idempotent.** `create type … if not
+exists` would have made the error go away and left the history still wrong,
+so the next real migration would land on a database nobody can describe. The
+error was doing its job.
+
+The one exception is `20261026000100_storage_licences`, where the three
+`create policy` statements became `drop policy if exists` + `create policy`.
+Different case: a policy is declarative and the migration restates each one in
+full, so dropping and recreating converges on the same end state rather than
+hiding a difference — and it is the first of the two C6 files, so it is the
+one a half-finished push leaves behind. Both C6 migrations now apply twice in
+a row with no error; verified by running each of them twice.
+
+The script has a fourth verdict, **RECORDED BUT MISSING**, for the opposite
+problem: the CLI thinks a file ran and the objects are not there. That is real
+drift, and marking it applied would bury it, so it says so instead of
+offering to repair. All four verdicts were exercised against a local database
+put into each state deliberately.
+
+| File | Change |
+| --- | --- |
+| `supabase/checks/migration-state.sql` | **new** — the diagnostic and the repair command |
+| `supabase/migrations/20261026000100_storage_licences.sql` | policies drop-then-create, so a half-finished push can be re-run |
+| `supabase/README.md` | `db push` is the way, not one of two ways; a troubleshooting section for this error |
+| `docs/CREDENTIALS.md` | points at it from the C6 checklist, where the push happens |

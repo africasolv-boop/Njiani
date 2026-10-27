@@ -45,7 +45,21 @@ on conflict (id) do update
 -- caller. A flat `licence-<uuid>.jpg` would leave no way to say it.
 -- ---------------------------------------------------------------------------
 
+-- `drop ... if exists` before each `create policy` below.
+--
+-- Not a style tic: a policy is declarative and each one is restated here in
+-- full, so dropping and recreating converges on the same end state rather
+-- than hiding a difference. It is `create type`-style DDL that must NOT be
+-- made re-runnable, because there the second run would be papering over a
+-- history the CLI has lost -- which is drift, and wants `supabase migration
+-- repair`, not a quieter migration. See supabase/checks/migration-state.sql.
+--
+-- The reason this file gets the treatment and the C3 ones do not: it is the
+-- first of the two C6 migrations, so it is the one a half-finished `db push`
+-- leaves behind.
+
 -- Upload your own.
+drop policy if exists licences_insert_own on storage.objects;
 create policy licences_insert_own on storage.objects
   for insert to authenticated
   with check (
@@ -55,6 +69,7 @@ create policy licences_insert_own on storage.objects
 
 -- Replace your own. Needed by the rejection flow: the driver retakes the
 -- photo and overwrites it, keeping their queue position.
+drop policy if exists licences_update_own on storage.objects;
 create policy licences_update_own on storage.objects
   for update to authenticated
   using (
@@ -71,6 +86,7 @@ create policy licences_update_own on storage.objects
 -- The driver can read their own photo because the sign-up screen shows them
 -- what they submitted. An admin reads every photo because that is the job.
 -- Nobody else -- no passenger, and no other driver -- has any policy here.
+drop policy if exists licences_read_own_or_admin on storage.objects;
 create policy licences_read_own_or_admin on storage.objects
   for select to authenticated
   using (
