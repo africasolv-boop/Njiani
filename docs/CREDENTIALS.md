@@ -129,6 +129,12 @@ stuck. **Left blank, the button is hidden rather than dialling nothing.**
       `supabase db push`. Check afterwards that Storage → licences shows
       **Private**. A public bucket would mean every driver's licence photo is
       readable by anyone who guesses a URL.
+
+      If that push stops with `type "vehicle_type" already exists`, the
+      database is fine and the CLI's history is behind — see
+      *`db push` wants to re-apply migrations that already ran* in
+      `supabase/README.md`, and run `supabase/checks/migration-state.sql`
+      for the exact repair command.
 - [ ] **An `admins` row for yourself**, or nothing can be approved.
       `review_driver()` refuses a signed-in caller without one:
       ```sql

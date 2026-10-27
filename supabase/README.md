@@ -8,6 +8,7 @@ database by clicking in Supabase Studio.
 
 ```
 config.toml     CLI project config. `supabase link` and `db push` need it
+checks/         diagnostics you paste into the SQL editor, read-only
 migrations/     numbered SQL, applied in filename order
 functions/      Edge Functions
 seed.sql        the pilot corridor: Ubungo <-> Kimara, Morogoro Road
@@ -115,13 +116,21 @@ changes to their own row and nobody else's.
 
 1. Create a free project at supabase.com.
 2. Dashboard → Database → Extensions: enable **postgis** and **pg_cron**.
-3. Apply the migrations in filename order, then `seed.sql`, via the SQL editor
-   — or with the CLI:
+3. Apply the migrations **with the CLI**:
    ```sh
    supabase link --project-ref <your-ref>
    supabase db push
    ```
-4. Put the URL and anon key in `.env.local` (see `docs/CREDENTIALS.md`).
+4. Run `seed.sql` in the SQL editor. It is reference data, not schema, so it
+   is not a migration and `db push` does not run it.
+5. Put the URL and anon key in `.env.local` (see `docs/CREDENTIALS.md`).
+
+> **Use `db push`, not the SQL editor, for the migrations.** An earlier
+> version of this file offered the SQL editor as an equal alternative. It is
+> not: pasting the files in creates every object and tells the CLI nothing, so
+> the next `db push` replays all of them from the top and dies on the first
+> statement that cannot run twice. The section below is how to get out of
+> that.
 
 ### Option B — fully local (needs Docker Desktop)
 
@@ -133,6 +142,57 @@ supabase db reset       # applies migrations + seed
 To run only the SQL suite, without Docker and without the rest of the
 Supabase stack, use `./tool/dev-db.sh` — see
 [Running the tests](#running-the-tests).
+
+## ⚠ `db push` wants to re-apply migrations that already ran
+
+```
+Applying migration 20260922000200_enums.sql...
+ERROR: type "vehicle_type" already exists (SQLSTATE 42710)
+```
+
+**The migration is not broken and the database is not broken.** Two separate
+things have to agree, and only one of them is the schema:
+
+1. the objects in the database;
+2. `supabase_migrations.schema_migrations`, the CLI's record of which files it
+   has applied.
+
+Anything that creates the objects without going through `db push` — the
+Studio SQL editor, a `psql -f`, a restored dump — leaves (2) empty. The next
+push then starts from the first file and stops at the first statement that
+cannot run twice, which is `create type` in `…000200_enums`.
+
+### Fixing it
+
+```sh
+psql "$DATABASE_URL" -f supabase/checks/migration-state.sql
+```
+
+…or paste [`checks/migration-state.sql`](checks/migration-state.sql) into the
+SQL editor. It reads only catalogues, writes nothing, and prints a verdict per
+migration — plus the exact command to run, built from what is actually there:
+
+```
+ 20260922000200_enums  | present | NOT RECORDED | repair: mark applied
+ 20261026000100_…      | MISSING | NOT RECORDED | will be applied by db push
+ RUN THIS              |         |              | npx supabase migration repair --status applied …
+```
+
+`migration repair --status applied` writes the history rows without running
+the SQL. Then `db push` applies only what is genuinely left.
+
+### What not to do
+
+**Do not make the migrations idempotent to get the push through.** `create
+type … if not exists` would make the error go away and leave the history
+still wrong, so the next real migration lands on a database nobody can
+describe. The error is doing its job; the history is what needs fixing.
+
+One verdict means the opposite problem. **RECORDED BUT MISSING** — the CLI
+thinks a file ran and its objects are not there — is real drift, and marking
+it applied would bury it. On a dev project the honest fix is
+`supabase db reset` (local) or recreating the project and pushing from
+scratch.
 
 ## ⚠ The Providers form demands an SMS provider we never use
 
