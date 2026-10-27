@@ -278,4 +278,95 @@ class NjStringsSw extends NjStrings {
 
   @override
   String get errDriverStale => 'Maombi yako yamebadilika. Tunaangalia tena…';
+
+  @override
+  String get errNotApproved => 'Akaunti yako bado haijaidhinishwa kuendesha.';
+
+  @override
+  String get dDirectionTitle => 'Unaelekea wapi?';
+
+  @override
+  String get dDirectionSubtitle =>
+      'Utaona abiria wanaoelekea njia moja na wewe.';
+
+  @override
+  String get dStartingFrom => 'Unaanzia hapa ulipo';
+
+  @override
+  String get dStartingFromPicked => 'Unaanzia';
+
+  @override
+  String get dFindingYou => 'Tunatafuta ulipo…';
+
+  @override
+  String get dPickStartStage => 'Chagua ulipo';
+
+  @override
+  String get dChangeStartStage => 'Siyo hapa?';
+
+  @override
+  String get dLocationDenied =>
+      'Njiani inahitaji mahali ulipo ili kujua abiria walio mbele yako. Unaweza kuchagua kituo chako badala yake.';
+
+  @override
+  String get dLocationBlocked =>
+      'Mahali ulipo pamezuiwa kwa Njiani. Washa kwenye Mipangilio, au chagua kituo chako hapa chini.';
+
+  @override
+  String get dLocationOff =>
+      'Mahali ulipo pamezimwa kwenye simu hii. Washa, au chagua kituo chako hapa chini.';
+
+  @override
+  String get dLocationSlow =>
+      'Hatukuweza kukupata — labda kuna majengo mengi. Chagua kituo chako hapa chini.';
+
+  @override
+  String get dTryLocationAgain => 'Jaribu tena';
+
+  @override
+  String dHeadingWest(String dest) {
+    return 'Kuelekea $dest';
+  }
+
+  @override
+  String get dNoDestinations => 'Hakuna vituo mbele yako kwenye barabara hii.';
+
+  @override
+  String dSeatsFree(int count) {
+    return 'Viti $count';
+  }
+
+  @override
+  String get dSeatsNote =>
+      'Una abiria tayari? Wachukue kwanza, kisha waongeze kwenye kichupo cha Ndani ya gari.';
+
+  @override
+  String dGoOnline(String dest) {
+    return 'Anza · unaelekea $dest';
+  }
+
+  @override
+  String get dGoingOnline => 'Inaanza…';
+
+  @override
+  String dChangeHeading(String dest) {
+    return 'Badilisha · unaelekea $dest';
+  }
+
+  @override
+  String get dOnlineNow => 'Uko mtandaoni';
+
+  @override
+  String get dGoOffline => 'Acha kazi';
+
+  @override
+  String get dPickDestination => 'Chagua unakoenda';
+
+  @override
+  String get dStagesTitle => 'Uko wapi sasa?';
+
+  @override
+  String dKmAway(String km) {
+    return 'km $km';
+  }
 }

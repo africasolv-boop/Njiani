@@ -78,6 +78,14 @@
 	<string>Njiani Driver uses the camera to photograph your driving licence, so our team can check it before you start carrying passengers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Njiani Driver needs access to your photos so you can choose a picture of your driving licence you have already taken.</string>
+	<!-- C7 — the direction picker.
+	     Which passengers are ahead of the driver is the whole product, and it
+	     is a question about where they are. When-in-use only: Njiani has no
+	     reason to know where a driver is with the app closed, and `always`
+	     is both a harder App Review conversation and a promise we would not
+	     be keeping. -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Njiani Driver uses your location to show you passengers who are ahead of you on the road you are driving.</string>
 	<!-- C6 and C15 — the "Call Njiani" buttons. -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>

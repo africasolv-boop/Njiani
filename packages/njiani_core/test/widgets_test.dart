@@ -100,19 +100,11 @@ void main() {
     });
   });
 
-  group('NjVehicleType', () {
-    test('seat counts match the physical vehicles', () {
-      expect(NjVehicleType.bajaj.seats, 3);
-      expect(NjVehicleType.boda.seats, 1);
-    });
-
-    test('both names are translated', () {
-      for (final type in NjVehicleType.values) {
-        expect(type.label, isNotEmpty);
-        expect(type.labelSw, isNotEmpty);
-      }
-    });
-  });
+  // The seat-count assertions that used to live here moved to driver_test.dart
+  // with the enum. NjVehicleType was a C1 design-system enum carrying the same
+  // facts as the C6 domain VehicleType -- seats, and a label in each language
+  // -- and nothing outside its own test ever used it. Two enums owning "a
+  // bajaj has three seats" is one more than can stay true.
 
   group('NjAvatar', () {
     test('derives initials from a name', () {

@@ -594,6 +594,156 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'Your application has changed. Checking again…'**
   String get errDriverStale;
+
+  /// DriverFailure.notApproved. go_online refused because drivers.status is not 'approved'. The router should have prevented it, so this means the screen and the row disagree -- and the row is right.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account isn\'t approved to drive yet.'**
+  String get errNotApproved;
+
+  /// dDirection heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Where are you heading?'**
+  String get dDirectionTitle;
+
+  /// dDirection. The whole product in one sentence: a heading is declared before a single request is seen.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll only see passengers going the same way.'**
+  String get dDirectionSubtitle;
+
+  /// dDirection. Label above the stage GPS resolved to.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting from your location'**
+  String get dStartingFrom;
+
+  /// dDirection. Label above a stage the driver named by hand.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting from'**
+  String get dStartingFromPicked;
+
+  /// dDirection, while the GPS fix is in flight.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding where you are…'**
+  String get dFindingYou;
+
+  /// dDirection. Opens the stage list, the no-GPS fallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where you are'**
+  String get dPickStartStage;
+
+  /// dDirection. Corrects a GPS fix that landed on the wrong stage.
+  ///
+  /// In en, this message translates to:
+  /// **'Not here?'**
+  String get dChangeStartStage;
+
+  /// dDirection. LocationProblem.denied — says WHY before asking again, and names the way round it.
+  ///
+  /// In en, this message translates to:
+  /// **'Njiani needs your location to know which passengers are ahead of you. You can choose your stage instead.'**
+  String get dLocationDenied;
+
+  /// dDirection. LocationProblem.deniedForever — only Settings can undo it, so this does not offer to ask again.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is blocked for Njiani. Turn it on in Settings, or choose your stage below.'**
+  String get dLocationBlocked;
+
+  /// dDirection. LocationProblem.serviceOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is switched off on this phone. Turn it on, or choose your stage below.'**
+  String get dLocationOff;
+
+  /// dDirection. LocationProblem.timedOut. Names a cause a driver at Ubungo will recognise rather than blaming the phone.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t find you — too many buildings, maybe. Choose your stage below.'**
+  String get dLocationSlow;
+
+  /// dDirection. Re-asks for a fix.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get dTryLocationAgain;
+
+  /// dDirection. Group heading over the stages in one direction. {dest} is the far end of that route.
+  ///
+  /// In en, this message translates to:
+  /// **'Towards {dest}'**
+  String dHeadingWest(String dest);
+
+  /// dDirection. Reached at the end of a route in both directions, which on a two-route corridor means the driver is off it.
+  ///
+  /// In en, this message translates to:
+  /// **'No stages ahead of you on this road.'**
+  String get dNoDestinations;
+
+  /// dDirection. How many seats this session will offer.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} free'**
+  String dSeatsFree(int count);
+
+  /// dDirection. From the design. The MVP has the driver reconcile by hand; C11 brings the On board tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Passengers already with you? Take them first, then add them from the On board tab.'**
+  String get dSeatsNote;
+
+  /// dDirection primary action. Names the destination so a mis-tap is visible before it costs anything.
+  ///
+  /// In en, this message translates to:
+  /// **'Go online · heading to {dest}'**
+  String dGoOnline(String dest);
+
+  /// dDirection, while go_online runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Going online…'**
+  String get dGoingOnline;
+
+  /// dDirection when a session is already open. The design: 'already online → Returning here shows Change, not Go online'.
+  ///
+  /// In en, this message translates to:
+  /// **'Change · heading to {dest}'**
+  String dChangeHeading(String dest);
+
+  /// dDirection. Shown on the open session's banner.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re online'**
+  String get dOnlineNow;
+
+  /// dDirection. Ends the session. Does not cancel anyone already claimed.
+  ///
+  /// In en, this message translates to:
+  /// **'Go offline'**
+  String get dGoOffline;
+
+  /// dDirection. Shown in place of the action while nothing is selected.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick where you\'re going'**
+  String get dPickDestination;
+
+  /// dDirection. Title of the stage picker sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Where are you now?'**
+  String get dStagesTitle;
+
+  /// dDirection. Distance to a destination along the road.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km'**
+  String dKmAway(String km);
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

@@ -10,6 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 /// terminates the app the instant the camera opens, which reads as a crash in
 /// the sign-up screen; without the `tel` query, Android 11+ reports that a
 /// dialler which is plainly installed cannot be opened.
+/// Matches a declared `<uses-permission>`, not a mention of its name.
+///
+/// The difference matters: this file's manifests carry comments explaining
+/// which permissions are deliberately absent and why, and a substring match
+/// on the bare name fails on the explanation.
+Matcher containsPermission(String name) =>
+    contains('<uses-permission android:name="android.permission.$name"');
+
 void main() {
   /// The app package's own directory.
   ///
@@ -58,6 +66,17 @@ void main() {
       expect(plist.toLowerCase(), contains('licence'));
     });
 
+    test('location has a usage description, when-in-use only', () {
+      expect(plist, contains('<key>NSLocationWhenInUseUsageDescription</key>'));
+      // `always` is a harder App Review conversation and a promise Njiani
+      // would not be keeping: there is no reason to know where a driver is
+      // with the app closed.
+      //
+      // Matched on the <key> element rather than the bare name, so a comment
+      // explaining why a key is absent cannot make the assertion fail.
+      expect(plist, isNot(contains('<key>NSLocationAlways')));
+    });
+
     test('tel: is declared, for Call Njiani', () {
       expect(plist, contains('LSApplicationQueriesSchemes'));
       expect(plist, contains('<string>tel</string>'));
@@ -79,6 +98,11 @@ void main() {
           contains('NSPhotoLibraryUsageDescription'),
           reason: '$lang is missing the photo library prompt',
         );
+        expect(
+          strings,
+          contains('NSLocationWhenInUseUsageDescription'),
+          reason: '$lang is missing the location prompt',
+        );
       }
     });
 
@@ -91,6 +115,8 @@ void main() {
           .toLowerCase();
       expect(sw, contains('leseni'));
       expect(sw, isNot(contains('driving licence')));
+      expect(sw, contains('mahali ulipo'));
+      expect(sw, isNot(contains('your location')));
     });
   });
 
@@ -105,11 +131,20 @@ void main() {
       expect(manifest, contains('android:scheme="tel"'));
     });
 
+    test('location is foreground only', () {
+      expect(manifest, containsPermission('ACCESS_FINE_LOCATION'));
+      expect(manifest, containsPermission('ACCESS_COARSE_LOCATION'));
+      // Same reasoning as the iOS keys: no reason to know where a driver is
+      // with the app closed, and a Play Console declaration to justify if we
+      // asked.
+      expect(manifest, isNot(containsPermission('ACCESS_BACKGROUND_LOCATION')));
+    });
+
     test('no runtime permission is declared for the camera', () {
       // image_picker uses the system camera app via ACTION_IMAGE_CAPTURE, so
       // no CAMERA permission is needed. Declaring one would make the Play
       // listing claim an access this binary never uses.
-      expect(manifest, isNot(contains('android.permission.CAMERA')));
+      expect(manifest, isNot(containsPermission('CAMERA')));
     });
   });
 }

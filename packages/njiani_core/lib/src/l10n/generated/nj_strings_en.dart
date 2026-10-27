@@ -275,4 +275,95 @@ class NjStringsEn extends NjStrings {
 
   @override
   String get errDriverStale => 'Your application has changed. Checking again…';
+
+  @override
+  String get errNotApproved => 'Your account isn\'t approved to drive yet.';
+
+  @override
+  String get dDirectionTitle => 'Where are you heading?';
+
+  @override
+  String get dDirectionSubtitle =>
+      'You\'ll only see passengers going the same way.';
+
+  @override
+  String get dStartingFrom => 'Starting from your location';
+
+  @override
+  String get dStartingFromPicked => 'Starting from';
+
+  @override
+  String get dFindingYou => 'Finding where you are…';
+
+  @override
+  String get dPickStartStage => 'Choose where you are';
+
+  @override
+  String get dChangeStartStage => 'Not here?';
+
+  @override
+  String get dLocationDenied =>
+      'Njiani needs your location to know which passengers are ahead of you. You can choose your stage instead.';
+
+  @override
+  String get dLocationBlocked =>
+      'Location is blocked for Njiani. Turn it on in Settings, or choose your stage below.';
+
+  @override
+  String get dLocationOff =>
+      'Location is switched off on this phone. Turn it on, or choose your stage below.';
+
+  @override
+  String get dLocationSlow =>
+      'Couldn\'t find you — too many buildings, maybe. Choose your stage below.';
+
+  @override
+  String get dTryLocationAgain => 'Try again';
+
+  @override
+  String dHeadingWest(String dest) {
+    return 'Towards $dest';
+  }
+
+  @override
+  String get dNoDestinations => 'No stages ahead of you on this road.';
+
+  @override
+  String dSeatsFree(int count) {
+    return '$count free';
+  }
+
+  @override
+  String get dSeatsNote =>
+      'Passengers already with you? Take them first, then add them from the On board tab.';
+
+  @override
+  String dGoOnline(String dest) {
+    return 'Go online · heading to $dest';
+  }
+
+  @override
+  String get dGoingOnline => 'Going online…';
+
+  @override
+  String dChangeHeading(String dest) {
+    return 'Change · heading to $dest';
+  }
+
+  @override
+  String get dOnlineNow => 'You\'re online';
+
+  @override
+  String get dGoOffline => 'Go offline';
+
+  @override
+  String get dPickDestination => 'Pick where you\'re going';
+
+  @override
+  String get dStagesTitle => 'Where are you now?';
+
+  @override
+  String dKmAway(String km) {
+    return '$km km';
+  }
 }

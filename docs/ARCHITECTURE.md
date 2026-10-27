@@ -54,6 +54,9 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D20 | Who verifies the code | **Supabase Auth, never the app and never Beem** | Beem is pure transport. Its hosted OTP product would mean bridging Beem's verdict into a Supabase session by hand, which is home-made auth in a ride-hailing app. |
 | D21 | Licence photos | **Private Storage bucket, path `<uid>/licence.<ext>`, no delete policy** | The first folder segment being the owner is what makes "your own object" expressible as an RLS policy at all; a flat filename leaves no way to say it. No DELETE policy, deliberately: the photo is the evidence behind an approval decision, so neither a driver nor an admin can erase it from the app. Retention is a service-role job, with the schedule at C17. |
 | D22 | The one status transition a driver may make | **`resubmit_driver_licence()`, a `security definer` function, `rejected` → `pending` only** | The C3 grants hold `drivers.status` back from `authenticated` entirely, which is right and also means a rejected driver has no way back into the queue. A narrow definer function is exactly the audited hole that privilege needs. It refuses a path outside the caller's own folder — without that check a driver could point their row at someone else's photo and be approved on another person's licence. |
+| D23 | What a session is built from | **`go_online()` reads the vehicle and the seat count from `drivers`; the client sends only a route and a destination** | `driver_sessions` had a CHECK tying `seats_total` to `vehicle_type` and nothing tying either to the driver's record — so a boda rider could have opened a bajaj session with three seats and been offered three-seat work. The function also enforces the C6 gate, because a gate in the UI is not a gate. `insert` and most of `update` are revoked from `authenticated` on that table; only `last_pos` stays writable. |
+| D24 | Choosing a destination chooses the direction | **No compass, no heading question — just the stage list** | Ubungo→Kimara and Kimara→Ubungo are two route rows over the same tarmac (D-level consequence of the one-row-per-direction decision in §5), so a driver's point sits in both corridors, but any given stage is ahead on exactly one of them. `destinations_ahead()` returns both directions' stages and picking one settles the route. One question instead of two, and the one a driver already knows the answer to. |
+| D25 | Rendering locale | **`NjLocale.of(context)`, never `languageProvider`** | They answer different questions. The provider is the first router gate — has a language been confirmed — and `Localizations.localeOf` is what actually chose the strings on screen. A screen reading the provider has two sources of truth that can disagree, and they did: English chrome around a Kiswahili place name. |
 | D18 | State management | **Riverpod without code generation** | `NotifierProvider` directly avoids a `build_runner` step in the build, which keeps `./tool/check.sh` the only thing a contributor has to run. |
 | D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
@@ -300,7 +303,14 @@ Every table has RLS enabled. Summary of intent (exact policies land in C3):
 - `profiles` — a user reads and writes only their own row.
 - `drivers` — a driver reads/writes their own row; `status` is **not** writable by the driver
   (only by an admin role). This is the verification gate.
-- `driver_sessions` — a driver writes only their own session. Passengers never read raw sessions.
+- `driver_sessions` — a driver writes only their own session, and barely any of it.
+  `insert` and `update` are revoked from `authenticated` except for `last_pos` and
+  `last_pos_at`; sessions are opened by `go_online()` and closed by `go_offline()`, both
+  `security definer`. `go_online` enforces the C6 approval gate, reads the vehicle type and
+  seat count from `drivers` rather than from the client (D23), refuses a destination that is
+  not on the declared route, and opens with the seats that are genuinely free — a driver
+  changing direction mid-trip keeps the passengers already with them. Passengers never read
+  raw sessions.
 - `ride_requests` — a passenger writes only their own. Drivers **never** hold a blanket read
   policy; they read matches **only** through `match_requests_for_session()`, which is scoped to
   their own online session. A driver cannot enumerate the request table.
@@ -341,11 +351,11 @@ changes and test steps, and each waits for your local sign-off before the next b
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
 | C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | `pLang` + i18n (EN/SW), `go_router` guard, Riverpod, persistence | ✅ Flip language; restart and it is remembered |
-| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 80 SQL assertions pass |
+| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 110 SQL assertions pass |
 | C4 | `pPhone` + `pOtp` — Supabase phone OTP, Beem delivery | ✅ Log in on your own phone |
 | C5 | Profile + session persistence | ✅ Kill the app, reopen, still logged in |
-| C6 | Driver signup, licence upload, pending screen, approval | 🧪 Submit → approve in Studio → screen changes, with nothing tapped |
-| C7 | Driver direction picker, go online, route board, seat bar | Pick Kimara, go online |
+| C6 | Driver signup, licence upload, pending screen, approval | ✅ Submit → approve in Studio → screen changes, with nothing tapped |
+| C7 | Driver direction picker, go online, route board, seat bar | 🧪 Pick Kimara, go online |
 | C8 | Passenger request — destination, vehicle, price, hint band | Send a request |
 | C9 | **Live matching feed** — the PostGIS query + realtime | Request on phone A appears on phone B |
 | C10 | **Atomic seat claim** | Two devices race one request; one wins, one sees "Taken" |

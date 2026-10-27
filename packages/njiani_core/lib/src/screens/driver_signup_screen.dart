@@ -305,7 +305,7 @@ class _DriverSignupScreenState extends ConsumerState<DriverSignupScreen> {
             if (_error != null) ...[
               const SizedBox(height: NjSpace.md),
               Text(
-                _messageFor(_error!.failure, strings),
+                driverFailureMessage(_error!.failure, strings),
                 style: context.njText.bodySmall?.copyWith(color: nj.danger),
               ),
               // What the server actually said, with credentials masked. Debug
@@ -339,16 +339,6 @@ class _DriverSignupScreenState extends ConsumerState<DriverSignupScreen> {
   TextStyle? _labelStyle(BuildContext context) =>
       context.njText.bodySmall?.copyWith(fontWeight: FontWeight.w600);
 
-  static String _messageFor(DriverFailure failure, NjStrings strings) =>
-      switch (failure) {
-        DriverFailure.uploadFailed => strings.dLicenceFailed,
-        DriverFailure.photoRejected => strings.errPhotoRejected,
-        DriverFailure.notConfigured => strings.errNotConfigured,
-        DriverFailure.offline => strings.errOffline,
-        DriverFailure.staleState => strings.errDriverStale,
-        DriverFailure.notSignedIn => strings.errUnknown,
-        DriverFailure.unknown => strings.errUnknown,
-      };
 }
 
 /// Forces upper case as the plate is typed, keeping the caret where it was.

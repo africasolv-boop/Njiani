@@ -46,6 +46,14 @@ dependencies:
   # or canLaunchUrl reports false for a dialler that is plainly installed.
   # Both app manifests carry it.
   url_launcher: ^6.3.3
+  # GPS, for the direction picker at C7 and the live position at C14. Behind
+  # DriverLocation, so tests and the fake backend never touch the plugin.
+  #
+  # NEEDS PLATFORM CONFIG: iOS requires NSLocationWhenInUseUsageDescription,
+  # Android ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION. The driver app
+  # carries both; the rider app does not need them until C14. See
+  # docs/CREDENTIALS.md.
+  geolocator: ^14.1.2
 
 dev_dependencies:
   flutter_test:

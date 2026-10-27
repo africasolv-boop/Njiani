@@ -4,3 +4,4 @@
 
 "NSCameraUsageDescription" = "Njiani Driver uses the camera to photograph your driving licence, so our team can check it before you start carrying passengers.";
 "NSPhotoLibraryUsageDescription" = "Njiani Driver needs access to your photos so you can choose a picture of your driving licence you have already taken.";
+"NSLocationWhenInUseUsageDescription" = "Njiani Driver uses your location to show you passengers who are ahead of you on the road you are driving.";

@@ -8,3 +8,4 @@
 
 "NSCameraUsageDescription" = "Njiani Driver inatumia kamera kupiga picha ya leseni yako ya udereva, ili timu yetu iihakiki kabla uanze kuchukua abiria.";
 "NSPhotoLibraryUsageDescription" = "Njiani Driver inahitaji ruhusa ya picha zako ili uchague picha ya leseni yako ya udereva ambayo umekwisha kuipiga.";
+"NSLocationWhenInUseUsageDescription" = "Njiani Driver inatumia mahali ulipo kukuonyesha abiria walio mbele yako kwenye barabara unayoendesha.";
