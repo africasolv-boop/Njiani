@@ -34,6 +34,9 @@ abstract final class NjRoutes {
   /// leave.
   static const String driverDirection = '/driver/direction';
 
+  /// The live request feed. Driver app only, and only while online.
+  static const String driverFeed = '/driver/feed';
+
   /// Development-only component gallery. Removed from release builds at C18.
   static const String gallery = '/gallery';
 

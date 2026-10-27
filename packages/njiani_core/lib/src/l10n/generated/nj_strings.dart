@@ -744,6 +744,114 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'{km} km'**
   String dKmAway(String km);
+
+  /// dFeed. The route board. The design shows 'Ubungo to Kimara'; the session stores a destination and a position, not an origin stage, and a stale origin would be worse than none.
+  ///
+  /// In en, this message translates to:
+  /// **'Heading to {dest}'**
+  String dFeedHeading(String dest);
+
+  /// dFeed. Back to the direction picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get dChange;
+
+  /// dFeed. Above the list, next to the live dot.
+  ///
+  /// In en, this message translates to:
+  /// **'Live · passengers heading to {dest}'**
+  String dFeedLive(String dest);
+
+  /// dFeed empty state. The second sentence is a promise the alert has to keep, or a driver decides the app is broken and stops looking.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody heading to {dest} yet. You\'ll hear a sound when a request comes in.'**
+  String dFeedEmpty(String dest);
+
+  /// dFeed card. Where the passenger is waiting, and how far along the road.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} · {distance} ahead'**
+  String dFeedAhead(String from, String distance);
+
+  /// dFeed card. Where they are going.
+  ///
+  /// In en, this message translates to:
+  /// **'To {dest}'**
+  String dFeedTo(String dest);
+
+  /// A short distance, in metres.
+  ///
+  /// In en, this message translates to:
+  /// **'{m} m'**
+  String dMetres(String m);
+
+  /// A longer distance, in kilometres.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km'**
+  String dKilometres(String km);
+
+  /// dFeed. The seat bar's label.
+  ///
+  /// In en, this message translates to:
+  /// **'{free} of {total} seats free'**
+  String dSeatsLine(int free, int total);
+
+  /// dFeed. Replaces the seat count when there is nothing left to offer.
+  ///
+  /// In en, this message translates to:
+  /// **'Every seat taken'**
+  String get dSeatsFullLine;
+
+  /// dFeed. What Pickup becomes when the vehicle is full. From the design.
+  ///
+  /// In en, this message translates to:
+  /// **'Seats full'**
+  String get dSeatsFull;
+
+  /// dFeed offline state. Keeps the list and labels it, rather than blanking it: the last answer is still the best one available, but 'three requests' and 'three requests, as of 14:02' are different claims.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection · showing what you had at {time}'**
+  String dFeedFrozen(String time);
+
+  /// dFeed. Re-reads the feed by hand.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get dFeedRefresh;
+
+  /// dFeed. The second tab, which arrives at C11. Disabled until then, with the seat count already live so the number means something.
+  ///
+  /// In en, this message translates to:
+  /// **'On board ({count})'**
+  String dFeedOnBoardTab(int count);
+
+  /// dFeed. The first tab.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get dFeedRequestsTab;
+
+  /// dFeed. The On board tab before C11 builds it. Says what the tab is for rather than pretending it is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Passengers you have picked up will appear here.'**
+  String get dFeedOnBoardSoon;
+
+  /// dFeed. Claims the seat. Wired at C10, where the race is settled.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup'**
+  String get dPickup;
+
+  /// dFeed. Stands in for Pickup until C10 wires the atomic claim. A button that silently does nothing is worse than one that says what it is waiting for.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup arrives next'**
+  String get dPickupSoon;
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

@@ -9,6 +9,7 @@ database by clicking in Supabase Studio.
 ```
 config.toml     CLI project config. `supabase link` and `db push` need it
 checks/         diagnostics you paste into the SQL editor, read-only
+dev/            development fixtures that WRITE. Never run automatically.
 migrations/     numbered SQL, applied in filename order
 functions/      Edge Functions
 seed.sql        the pilot corridor: Ubungo <-> Kimara, Morogoro Road
@@ -55,6 +56,7 @@ it in `public`, which is exactly why this bug reached a real project.
 | `20261026000100_storage_licences` | the private licence bucket and its policies |
 | `20261026000200_driver_review` | `review_driver`, `resubmit_driver_licence`, realtime on `drivers` |
 | `20261027000100_going_online` | `seats_for`, `destinations_ahead`, `go_online`, `go_offline`, `report_position` |
+| `20261028000100_feed_nudge` | the feed's realtime nudge, `current_driver_session`, and a driver no longer seeing their own request |
 
 ### Storage
 
@@ -140,6 +142,44 @@ any given stage is ahead on exactly one of them.
 
 `report_position(point)` — the one thing about a session a client writes, and
 the only reason `last_pos` is still in the update grant.
+
+### Keeping a feed live (C9)
+
+A feed cannot be a subscription to `ride_requests`: Realtime respects RLS and
+a driver holds no read policy on that table. So the signal and the data are
+split.
+
+`notify_route_of_request()` fires on a request appearing, or leaving `open`,
+and broadcasts to `route_feed_topic(route_id, vehicle_type)` — a payload of a
+route id, a vehicle type and a timestamp, and nothing else. The client answers
+it by calling `match_requests_for_session()`, which applies the same scoping
+it always did. **The live part is a doorbell, not a window.**
+
+The topic name is computed by `route_feed_topic()` in SQL and by
+`SupabaseFeedRepository.topicFor()` in Dart. A mismatch is a feed that is
+silently never live, so there is an assertion on each side pinning the format.
+
+The trigger is **best effort, deliberately**: its whole body is wrapped, so an
+outage, a renamed function or a missing schema cannot stop a passenger's
+request being written. The client polls every 30 seconds alongside it, which
+is what recovers from a socket that died in a tunnel. A dropped nudge costs
+latency and nothing else.
+
+Subscription is gated by a policy on `realtime.messages`: a driver may listen
+to a route's topic only while they are online on that route, in that vehicle.
+It expires with the session, which is the lifetime the feed has.
+
+### Putting something in a feed by hand
+
+`dev/fake-request.sql` writes a request that looks like real passenger
+traffic, and prints why each online driver can or cannot see it. Needed until
+C8 builds the passenger's side, and useful after it for testing a feed
+without a second phone. `dev/fake-request-cleanup.sql` removes everything it
+made.
+
+Both are scoped to a `0de00de0-` id prefix, which no migration, seed or test
+uses — `dddddddd-` would have been deleted by the concurrency test's own
+cleanup.
 
 ## Running it locally
 
@@ -319,7 +359,7 @@ be certified as passing.
 Use its connection string from Dashboard → Settings → Database. **Use a dev
 project, never production** — the concurrency test writes and deletes rows.
 
-Expected: **110 assertions passed.**
+Expected: **130 assertions passed.**
 
 | File | Covers |
 | --- | --- |
@@ -329,6 +369,7 @@ Expected: **110 assertions passed.**
 | `04_lifecycle_test.sql` | claim, release, re-claim, expiry, stage-mode demand, abandoned sessions |
 | `05_driver_review_test.sql` | the verification gate: a driver cannot approve themselves, a rejection needs a reason, re-submission keeps the other checks, the column grants, and the bucket's policies |
 | `06_going_online_test.sql` | what is ahead and what is behind, a session built from the driver's record rather than the client's, and a claimed seat surviving a direction change without being sold twice |
+| `07_feed_nudge_test.sql` | the nudge carries nothing a driver may not read, a broken broadcast does not stop a request, who may subscribe, and nearest-ahead ordering beating a better offer |
 
 Everything except the concurrency test runs in a transaction and rolls back.
 That one needs two separate connections, so it cleans up after itself.

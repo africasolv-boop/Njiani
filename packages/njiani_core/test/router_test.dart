@@ -23,6 +23,11 @@ Future<ProviderContainer> pumpApp(
       if (session != null)
         sessionRepositoryProvider.overrideWithValue(session),
       licenceCameraProvider.overrideWithValue(FakeLicenceCamera()),
+      // No polling in tests. A real periodic timer outlives the widget
+      // tree and trips `A Timer is still pending`, and a test that means to
+      // exercise the nudge would otherwise be able to pass on a poll.
+      feedPollPolicyProvider.overrideWithValue(FeedPollPolicy.manual),
+      feedAlertProvider.overrideWithValue(FakeFeedAlert()),
       // Never the real one: it opens a GPS request, and a widget test that
       // reaches a plugin fails in a way that looks like the screen is broken.
       driverLocationProvider.overrideWithValue(FakeDriverLocation()),
@@ -249,16 +254,32 @@ void main() {
       expect(find.byType(DriverPendingScreen), findsNothing);
     });
 
-    testWidgets('approved and online is let through to the feed',
-        (tester) async {
+    testWidgets('approved and online lands on the live feed', (tester) async {
       await pumpDriver(
         tester,
         row: rowWith(DriverStatus.approved),
         session: onlineSession(),
       );
 
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(DriverFeedScreen), findsOneWidget);
       expect(find.byType(DriverDirectionScreen), findsNothing);
+      expect(find.byType(PlaceholderScreen), findsNothing);
+    });
+
+    testWidgets('an online driver can still walk back to the picker',
+        (tester) async {
+      // "already online -> Returning here shows Change, not Go online".
+      // The gate must not bounce them straight out again.
+      final container = await pumpDriver(
+        tester,
+        row: rowWith(DriverStatus.approved),
+        session: onlineSession(),
+      );
+
+      container.read(routerProvider).go(NjRoutes.driverDirection);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DriverDirectionScreen), findsOneWidget);
     });
 
     // The one the design insists on: a driver who submitted at a stage and

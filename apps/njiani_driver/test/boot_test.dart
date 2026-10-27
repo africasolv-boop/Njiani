@@ -24,6 +24,11 @@ Future<ProviderContainer> pumpApp(
       if (session != null)
         sessionRepositoryProvider.overrideWithValue(session),
       licenceCameraProvider.overrideWithValue(FakeLicenceCamera()),
+      // No polling in tests. A real periodic timer outlives the widget
+      // tree and trips `A Timer is still pending`, and a test that means to
+      // exercise the nudge would otherwise be able to pass on a poll.
+      feedPollPolicyProvider.overrideWithValue(FeedPollPolicy.manual),
+      feedAlertProvider.overrideWithValue(FakeFeedAlert()),
       driverLocationProvider.overrideWithValue(FakeDriverLocation()),
       placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
     ],
@@ -83,9 +88,10 @@ void main() {
     addTearDown(auth.dispose);
     await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
 
-    // An approved driver who is already online, because the gallery link
-    // lives on the landing screen and two gates stand before it: C6's
-    // verification, and C7's "say where you are going first".
+    // An approved driver who is NOT online, because from C9 an online
+    // driver lands on the feed and the gallery link lives on the direction
+    // picker -- in debug builds, which is where a development surface
+    // belongs.
     final driver = FakeDriverRepository(
       driver: const Driver(
         profileId: 'driver-1',
@@ -103,20 +109,10 @@ void main() {
       storedLocale: NjLocale.en,
       auth: auth,
       driver: driver,
-      session: FakeSessionRepository(
-        session: const DriverSession(
-          id: 'session-1',
-          driverId: 'driver-1',
-          routeId: 'route-west',
-          destStageId: 'west-9',
-          vehicleType: VehicleType.bajaj,
-          seatsTotal: 3,
-          seatsFree: 3,
-          online: true,
-        ),
-      ),
+      session: FakeSessionRepository(),
     );
 
+    await tester.ensureVisible(find.text('Component gallery'));
     await tester.tap(find.text('Component gallery'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

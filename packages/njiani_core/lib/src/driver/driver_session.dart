@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../locale/nj_locale.dart';
 import 'driver.dart';
 
 /// A driver who has declared a heading and gone online.
@@ -19,6 +20,10 @@ class DriverSession {
     required this.seatsFree,
     required this.online,
     this.wentOnlineAt,
+    this.destName,
+    this.destNameSw,
+    this.fromName,
+    this.fromNameSw,
   });
 
   factory DriverSession.fromRow(Map<String, dynamic> row) => DriverSession(
@@ -33,6 +38,10 @@ class DriverSession {
         online: (row['status'] as String?) == 'online',
         wentOnlineAt:
             DateTime.tryParse(row['went_online_at'] as String? ?? ''),
+        destName: row['dest_name'] as String?,
+        destNameSw: row['dest_name_sw'] as String?,
+        fromName: row['from_name'] as String?,
+        fromNameSw: row['from_name_sw'] as String?,
       );
 
   final String id;
@@ -52,6 +61,22 @@ class DriverSession {
 
   final bool online;
   final DateTime? wentOnlineAt;
+
+  /// Where the driver said they are heading, resolved server-side.
+  final String? destName;
+  final String? destNameSw;
+
+  /// The stage nearest the driver's last reported position, recomputed on
+  /// every read. Null until there is a fix — a board that says Ubungo when
+  /// the driver has reached Kibo is worse than one that says nothing.
+  final String? fromName;
+  final String? fromNameSw;
+
+  String? destLabel(NjLocale locale) =>
+      locale == NjLocale.sw ? (destNameSw ?? destName) : destName;
+
+  String? fromLabel(NjLocale locale) =>
+      locale == NjLocale.sw ? (fromNameSw ?? fromName) : fromName;
 
   int get seatsTaken => seatsTotal - seatsFree;
 

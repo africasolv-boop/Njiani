@@ -366,4 +366,79 @@ class NjStringsEn extends NjStrings {
   String dKmAway(String km) {
     return '$km km';
   }
+
+  @override
+  String dFeedHeading(String dest) {
+    return 'Heading to $dest';
+  }
+
+  @override
+  String get dChange => 'Change';
+
+  @override
+  String dFeedLive(String dest) {
+    return 'Live · passengers heading to $dest';
+  }
+
+  @override
+  String dFeedEmpty(String dest) {
+    return 'Nobody heading to $dest yet. You\'ll hear a sound when a request comes in.';
+  }
+
+  @override
+  String dFeedAhead(String from, String distance) {
+    return '$from · $distance ahead';
+  }
+
+  @override
+  String dFeedTo(String dest) {
+    return 'To $dest';
+  }
+
+  @override
+  String dMetres(String m) {
+    return '$m m';
+  }
+
+  @override
+  String dKilometres(String km) {
+    return '$km km';
+  }
+
+  @override
+  String dSeatsLine(int free, int total) {
+    return '$free of $total seats free';
+  }
+
+  @override
+  String get dSeatsFullLine => 'Every seat taken';
+
+  @override
+  String get dSeatsFull => 'Seats full';
+
+  @override
+  String dFeedFrozen(String time) {
+    return 'No connection · showing what you had at $time';
+  }
+
+  @override
+  String get dFeedRefresh => 'Refresh';
+
+  @override
+  String dFeedOnBoardTab(int count) {
+    return 'On board ($count)';
+  }
+
+  @override
+  String get dFeedRequestsTab => 'Requests';
+
+  @override
+  String get dFeedOnBoardSoon =>
+      'Passengers you have picked up will appear here.';
+
+  @override
+  String get dPickup => 'Pickup';
+
+  @override
+  String get dPickupSoon => 'Pickup arrives next';
 }

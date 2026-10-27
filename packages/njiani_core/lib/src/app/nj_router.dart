@@ -9,6 +9,7 @@ import '../driver/session_controller.dart';
 import '../gallery/gallery_screen.dart';
 import '../locale/language_controller.dart';
 import '../screens/driver_direction_screen.dart';
+import '../screens/driver_feed_screen.dart';
 import '../screens/driver_pending_screen.dart';
 import '../screens/driver_rejected_screen.dart';
 import '../screens/driver_signup_screen.dart';
@@ -101,10 +102,23 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
         //    One-way only: once there is a session the driver may come back
         //    here to change direction or go offline, so this does not push
         //    them off it.
-        if (gate == DriverGate.cleared && here != NjRoutes.driverDirection) {
+        if (gate == DriverGate.cleared) {
           final session = ref.read(sessionProvider);
-          final offline = session is AsyncData && session.value == null;
-          if (offline) return NjRoutes.driverDirection;
+          final online = session.valueOrNull?.online ?? false;
+
+          if (session is AsyncData && !online) {
+            // No heading declared, so there is nothing to show in a feed.
+            // Not forced off the picker itself -- that is where they go to
+            // declare one.
+            if (here != NjRoutes.driverDirection) {
+              return NjRoutes.driverDirection;
+            }
+          } else if (online && here == NjRoutes.home) {
+            // Online: the landing route is the feed. Only `home` is
+            // redirected, so the driver can still walk back to the picker to
+            // change direction or go offline.
+            return NjRoutes.driverFeed;
+          }
         }
       }
 
@@ -161,6 +175,10 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       GoRoute(
         path: NjRoutes.driverDirection,
         builder: (context, state) => const DriverDirectionScreen(),
+      ),
+      GoRoute(
+        path: NjRoutes.driverFeed,
+        builder: (context, state) => const DriverFeedScreen(),
       ),
       GoRoute(
         path: NjRoutes.gallery,

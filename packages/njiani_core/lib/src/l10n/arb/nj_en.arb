@@ -480,5 +480,133 @@
         "type": "String"
       }
     }
+  },
+  "dFeedHeading": "Heading to {dest}",
+  "@dFeedHeading": {
+    "description": "dFeed. The route board. The design shows 'Ubungo to Kimara'; the session stores a destination and a position, not an origin stage, and a stale origin would be worse than none.",
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "dChange": "Change",
+  "@dChange": {
+    "description": "dFeed. Back to the direction picker."
+  },
+  "dFeedLive": "Live · passengers heading to {dest}",
+  "@dFeedLive": {
+    "description": "dFeed. Above the list, next to the live dot.",
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "dFeedEmpty": "Nobody heading to {dest} yet. You'll hear a sound when a request comes in.",
+  "@dFeedEmpty": {
+    "description": "dFeed empty state. The second sentence is a promise the alert has to keep, or a driver decides the app is broken and stops looking.",
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "dFeedAhead": "{from} · {distance} ahead",
+  "@dFeedAhead": {
+    "description": "dFeed card. Where the passenger is waiting, and how far along the road.",
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "distance": {
+        "type": "String"
+      }
+    }
+  },
+  "dFeedTo": "To {dest}",
+  "@dFeedTo": {
+    "description": "dFeed card. Where they are going.",
+    "placeholders": {
+      "dest": {
+        "type": "String"
+      }
+    }
+  },
+  "dMetres": "{m} m",
+  "@dMetres": {
+    "description": "A short distance, in metres.",
+    "placeholders": {
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "dKilometres": "{km} km",
+  "@dKilometres": {
+    "description": "A longer distance, in kilometres.",
+    "placeholders": {
+      "km": {
+        "type": "String"
+      }
+    }
+  },
+  "dSeatsLine": "{free} of {total} seats free",
+  "@dSeatsLine": {
+    "description": "dFeed. The seat bar's label.",
+    "placeholders": {
+      "free": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "dSeatsFullLine": "Every seat taken",
+  "@dSeatsFullLine": {
+    "description": "dFeed. Replaces the seat count when there is nothing left to offer."
+  },
+  "dSeatsFull": "Seats full",
+  "@dSeatsFull": {
+    "description": "dFeed. What Pickup becomes when the vehicle is full. From the design."
+  },
+  "dFeedFrozen": "No connection · showing what you had at {time}",
+  "@dFeedFrozen": {
+    "description": "dFeed offline state. Keeps the list and labels it, rather than blanking it: the last answer is still the best one available, but 'three requests' and 'three requests, as of 14:02' are different claims.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "dFeedRefresh": "Refresh",
+  "@dFeedRefresh": {
+    "description": "dFeed. Re-reads the feed by hand."
+  },
+  "dFeedOnBoardTab": "On board ({count})",
+  "@dFeedOnBoardTab": {
+    "description": "dFeed. The second tab, which arrives at C11. Disabled until then, with the seat count already live so the number means something.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dFeedRequestsTab": "Requests",
+  "@dFeedRequestsTab": {
+    "description": "dFeed. The first tab."
+  },
+  "dFeedOnBoardSoon": "Passengers you have picked up will appear here.",
+  "@dFeedOnBoardSoon": {
+    "description": "dFeed. The On board tab before C11 builds it. Says what the tab is for rather than pretending it is empty."
+  },
+  "dPickup": "Pickup",
+  "@dPickup": {
+    "description": "dFeed. Claims the seat. Wired at C10, where the race is settled."
+  },
+  "dPickupSoon": "Pickup arrives next",
+  "@dPickupSoon": {
+    "description": "dFeed. Stands in for Pickup until C10 wires the atomic claim. A button that silently does nothing is worse than one that says what it is waiting for."
   }
 }
