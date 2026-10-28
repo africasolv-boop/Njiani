@@ -544,4 +544,39 @@ class NjStringsEn extends NjStrings {
   @override
   String get errRequestFailed =>
       'Couldn\'t send. Your request was not created.';
+
+  @override
+  String get dSessionUnreadable =>
+      'Couldn\'t check whether you\'re online. Pick a direction to start again.';
+
+  @override
+  String get pDetailsTitle => 'What should drivers call you?';
+
+  @override
+  String get pDetailsBody =>
+      'Your driver sees this when they take your request. Nothing else does.';
+
+  @override
+  String get pNameLabel => 'Your name';
+
+  @override
+  String get pNameHint => 'First name is enough';
+
+  @override
+  String get pEmailLabel => 'Email (optional)';
+
+  @override
+  String get pEmailHint => 'For receipts. We sign you in by phone.';
+
+  @override
+  String get pEmailInvalid => 'That doesn\'t look like an email address.';
+
+  @override
+  String get pDetailsSave => 'Continue';
+
+  @override
+  String get pDetailsSaving => 'Saving…';
+
+  @override
+  String get pDetailsFailed => 'Couldn\'t save that. Try again.';
 }

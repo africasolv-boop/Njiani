@@ -163,6 +163,28 @@ class ProfileController extends AsyncNotifier<Profile?> {
     }
   }
 
+  /// Sets the name and, optionally, the email.
+  ///
+  /// The write goes first, for the same reason [setDisplayName]'s does: this
+  /// can be reached while `build()` is still in flight, and an early return
+  /// would drop it silently.
+  Future<void> setDetails({required String name, String? email}) async {
+    await _repository.setDetails(name: name, email: email);
+
+    final current = state.valueOrNull;
+    if (current != null) {
+      state = AsyncData(current.copyWith(
+        displayName: name.trim(),
+        email: email?.trim(),
+        clearEmail: (email ?? '').trim().isEmpty,
+      ));
+    } else {
+      // No profile in hand yet, so re-read rather than guess: the screen is
+      // about to be replaced by the router and needs the real row.
+      await refresh();
+    }
+  }
+
   /// Re-reads the profile from the server.
   Future<void> refresh() async {
     state = const AsyncLoading();

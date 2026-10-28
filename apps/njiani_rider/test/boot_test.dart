@@ -9,6 +9,7 @@ Future<ProviderContainer> pumpApp(
   WidgetTester tester, {
   NjLocale? storedLocale,
   AuthRepository? auth,
+  ProfileRepository? profile,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -21,6 +22,8 @@ Future<ProviderContainer> pumpApp(
       // In-memory, and never a real one: the request screen reads the stage
       // list and the device's position the moment it builds.
       requestRepositoryProvider.overrideWithValue(FakeRequestRepository()),
+      if (profile != null)
+        profileRepositoryProvider.overrideWithValue(profile),
       placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
       driverLocationProvider.overrideWithValue(FakeDriverLocation()),
     ],
@@ -71,6 +74,70 @@ void main() {
     // The rider binary's own next screen. Asserted on the type rather than
     // on a component label, which moves with the roadmap.
     expect(find.byType(RequestScreen), findsOneWidget);
+  });
+
+  // Reported as missing from the rider app, and it is the same shared code
+  // path the driver app uses: `AuthController` seeds itself from
+  // `repository.isSignedIn`, which reads the session `Supabase.initialize()`
+  // restored before the first frame. Pinned here because the driver app had
+  // this test and the rider app did not, which is the only reason it could
+  // have been true in one and not the other.
+  testWidgets('a verified number goes straight in, with no code screen',
+      (tester) async {
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+    // Signed in before the first frame, as a returning user is.
+    await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+    await pumpApp(tester, storedLocale: NjLocale.en, auth: auth);
+
+    expect(find.byType(PhoneScreen), findsNothing);
+    expect(find.byType(OtpScreen), findsNothing);
+    expect(find.byType(LanguageScreen), findsNothing);
+    expect(find.byType(RequestScreen), findsOneWidget);
+  });
+
+  testWidgets('and a passenger with no name is asked for one first',
+      (tester) async {
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+    await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+    await pumpApp(
+      tester,
+      storedLocale: NjLocale.en,
+      auth: auth,
+      profile: FakeProfileRepository(
+        profile: Profile(
+          id: 'passenger-1',
+          phone: TzPhone.tryParse('712345678'),
+          lang: NjLocale.en,
+        ),
+      ),
+    );
+
+    expect(find.byType(PassengerDetailsScreen), findsOneWidget);
+    expect(find.byType(RequestScreen), findsNothing);
+  });
+
+  testWidgets('a profile that cannot be read does not block the request',
+      (tester) async {
+    // Being unable to ask for a ride because a nicety could not be read is
+    // worse than an unnamed passenger -- and it is the same mistake the
+    // driver gate made by resting at the landing screen.
+    final auth = FakeAuthRepository();
+    addTearDown(auth.dispose);
+    await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+    await pumpApp(
+      tester,
+      storedLocale: NjLocale.en,
+      auth: auth,
+      profile: FakeProfileRepository()..failure = Exception('offline'),
+    );
+
+    expect(find.byType(RequestScreen), findsOneWidget);
+    expect(find.byType(PassengerDetailsScreen), findsNothing);
   });
 
   testWidgets('the component gallery stays reachable', (tester) async {

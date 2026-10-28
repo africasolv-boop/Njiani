@@ -155,5 +155,16 @@
   "pSeatsBoda": "Boda · kiti 1",
   "errRequestNotATrip": "Safari hiyo haiwezekani — unakoenda lazima kuwe mbele zaidi kwenye barabara ile ile.",
   "errAlreadyWaiting": "Tayari una ombi linalosubiri.",
-  "errRequestFailed": "Haikutumwa. Ombi lako halikutengenezwa."
+  "errRequestFailed": "Haikutumwa. Ombi lako halikutengenezwa.",
+  "dSessionUnreadable": "Hatukuweza kuangalia kama uko kazini. Chagua unakoelekea ili uanze upya.",
+  "pDetailsTitle": "Madereva wakuite nani?",
+  "pDetailsBody": "Dereva wako ataona hili akichukua ombi lako. Hakuna mwingine atakayeliona.",
+  "pNameLabel": "Jina lako",
+  "pNameHint": "Jina la kwanza linatosha",
+  "pEmailLabel": "Barua pepe (si lazima)",
+  "pEmailHint": "Kwa risiti. Tunakuingiza kwa namba ya simu.",
+  "pEmailInvalid": "Hiyo haionekani kama anwani ya barua pepe.",
+  "pDetailsSave": "Endelea",
+  "pDetailsSaving": "Inahifadhi…",
+  "pDetailsFailed": "Haikuhifadhiwa. Jaribu tena."
 }

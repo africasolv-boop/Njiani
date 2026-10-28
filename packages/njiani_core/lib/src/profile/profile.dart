@@ -14,6 +14,7 @@ class Profile {
     required this.phone,
     required this.lang,
     this.displayName,
+    this.email,
     this.createdAt,
   });
 
@@ -27,6 +28,7 @@ class Profile {
         phone: TzPhone.tryParse(row['phone'] as String?),
         lang: NjLocale.tryParse(row['lang'] as String?) ?? NjLocale.fallback,
         displayName: row['display_name'] as String?,
+        email: row['email'] as String?,
         createdAt: DateTime.tryParse(row['created_at'] as String? ?? ''),
       );
 
@@ -39,17 +41,36 @@ class Profile {
   /// The account's language. What SMS and push notifications are written in.
   final NjLocale lang;
 
-  /// Set during driver sign-up at C6. Passengers do not need one.
+  /// What a driver is told they are picking up, and what a passenger is told
+  /// is coming for them. Set at driver sign-up (C6), and by passengers
+  /// themselves — a passenger who arrives as nobody is not someone you can
+  /// call out for at a stage.
   final String? displayName;
+
+  /// Optional, and always will be. Njiani signs in by phone (D10) and nothing
+  /// in the product needs an address; it is here for a receipt somebody asks
+  /// for and for reaching a person whose phone has gone. A required one would
+  /// be a field people put `a@a.com` in.
+  final String? email;
+
+  /// True once there is a name a driver could use.
+  bool get hasName => (displayName ?? '').trim().isNotEmpty;
 
   /// When the account was created.
   final DateTime? createdAt;
 
-  Profile copyWith({NjLocale? lang, String? displayName}) => Profile(
+  Profile copyWith({
+    NjLocale? lang,
+    String? displayName,
+    String? email,
+    bool clearEmail = false,
+  }) =>
+      Profile(
         id: id,
         phone: phone,
         lang: lang ?? this.lang,
         displayName: displayName ?? this.displayName,
+        email: clearEmail ? null : email ?? this.email,
         createdAt: createdAt,
       );
 
@@ -59,10 +80,11 @@ class Profile {
       other.id == id &&
       other.phone == phone &&
       other.lang == lang &&
-      other.displayName == displayName;
+      other.displayName == displayName &&
+      other.email == email;
 
   @override
-  int get hashCode => Object.hash(id, phone, lang, displayName);
+  int get hashCode => Object.hash(id, phone, lang, displayName, email);
 
   @override
   String toString() => 'Profile($id, ${phone?.national}, ${lang.code})';

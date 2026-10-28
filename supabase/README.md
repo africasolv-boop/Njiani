@@ -59,6 +59,7 @@ it in `public`, which is exactly why this bug reached a real project.
 | `20261028000100_feed_nudge` | the feed's realtime nudge, `current_driver_session`, and a driver no longer seeing their own request |
 | `20261028000200_where_am_i` | a radius on `nearest_stage`, and `where_am_i` |
 | `20261029000100_requesting` | `price_band`, `create_ride_request`, `cancel_ride_request`, `current_ride_request`, and the behind-the-driver tolerance |
+| `20261030000100_passenger_details` | `profiles.email`, name/email normalisation, and column grants that hold back `phone` |
 
 ### Storage
 
@@ -404,7 +405,7 @@ be certified as passing.
 Use its connection string from Dashboard → Settings → Database. **Use a dev
 project, never production** — the concurrency test writes and deletes rows.
 
-Expected: **155 assertions passed.**
+Expected: **168 assertions passed.**
 
 | File | Covers |
 | --- | --- |
@@ -416,6 +417,7 @@ Expected: **155 assertions passed.**
 | `06_going_online_test.sql` | what is ahead and what is behind, a session built from the driver's record rather than the client's, and a claimed seat surviving a direction change without being sold twice |
 | `07_feed_nudge_test.sql` | the nudge carries nothing a driver may not read, a broken broadcast does not stop a request, who may subscribe, and nearest-ahead ordering beating a better offer |
 | `08_requesting_test.sql` | the four ways a request can be unmatchable, each refused before it is written; the band; one open request per passenger; and that a request made through the function reaches a driver's feed |
+| `09_passenger_details_test.sql` | a name and an optional email are a passenger's own; their phone number is not |
 
 Everything except the concurrency test runs in a transaction and rolls back.
 That one needs two separate connections, so it cleans up after itself.

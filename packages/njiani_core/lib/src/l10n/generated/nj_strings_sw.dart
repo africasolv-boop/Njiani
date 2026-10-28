@@ -546,4 +546,39 @@ class NjStringsSw extends NjStrings {
 
   @override
   String get errRequestFailed => 'Haikutumwa. Ombi lako halikutengenezwa.';
+
+  @override
+  String get dSessionUnreadable =>
+      'Hatukuweza kuangalia kama uko kazini. Chagua unakoelekea ili uanze upya.';
+
+  @override
+  String get pDetailsTitle => 'Madereva wakuite nani?';
+
+  @override
+  String get pDetailsBody =>
+      'Dereva wako ataona hili akichukua ombi lako. Hakuna mwingine atakayeliona.';
+
+  @override
+  String get pNameLabel => 'Jina lako';
+
+  @override
+  String get pNameHint => 'Jina la kwanza linatosha';
+
+  @override
+  String get pEmailLabel => 'Barua pepe (si lazima)';
+
+  @override
+  String get pEmailHint => 'Kwa risiti. Tunakuingiza kwa namba ya simu.';
+
+  @override
+  String get pEmailInvalid => 'Hiyo haionekani kama anwani ya barua pepe.';
+
+  @override
+  String get pDetailsSave => 'Endelea';
+
+  @override
+  String get pDetailsSaving => 'Inahifadhi…';
+
+  @override
+  String get pDetailsFailed => 'Haikuhifadhiwa. Jaribu tena.';
 }

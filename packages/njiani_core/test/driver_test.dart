@@ -652,14 +652,20 @@ void main() {
 
   // =========================================================================
   group('the gate decision, in one function', () {
-    test('a failed read holds position instead of guessing', () {
+    test('a failed read is not the same as a slow one', () {
       // The worst outcome available here is sending an approved driver back
-      // to a blank sign-up form because their data dropped out at a stage.
+      // to a blank sign-up form because their data dropped out at a stage, so
+      // both hold position -- but only one of them is going to answer, and
+      // the router needs to know which.
+      //
+      // Collapsing these two is what left an approved driver on the landing
+      // screen: a cold start was treated as a dead connection, and the rule
+      // written for the dead connection fired on every launch.
       expect(
         driverGateFor(AsyncError(Exception('offline'), StackTrace.empty)),
-        DriverGate.unknown,
+        DriverGate.unreadable,
       );
-      expect(driverGateFor(const AsyncLoading()), DriverGate.unknown);
+      expect(driverGateFor(const AsyncLoading()), DriverGate.loading);
     });
 
     test('maps every status to a screen', () {
