@@ -37,6 +37,9 @@ abstract final class NjRoutes {
   /// The live request feed. Driver app only, and only while online.
   static const String driverFeed = '/driver/feed';
 
+  /// Who the driver is coming for. Rider app only, asked once.
+  static const String passengerDetails = '/me';
+
   /// Request a ride. Rider app only.
   static const String request = '/request';
 

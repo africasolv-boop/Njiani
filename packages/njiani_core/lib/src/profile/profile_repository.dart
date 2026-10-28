@@ -17,6 +17,13 @@ abstract interface class ProfileRepository {
 
   /// Writes the account's display name. Used by driver sign-up at C6.
   Future<void> setDisplayName(String name);
+
+  /// Writes the name and, optionally, the email.
+  ///
+  /// One call rather than two: a passenger fills them on one screen and
+  /// tapping Save twice over would be two round trips and two chances for
+  /// half of it to land.
+  Future<void> setDetails({required String name, String? email});
 }
 
 /// Backed by the `profiles` table.
@@ -38,7 +45,7 @@ class SupabaseProfileRepository implements ProfileRepository {
     // exception to propagate into a screen.
     final row = await _client
         .from(_table)
-        .select('id, phone, display_name, lang, created_at')
+        .select('id, phone, display_name, email, lang, created_at')
         .eq('id', id)
         .maybeSingle();
 
@@ -58,6 +65,20 @@ class SupabaseProfileRepository implements ProfileRepository {
     if (id == null) return;
     await _client.from(_table).update({'display_name': name}).eq('id', id);
   }
+
+  @override
+  Future<void> setDetails({required String name, String? email}) async {
+    final id = _userId;
+    if (id == null) return;
+
+    final cleaned = email?.trim();
+    await _client.from(_table).update({
+      'display_name': name.trim(),
+      // Sent as null, not omitted: clearing an address someone typed by
+      // mistake has to be possible.
+      'email': cleaned == null || cleaned.isEmpty ? null : cleaned,
+    }).eq('id', id);
+  }
 }
 
 /// In-memory profile store, for tests and for running without a backend.
@@ -73,6 +94,10 @@ class FakeProfileRepository implements ProfileRepository {
 
   /// Names written, in order.
   final List<String> nameWrites = [];
+
+  /// Emails written, in order. Null is a real value here: it is how an
+  /// address typed by mistake is cleared.
+  final List<String?> emailWrites = [];
 
   /// Forced failure, for exercising the error path.
   Object? failure;
@@ -95,5 +120,17 @@ class FakeProfileRepository implements ProfileRepository {
     if (failure != null) throw failure!;
     nameWrites.add(name);
     profile = profile?.copyWith(displayName: name);
+  }
+
+  @override
+  Future<void> setDetails({required String name, String? email}) async {
+    if (failure != null) throw failure!;
+    nameWrites.add(name);
+    emailWrites.add(email);
+    profile = profile?.copyWith(
+      displayName: name,
+      email: email,
+      clearEmail: email == null || email.isEmpty,
+    );
   }
 }

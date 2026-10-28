@@ -2579,3 +2579,131 @@ duplicate functions.
 | `pSearch` proper | The waiting state here says a driver will see the offer; the design's screen names **how many** can see it right now, from `match_requests_for_session`. That count is C9's passenger half and lands with the matched / no-driver transitions |
 | `pMatched`, `pNoDriver` | **C10** and **C9** respectively. Right now a claimed request simply stops being open, and the waiting panel falls back to the form |
 | Saved places (`pPlaces`) | V2. The stage list is the whole address book for now |
+
+---
+
+### Fix, 2026-10-30 — the driver app stuck on the landing placeholder
+
+Your screenshot: **Next: C9 — Live requests**, with Change language, Sign out
+and Component gallery, and no way forward.
+
+**It was two silent fall-throughs in the router, and the immediate trigger was
+the duplicate-function bug from yesterday.** `current_driver_session()` calls
+`nearest_stage()`, and until yesterday's C8 push your project had two of
+those — so every session read failed with `is not unique`. The gate then did
+this:
+
+```dart
+if (session is AsyncData && !online) { ...go to the picker... }
+else if (online && here == home)    { ...go to the feed...   }
+// AsyncError is neither. Nothing returned. Stay at `/`.
+```
+
+And `/` rendered the landing placeholder. The same thing happened one branch
+earlier if the *driver record* failed to read: `DriverGate.unknown => here`,
+and `here` was `/`.
+
+So: push the latest migrations and the immediate cause is gone. But a
+redirect that can decline to decide needs somewhere harmless to decline to,
+and a screen reading "This screen arrives in the next component" is not it.
+
+**Three changes:**
+
+1. **`home` is not a screen** (D30). The gate is now one named function,
+   `driverDestination`, and every branch returns a real route. It has its own
+   test file, because what the two fall-throughs had in common was being
+   unreachable by any test that drove the router normally — the invariant is
+   stated over every combination rather than as a list of the two that broke.
+
+2. **`/` renders a spinner**, not the placeholder. Both apps redirect away
+   within a frame, so it is only ever seen in passing — but when something
+   does go wrong, a spinner looks like what it is.
+
+3. **A failed session read is visible.** The direction picker says *"Couldn't
+   check whether you're online. Pick a direction to start again."* rather than
+   the router silently swallowing it.
+
+**And the fix broke something, which is how it earned a fourth change.**
+`DriverGate.unknown` covered both a read still in flight and a read that
+failed. The rule written for the failure — *move off `home`, nothing is
+coming* — therefore fired on every cold start, sending an online driver to
+the picker, where the router then correctly left them, because a driver is
+allowed to visit it.
+
+They are two values now (D31): `loading` holds everything, including at
+`home`, which is what the spinner is for; `unreadable` holds position except
+where there is no position to hold. One of them answers itself and the other
+does not.
+
+### Also — the rider's name and email
+
+From C10 a driver is told who they are picking up, and "a passenger" is not
+something you can call out at a stage. `display_name` has existed since C3 and
+only driver sign-up ever set it.
+
+`pDetails` asks once, after sign-in, before the request screen. **The email is
+optional and says so in its own label**, with the reason underneath — *"For
+receipts. We sign you in by phone."* Njiani signs in by phone (D10) and
+nothing in the product needs an address; a required one would be a field
+people put `a@a.com` in, which is worse than an empty column.
+
+The gate fires on a **known** empty name only. A profile still loading, or one
+that failed to read, holds nothing up — being unable to ask for a ride because
+a nicety could not be read is worse than an unnamed passenger, and it is
+exactly the mistake the driver gate had just made.
+
+Two things the database does rather than the screen:
+
+- **Normalisation.** `  NEEMA@Example.COM ` is stored as `neema@example.com`,
+  and a name of `"   "` becomes null. Case and whitespace are not identity,
+  and stored-as-typed is how one person becomes two rows. It also means the
+  screen's `hasName` and the database agree about what counts as a name.
+- **`phone` is held back by GRANT.** `profiles_update_own` scopes writes to
+  the owner's row, but RLS cannot protect a single column, and the account's
+  phone number is its identity. Same reasoning as `drivers.status` at C3.
+
+The email check is deliberately loose — it catches a typed-in phone number or
+a stray space and nothing cleverer. Adjudicating what an address may contain
+is a famously bad idea, and the only real test of one is sending to it.
+
+### On the rider's session restore
+
+**It is the same shared code path the driver app uses**, and there is nothing
+rider-specific in it: `AuthController` seeds itself from
+`repository.isSignedIn`, which reads the session `Supabase.initialize()`
+restored before the first frame, and `bootstrap()` awaits that in both
+binaries. The two `main.dart` files are identical apart from a comment.
+
+What was genuinely missing was the **test**: the driver app had "an
+already-signed-in session lands straight in the app" and the rider app did
+not, which is the only reason this could have been true in one and not the
+other. Three now:
+
+```
+✓ a verified number goes straight in, with no code screen
+✓ and a passenger with no name is asked for one first
+✓ a profile that cannot be read does not block the request
+```
+
+If you still see the phone screen on reopen, tell me which screen you land on
+— the phone screen and the language screen have different causes, and the
+difference narrows it immediately.
+
+| File | Change |
+| --- | --- |
+| `packages/njiani_core/lib/src/app/nj_router.dart` | `driverDestination`, the rider name gate, no placeholder at `/` |
+| `packages/njiani_core/lib/src/driver/driver_controller.dart` | `DriverGate.loading` and `.unreadable` |
+| `packages/njiani_core/lib/src/screens/settling_screen.dart` | **new** — what `/` renders |
+| `packages/njiani_core/lib/src/screens/passenger_details_screen.dart` | **new** — `pDetails` |
+| `supabase/migrations/20261030000100_passenger_details.sql` | **new** — email, normalisation, column grants |
+| `supabase/tests/09_passenger_details_test.sql` | **new** — 13 assertions |
+| `packages/njiani_core/test/driver_destination_test.dart` | **new** — 13 tests, every branch |
+| `packages/njiani_core/test/passenger_details_test.dart` | **new** — 15 tests |
+| `packages/njiani_core/lib/src/screens/driver_direction_screen.dart` | says when a session read failed |
+| `apps/njiani_rider/test/boot_test.dart` | the restore test that was missing |
+
+**Verified** — analyze clean, **430 Flutter tests**, **168 SQL assertions**,
+against a database rebuilt from scratch.
+
+**On your side:** `supabase db push` picks up one new migration, and it is
+also what clears the duplicate `nearest_stage` that started this.

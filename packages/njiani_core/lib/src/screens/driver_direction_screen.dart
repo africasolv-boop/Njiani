@@ -13,6 +13,7 @@ import '../l10n/generated/nj_strings.dart';
 import '../locale/nj_locale.dart';
 import '../places/place.dart';
 import '../util/redact.dart';
+import '../widgets/nj_banner.dart';
 import '../widgets/nj_button.dart';
 import '../widgets/nj_card.dart';
 import '../widgets/nj_dev_tools.dart';
@@ -159,12 +160,21 @@ class _DriverDirectionScreenState extends ConsumerState<DriverDirectionScreen> {
     final session = ref.watch(sessionProvider).valueOrNull;
     final seats = ref.watch(driverProvider).valueOrNull?.seats ?? 0;
 
+    // A failed session read used to be invisible: the router fell through and
+    // left the driver on the landing placeholder. It lands here now, and says
+    // so.
+    final sessionFailed = ref.watch(sessionProvider) is AsyncError;
+
     return Scaffold(
       backgroundColor: nj.surface,
       body: SafeArea(
         child: NjScreenBody(
           padding: const EdgeInsets.all(NjSpace.xl),
           children: [
+            if (sessionFailed) ...[
+              NjBanner(title: strings.dSessionUnreadable),
+              const SizedBox(height: NjSpace.lg),
+            ],
             if (session != null) ...[
               _OnlineBanner(session: session, onGoOffline: _busy ? null : _goOffline),
               const SizedBox(height: NjSpace.lg),

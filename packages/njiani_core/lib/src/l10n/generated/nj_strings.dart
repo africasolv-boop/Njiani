@@ -1032,6 +1032,72 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'Couldn\'t send. Your request was not created.'**
   String get errRequestFailed;
+
+  /// dDirection. The session read failed -- the screen says so instead of the router silently leaving the driver on a landing placeholder, which is what used to happen.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check whether you\'re online. Pick a direction to start again.'**
+  String get dSessionUnreadable;
+
+  /// pDetails heading. Asked once, after sign-in. A passenger who arrives as nobody is not someone a driver can call out for at a stage.
+  ///
+  /// In en, this message translates to:
+  /// **'What should drivers call you?'**
+  String get pDetailsTitle;
+
+  /// pDetails. Says exactly who sees it, because the honest answer is short and a vague one invites people to type nonsense.
+  ///
+  /// In en, this message translates to:
+  /// **'Your driver sees this when they take your request. Nothing else does.'**
+  String get pDetailsBody;
+
+  /// pDetails field label.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get pNameLabel;
+
+  /// pDetails. Lowers the bar on purpose: a surname is not needed to find someone at a stage.
+  ///
+  /// In en, this message translates to:
+  /// **'First name is enough'**
+  String get pNameHint;
+
+  /// pDetails field label. Optional in the label itself, so nobody has to find out by trying to skip it.
+  ///
+  /// In en, this message translates to:
+  /// **'Email (optional)'**
+  String get pEmailLabel;
+
+  /// pDetails. Answers 'why do you want this' before it is asked, and says it is not a second way in.
+  ///
+  /// In en, this message translates to:
+  /// **'For receipts. We sign you in by phone.'**
+  String get pEmailHint;
+
+  /// pDetails. The same loose check the database makes: catches a typed-in phone number or a stray space, nothing cleverer.
+  ///
+  /// In en, this message translates to:
+  /// **'That doesn\'t look like an email address.'**
+  String get pEmailInvalid;
+
+  /// pDetails primary action.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get pDetailsSave;
+
+  /// pDetails, while the write runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Saving…'**
+  String get pDetailsSaving;
+
+  /// pDetails. A failed write, said plainly rather than letting the screen look saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save that. Try again.'**
+  String get pDetailsFailed;
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

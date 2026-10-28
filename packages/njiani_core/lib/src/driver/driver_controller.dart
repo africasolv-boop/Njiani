@@ -124,12 +124,17 @@ final driverProvider =
 /// about the same question cannot disagree. Returns null for a driver who may
 /// drive, which the router reads as "no redirect".
 DriverGate driverGateFor(AsyncValue<Driver?> driver) => switch (driver) {
-      AsyncLoading() => DriverGate.unknown,
+      // Still reading. Resolves on its own, so nothing moves.
+      AsyncLoading() => DriverGate.loading,
       // A failed read is not a reason to show sign-up to a driver who already
       // applied. Sending an approved driver back to a blank form, because
       // their data dropped out at a stage, is the worst outcome available
       // here -- so an error waits rather than guessing.
-      AsyncError() => DriverGate.unknown,
+      //
+      // Kept distinct from `loading`, which is the whole point: one of them
+      // is going to answer and the other is not. Collapsing them meant the
+      // router treated a cold start exactly like a dead connection.
+      AsyncError() => DriverGate.unreadable,
       AsyncData(value: null) => DriverGate.signUp,
       AsyncData(value: final row) => switch (row!.status) {
           DriverStatus.pending => DriverGate.pending,
@@ -137,13 +142,17 @@ DriverGate driverGateFor(AsyncValue<Driver?> driver) => switch (driver) {
           DriverStatus.suspended => DriverGate.suspended,
           DriverStatus.approved => DriverGate.cleared,
         },
-      _ => DriverGate.unknown,
+      _ => DriverGate.loading,
     };
 
 /// Where the driver-approval gate sends a driver.
 enum DriverGate {
-  /// Nothing read yet. The router holds position rather than moving.
-  unknown,
+  /// Still reading. The router holds position; this answers itself.
+  loading,
+
+  /// The read failed. The router holds position too -- except where there is
+  /// no position to hold, because nothing is coming to move it.
+  unreadable,
 
   /// No application on file.
   signUp,

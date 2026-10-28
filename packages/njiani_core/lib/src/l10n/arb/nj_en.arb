@@ -741,5 +741,49 @@
   "errRequestFailed": "Couldn't send. Your request was not created.",
   "@errRequestFailed": {
     "description": "RequestFailure.unknown and offline. The design is explicit that this must be unambiguous: a silent failure means standing at the road for nothing."
+  },
+  "dSessionUnreadable": "Couldn't check whether you're online. Pick a direction to start again.",
+  "@dSessionUnreadable": {
+    "description": "dDirection. The session read failed -- the screen says so instead of the router silently leaving the driver on a landing placeholder, which is what used to happen."
+  },
+  "pDetailsTitle": "What should drivers call you?",
+  "@pDetailsTitle": {
+    "description": "pDetails heading. Asked once, after sign-in. A passenger who arrives as nobody is not someone a driver can call out for at a stage."
+  },
+  "pDetailsBody": "Your driver sees this when they take your request. Nothing else does.",
+  "@pDetailsBody": {
+    "description": "pDetails. Says exactly who sees it, because the honest answer is short and a vague one invites people to type nonsense."
+  },
+  "pNameLabel": "Your name",
+  "@pNameLabel": {
+    "description": "pDetails field label."
+  },
+  "pNameHint": "First name is enough",
+  "@pNameHint": {
+    "description": "pDetails. Lowers the bar on purpose: a surname is not needed to find someone at a stage."
+  },
+  "pEmailLabel": "Email (optional)",
+  "@pEmailLabel": {
+    "description": "pDetails field label. Optional in the label itself, so nobody has to find out by trying to skip it."
+  },
+  "pEmailHint": "For receipts. We sign you in by phone.",
+  "@pEmailHint": {
+    "description": "pDetails. Answers 'why do you want this' before it is asked, and says it is not a second way in."
+  },
+  "pEmailInvalid": "That doesn't look like an email address.",
+  "@pEmailInvalid": {
+    "description": "pDetails. The same loose check the database makes: catches a typed-in phone number or a stray space, nothing cleverer."
+  },
+  "pDetailsSave": "Continue",
+  "@pDetailsSave": {
+    "description": "pDetails primary action."
+  },
+  "pDetailsSaving": "Saving…",
+  "@pDetailsSaving": {
+    "description": "pDetails, while the write runs."
+  },
+  "pDetailsFailed": "Couldn't save that. Try again.",
+  "@pDetailsFailed": {
+    "description": "pDetails. A failed write, said plainly rather than letting the screen look saved."
   }
 }
