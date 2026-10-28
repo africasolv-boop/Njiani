@@ -154,3 +154,53 @@ class LatLng {
   @override
   String toString() => 'LatLng($lat, $lng)';
 }
+
+/// What the server knows about where the driver is standing.
+///
+/// Three situations look identical from an empty destination list, and the
+/// screen has to tell a driver which one they are in. See `where_am_i()`.
+@immutable
+class Origin {
+  const Origin({
+    required this.onCorridor,
+    required this.routesActive,
+    this.stage,
+    this.metres,
+  });
+
+  factory Origin.fromRow(Map<String, dynamic> row) => Origin(
+        onCorridor: row['on_corridor'] as bool? ?? false,
+        routesActive: (row['routes_active'] as num?)?.toInt() ?? 0,
+        stage: row['stage_id'] == null
+            ? null
+            : Stage(
+                id: row['stage_id'] as String,
+                routeId: '',
+                name: row['name'] as String? ?? '',
+                nameSw: row['name_sw'] as String? ?? '',
+                seq: 0,
+              ),
+        metres: (row['metres'] as num?)?.toDouble(),
+      );
+
+  /// The nearest stage within range, or null if the driver is nowhere near
+  /// one. Null is an answer, not a failure.
+  final Stage? stage;
+
+  final double? metres;
+
+  /// True when the point is inside some active route's corridor.
+  final bool onCorridor;
+
+  /// How many routes exist at all. Zero means the database has no roads in
+  /// it, which is a setup problem and not a driver one -- almost always
+  /// `seed.sql` never having been run.
+  final int routesActive;
+
+  /// Nothing is configured. Nothing will work until it is.
+  bool get noRoutes => routesActive == 0;
+
+  @override
+  String toString() => 'Origin(${stage?.name}, onCorridor: $onCorridor, '
+      'routes: $routesActive)';
+}

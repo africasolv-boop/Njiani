@@ -125,5 +125,11 @@
   "dFeedRequestsTab": "Maombi",
   "dFeedOnBoardSoon": "Abiria uliowachukua wataonekana hapa.",
   "dPickup": "Chukua",
-  "dPickupSoon": "Kuchukua kunakuja"
+  "dPickupSoon": "Kuchukua kunakuja",
+  "dNoRoutesConfigured": "Njiani haina barabara zilizowekwa bado.",
+  "dNoRoutesHint": "Endesha supabase/seed.sql kwenye mradi huu. `supabase db push` inaweka migrations pekee — njia ni data ya marejeo.",
+  "dOffCorridor": "Hauko kwenye barabara ambayo Njiani inahudumia bado.",
+  "dOffCorridorHint": "Nenda kwenye barabara ya Ubungo–Kimara, au chagua kituo utakapoanzia.",
+  "dEndOfTheRoad": "Uko mwisho wa barabara hii.",
+  "dEndOfTheRoadHint": "Chagua kituo utakapoanzia ili urudi upande mwingine."
 }

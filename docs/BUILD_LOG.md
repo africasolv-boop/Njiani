@@ -2314,3 +2314,68 @@ checked by breaking an assertion deliberately and confirming it still fails.
 | Nothing calls `report_position` yet | Carried over from C7. A driver who goes online at Ubungo and drives to Kibo keeps a feed computed from Ubungo until they re-enter the screen. Throttling it properly is the next thing I would do, and it belongs here rather than at C14 — I left it out to keep C9 to the feed, but say the word and it is small |
 | `pSearch` and `pNoDriver` | C9's passenger half in the screen map, and both unreachable without C8's request screen. They land with C8 |
 | Today's earnings bar | The design's footer. **C11**, with the earnings tally |
+
+
+---
+
+### Fix, 2026-10-28 — a direction picker with a blank location and no way out
+
+Your screenshot: **Starting from your location** with nothing under it, and
+**No stages ahead of you on this road** — with only a small "Not here?" link
+to escape.
+
+**The cause was an empty database, not the GPS.** `supabase db push` applies
+migrations; the Ubungo–Kimara corridor is reference data and lives in
+`seed.sql`, which push does not touch. With no `routes` and no `stages`, both
+queries correctly return nothing — and the screen had no way to say so. I
+documented the seed as a separate step at C7 and that was plainly not enough,
+because the screen gave no clue which of several things had gone wrong.
+
+Three defects, all mine:
+
+**1. `nearest_stage` had no distance limit.** Asked about a point in
+Amsterdam it returned Kimara Mwisho — 7,315 km away — and the picker would
+have printed it under "Starting from your location" as a fact. Verified by
+running exactly that query. It takes a radius now, 3 km: more than the widest
+corridor plus a bad fix, less than a different part of the city. Beyond it the
+answer is no row, which the screen can then say out loud.
+
+**2. One sentence for three situations.** An empty destination list means one
+of: the database has no roads, the driver is off every corridor, or they are
+at the far end of a route. `where_am_i()` returns `on_corridor` and
+`routes_active` alongside the nearest stage, so the screen can tell them
+apart:
+
+| | What it says now |
+| --- | --- |
+| No routes at all | "Njiani has no roads set up yet." — plus, in debug builds only, the exact fix: run `seed.sql`, and why `db push` did not |
+| Off the corridor | "You're not on a road Njiani covers yet." + "Drive to the Ubungo–Kimara road, or choose the stage you'll start from." |
+| End of the road | "You're at the end of this road." + the way back |
+
+**3. No way forward.** The stage picker was a small "Not here?" text link. It
+is a real button now in two of those three cases — it is the way out of both,
+and a driver should not have to find it. Not offered in the no-routes case,
+because there would be nothing in the list.
+
+`supabase/checks/corridor-state.sql` is the diagnostic: active routes, stages
+and price bands, each route's length, and what the app would say about any
+point you give it. Read-only.
+
+Four new tests, including one pinning that a stage 7,000 km away is **not**
+claimed as your location.
+
+| File | Change |
+| --- | --- |
+| `supabase/migrations/20261028000200_where_am_i.sql` | **new** — the radius, and `where_am_i` |
+| `supabase/checks/corridor-state.sql` | **new** — the diagnostic |
+| `packages/njiani_core/lib/src/places/place.dart` | `Origin` |
+| `packages/njiani_core/lib/src/places/places_repository.dart` | `whereAmI` replaces `nearestStage` |
+| `packages/njiani_core/lib/src/driver/session_controller.dart` | `EmptyReason` |
+| `packages/njiani_core/lib/src/screens/driver_direction_screen.dart` | says which, and offers the picker |
+
+**On your machine:** run `seed.sql` against the project (SQL editor, paste the
+file), then `supabase db push` for this migration. The picker should then
+show Ubungo and eight stages west of it — though only if the device reports a
+position on the corridor. On a Windows desktop build it will report wherever
+that machine is, which is off-corridor, and you will now get the second row of
+that table instead of a blank: the explanation plus the stage list.

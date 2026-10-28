@@ -441,4 +441,25 @@ class NjStringsEn extends NjStrings {
 
   @override
   String get dPickupSoon => 'Pickup arrives next';
+
+  @override
+  String get dNoRoutesConfigured => 'Njiani has no roads set up yet.';
+
+  @override
+  String get dNoRoutesHint =>
+      'Run supabase/seed.sql against this project. `supabase db push` applies migrations only — the corridor is reference data.';
+
+  @override
+  String get dOffCorridor => 'You\'re not on a road Njiani covers yet.';
+
+  @override
+  String get dOffCorridorHint =>
+      'Drive to the Ubungo–Kimara road, or choose the stage you\'ll start from.';
+
+  @override
+  String get dEndOfTheRoad => 'You\'re at the end of this road.';
+
+  @override
+  String get dEndOfTheRoadHint =>
+      'Choose the stage you\'ll start from to head back the other way.';
 }

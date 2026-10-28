@@ -12,8 +12,12 @@ String wktPoint(LatLng point) => 'POINT(${point.lng} ${point.lat})';
 
 /// Routes, stages, and what is ahead of a point on the road.
 abstract interface class PlacesRepository {
-  /// The stage nearest [point], for the "starting from" line.
-  Future<Stage?> nearestStage(LatLng point);
+  /// Where the driver is, and whether there is anywhere to be.
+  ///
+  /// Replaces a bare "nearest stage": that question has no good answer when
+  /// the driver is nowhere near one, and answering it anyway is how a point
+  /// in Amsterdam came back as Kimara Mwisho.
+  Future<Origin> whereAmI(LatLng point);
 
   /// Everywhere the driver could head for from [point], ordered by route then
   /// by position along it.
@@ -42,13 +46,15 @@ class SupabasePlacesRepository implements PlacesRepository {
   final SupabaseClient _client;
 
   @override
-  Future<Stage?> nearestStage(LatLng point) async {
+  Future<Origin> whereAmI(LatLng point) async {
     final rows = await _client.rpc<List<dynamic>>(
-      'nearest_stage',
+      'where_am_i',
       params: {'p_point': wktPoint(point)},
     );
-    if (rows.isEmpty) return null;
-    return Stage.fromRow(rows.first as Map<String, dynamic>);
+    if (rows.isEmpty) {
+      return const Origin(onCorridor: false, routesActive: 0);
+    }
+    return Origin.fromRow(rows.first as Map<String, dynamic>);
   }
 
   @override
@@ -107,9 +113,15 @@ class FakePlacesRepository implements PlacesRepository {
   /// What [destinationsAhead] returns, whatever point it is given.
   List<Destination> destinations;
 
-  /// What [nearestStage] returns. Where the driver is standing — which is
+  /// The stage [whereAmI] reports. Where the driver is standing — which is
   /// never one of [destinations], because you cannot head to where you are.
   Stage? nearest;
+
+  /// Set false to model a driver who is nowhere near a Njiani road.
+  bool onCorridor = true;
+
+  /// Set 0 to model a database whose reference data was never loaded.
+  int routesActive = 2;
 
   /// The stage the fake driver is standing at.
   static const Stage ubungoMataa = Stage(
@@ -166,9 +178,13 @@ class FakePlacesRepository implements PlacesRepository {
   ];
 
   @override
-  Future<Stage?> nearestStage(LatLng point) async {
+  Future<Origin> whereAmI(LatLng point) async {
     if (failure != null) throw failure!;
-    return nearest;
+    return Origin(
+      stage: onCorridor ? nearest : null,
+      onCorridor: onCorridor,
+      routesActive: routesActive,
+    );
   }
 
   @override

@@ -254,14 +254,13 @@ class _DriverDirectionScreenState extends ConsumerState<DriverDirectionScreen> {
         ),
       ),
 
-      if (grouped.isEmpty)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: NjSpace.lg),
-          child: Text(
-            strings.dNoDestinations,
-            style: context.njText.bodyMedium?.copyWith(color: nj.muted),
-          ),
-        ),
+      // Nothing to head for. Three very different reasons, and a driver has
+      // to be told which one -- the old screen said "No stages ahead of you
+      // on this road" for all three, with no way forward from any of them.
+      if (grouped.isEmpty) _NothingAhead(
+        reason: options.emptyReason,
+        onPickStage: _pickStartStage,
+      ),
 
       for (final entry in grouped.entries) ...[
         const SizedBox(height: NjSpace.lg),
@@ -639,6 +638,76 @@ class _Problem extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+
+/// Why there is nowhere to go, and what to do about it.
+class _NothingAhead extends StatelessWidget {
+  const _NothingAhead({required this.reason, required this.onPickStage});
+
+  final EmptyReason? reason;
+  final VoidCallback onPickStage;
+
+  @override
+  Widget build(BuildContext context) {
+    final nj = context.nj;
+    final strings = NjStrings.of(context);
+
+    final (String title, String? hint) = switch (reason) {
+      EmptyReason.noRoutesConfigured => (
+          strings.dNoRoutesConfigured,
+          // The exact fix, in debug only. A driver can do nothing with it,
+          // and whoever is holding the phone during a build can do
+          // everything with it.
+          kDebugMode ? strings.dNoRoutesHint : null,
+        ),
+      EmptyReason.offCorridor => (
+          strings.dOffCorridor,
+          strings.dOffCorridorHint,
+        ),
+      EmptyReason.endOfTheRoad => (
+          strings.dEndOfTheRoad,
+          strings.dEndOfTheRoadHint,
+        ),
+      null => (strings.dNoDestinations, null),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(top: NjSpace.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          NjCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: context.njText.bodyLarge
+                      ?.copyWith(fontWeight: FontWeight.w700),
+                ),
+                if (hint != null) ...[
+                  const SizedBox(height: NjSpace.xs),
+                  Text(
+                    hint,
+                    style:
+                        context.njText.bodySmall?.copyWith(color: nj.muted),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          // The picker, as a real button rather than the small "Not here?"
+          // link above. It is the way out of two of these three, and a
+          // driver should not have to find it.
+          if (reason != EmptyReason.noRoutesConfigured) ...[
+            const SizedBox(height: NjSpace.md),
+            NjButton(label: strings.dPickStartStage, onPressed: onPickStage),
+          ],
+        ],
+      ),
     );
   }
 }

@@ -608,5 +608,29 @@
   "dPickupSoon": "Pickup arrives next",
   "@dPickupSoon": {
     "description": "dFeed. Stands in for Pickup until C10 wires the atomic claim. A button that silently does nothing is worse than one that says what it is waiting for."
+  },
+  "dNoRoutesConfigured": "Njiani has no roads set up yet.",
+  "@dNoRoutesConfigured": {
+    "description": "dDirection. where_am_i reported zero active routes. A setup problem, not a driver one -- almost always seed.sql never having been run, since db push applies migrations and not reference data."
+  },
+  "dNoRoutesHint": "Run supabase/seed.sql against this project. `supabase db push` applies migrations only — the corridor is reference data.",
+  "@dNoRoutesHint": {
+    "description": "dDirection, debug builds only. The exact fix for dNoRoutesConfigured. Never shown to a driver."
+  },
+  "dOffCorridor": "You're not on a road Njiani covers yet.",
+  "@dOffCorridor": {
+    "description": "dDirection. Located, but outside every route's corridor. The common case for a driver at home, before they drive to the road."
+  },
+  "dOffCorridorHint": "Drive to the Ubungo–Kimara road, or choose the stage you'll start from.",
+  "@dOffCorridorHint": {
+    "description": "dDirection. Names both ways out of being off-corridor."
+  },
+  "dEndOfTheRoad": "You're at the end of this road.",
+  "@dEndOfTheRoad": {
+    "description": "dDirection. On a corridor, with nothing further along it. Turning round is the answer, which the stage picker gives them."
+  },
+  "dEndOfTheRoadHint": "Choose the stage you'll start from to head back the other way.",
+  "@dEndOfTheRoadHint": {
+    "description": "dDirection. The way out of the end of a route."
   }
 }
