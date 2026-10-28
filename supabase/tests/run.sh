@@ -44,7 +44,16 @@ report() {
   local name="$1" out="$2" status="$3"
   local passed errors
   passed=$(printf '%s' "$out" | grep -cE 'NOTICE:  ok ')
-  errors=$(printf '%s' "$out" | grep -iE 'FAIL|ERROR' | head -3)
+  # Matched on the shapes psql actually prints -- `ERROR:` for anything the
+  # server refused (a failed assertion arrives as `ERROR:  FAIL  <label>`)
+  # and psql's own lowercase `error:` for a connection it never made.
+  #
+  # NOT a case-insensitive search for "fail", which is what this used to be:
+  # an assertion labelled "a request is still written when the broadcast
+  # fails" turned its own passing NOTICE into a reported failure. The
+  # opposite mistake to the false green this function already guards
+  # against, and just as misleading.
+  errors=$(printf '%s' "$out" | grep -E 'ERROR:|psql: error:' | head -3)
 
   total=$((total + passed))
 

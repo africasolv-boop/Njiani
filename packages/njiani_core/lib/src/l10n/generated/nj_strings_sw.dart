@@ -369,4 +369,78 @@ class NjStringsSw extends NjStrings {
   String dKmAway(String km) {
     return 'km $km';
   }
+
+  @override
+  String dFeedHeading(String dest) {
+    return 'Unaelekea $dest';
+  }
+
+  @override
+  String get dChange => 'Badilisha';
+
+  @override
+  String dFeedLive(String dest) {
+    return 'Moja kwa moja · abiria wanaoelekea $dest';
+  }
+
+  @override
+  String dFeedEmpty(String dest) {
+    return 'Hakuna mtu anayeelekea $dest bado. Utasikia sauti ombi likija.';
+  }
+
+  @override
+  String dFeedAhead(String from, String distance) {
+    return '$from · $distance mbele';
+  }
+
+  @override
+  String dFeedTo(String dest) {
+    return 'Hadi $dest';
+  }
+
+  @override
+  String dMetres(String m) {
+    return 'm $m';
+  }
+
+  @override
+  String dKilometres(String km) {
+    return 'km $km';
+  }
+
+  @override
+  String dSeatsLine(int free, int total) {
+    return 'Viti $free kati ya $total vipo';
+  }
+
+  @override
+  String get dSeatsFullLine => 'Viti vyote vimejaa';
+
+  @override
+  String get dSeatsFull => 'Viti vimejaa';
+
+  @override
+  String dFeedFrozen(String time) {
+    return 'Hakuna mtandao · unaona ulivyokuwa na saa $time';
+  }
+
+  @override
+  String get dFeedRefresh => 'Pakua upya';
+
+  @override
+  String dFeedOnBoardTab(int count) {
+    return 'Ndani ya gari ($count)';
+  }
+
+  @override
+  String get dFeedRequestsTab => 'Maombi';
+
+  @override
+  String get dFeedOnBoardSoon => 'Abiria uliowachukua wataonekana hapa.';
+
+  @override
+  String get dPickup => 'Chukua';
+
+  @override
+  String get dPickupSoon => 'Kuchukua kunakuja';
 }

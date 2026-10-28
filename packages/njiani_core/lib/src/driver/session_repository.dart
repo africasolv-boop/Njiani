@@ -39,23 +39,19 @@ class SupabaseSessionRepository implements SessionRepository {
 
   final SupabaseClient _client;
 
-  static const String _columns =
-      'id, driver_id, route_id, dest_stage_id, vehicle_type, seats_total, '
-      'seats_free, status, went_online_at';
-
   @override
   Future<DriverSession?> current() async {
     final id = _client.auth.currentUser?.id;
     if (id == null) return null;
 
     try {
-      final row = await _client
-          .from('driver_sessions')
-          .select(_columns)
-          .eq('driver_id', id)
-          .eq('status', 'online')
-          .maybeSingle();
-      return row == null ? null : DriverSession.fromRow(row);
+      // Through the function, not the table: it resolves the destination and
+      // the driver's nearest stage in the same round trip, which the route
+      // board needs and which would otherwise be two more calls on a
+      // connection the driver pays for.
+      final rows = await _client.rpc<List<dynamic>>('current_driver_session');
+      if (rows.isEmpty) return null;
+      return DriverSession.fromRow(rows.first as Map<String, dynamic>);
     } on PostgrestException catch (error) {
       throw DriverError(_classify(error), detail: error.message);
     }

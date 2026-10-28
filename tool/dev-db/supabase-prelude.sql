@@ -163,3 +163,68 @@ $$;
 grant usage on schema storage to anon, authenticated, service_role;
 grant all on storage.buckets, storage.objects
   to anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
+-- realtime. Supabase's Realtime service owns this schema. C9 uses two pieces
+-- of it: `realtime.send()`, which a trigger calls to broadcast a nudge, and
+-- `realtime.messages`, whose RLS decides who may subscribe to a private
+-- topic.
+--
+-- `send` here RECORDS instead of broadcasting, into `realtime.sent`, so a
+-- test can assert that the trigger fired with the right topic and a payload
+-- carrying no passenger data. That table is ours, not Supabase's; nothing in
+-- `supabase/migrations/` may reference it.
+--
+-- What this CANNOT stand in for: the Realtime service. Nothing here delivers
+-- a message to a client, and nothing here proves that Realtime consults
+-- `realtime.messages` RLS the way the policy assumes. What it does prove is
+-- that the trigger calls a real signature, with the topic the client
+-- computes, and that the policy is valid SQL whose predicate says what it
+-- means to say. The delivery itself is tested on a device.
+-- ---------------------------------------------------------------------------
+create schema if not exists realtime;
+
+-- Every broadcast the trigger attempted, in order.
+create table if not exists realtime.sent (
+  id          bigserial primary key,
+  payload     jsonb,
+  event       text,
+  topic       text,
+  private     boolean,
+  inserted_at timestamptz not null default now()
+);
+
+-- Matches Supabase's signature, including the argument order and the
+-- `private` default. A mismatch here would mean the trigger compiles locally
+-- and fails on the real project -- caught by its exception handler, and
+-- therefore silent, which is the worst way for it to be wrong.
+create or replace function realtime.send(
+  payload jsonb,
+  event   text,
+  topic   text,
+  private boolean default true
+)
+returns void
+language sql
+as $$
+  insert into realtime.sent (payload, event, topic, private)
+  values (payload, event, topic, private);
+$$;
+
+-- The subscribe gate. Only the columns the C9 policy reads; the real table
+-- carries an id, an extension and an inserted_at as well.
+create table if not exists realtime.messages (
+  topic       text not null,
+  extension   text,
+  event       text,
+  private     boolean default false,
+  payload     jsonb,
+  inserted_at timestamptz not null default now()
+);
+
+alter table realtime.messages enable row level security;
+
+grant usage on schema realtime to anon, authenticated, service_role;
+grant all on realtime.messages, realtime.sent to authenticated, service_role;
+grant execute on function realtime.send(jsonb, text, text, boolean)
+  to authenticated, service_role;

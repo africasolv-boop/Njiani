@@ -25,6 +25,9 @@ Future<void> pumpScreen(
   SessionRepository? session,
   PlacesRepository? places,
   DriverLocation? location,
+  FeedRepository? feed,
+  FeedPollPolicy? poll,
+  FeedAlert? alert,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -47,6 +50,11 @@ Future<void> pumpScreen(
       // asks the OS for a GPS fix.
       driverLocationProvider
         .overrideWithValue(location ?? FakeDriverLocation()),
+    if (feed != null) feedRepositoryProvider.overrideWithValue(feed),
+    // Never a real timer, and never a real platform channel. See the note
+    // on the camera above.
+    feedPollPolicyProvider.overrideWithValue(poll ?? FeedPollPolicy.manual),
+    feedAlertProvider.overrideWithValue(alert ?? FakeFeedAlert()),
     ],
   );
   addTearDown(container.dispose);
@@ -100,4 +108,10 @@ AsyncValue<Driver?> driverStateOf(WidgetTester tester, Finder of) {
 SessionController sessionControllerOf(WidgetTester tester, Finder of) {
   final element = tester.element(of);
   return ProviderScope.containerOf(element).read(sessionProvider.notifier);
+}
+
+/// Reads the feed controller out of a pumped tree.
+FeedController feedControllerOf(WidgetTester tester, Finder of) {
+  final element = tester.element(of);
+  return ProviderScope.containerOf(element).read(feedProvider.notifier);
 }

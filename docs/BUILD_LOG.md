@@ -2041,3 +2041,276 @@ rider), **110 SQL assertions**, 11 signature checks.
 | `dStage`, "I'm parked · show me where demand is" | The design puts it at **§13.1**, not C7. `demand_near()` already exists from C3, so it is a screen rather than a feature |
 | The route board and seat bar in the roadmap line | Those are the feed's chrome at **C9 / C10**, not this screen's. The session carries the seat counts they will read |
 | A driver with every seat taken cannot change direction | `go_online` refuses with "every seat is already taken". Correct for now — there is nowhere to put anyone — but it also blocks a legitimate re-heading. Revisit at **C11**, when dropping a passenger exists |
+
+---
+
+## C9 — The live feed · 🧪 awaiting your test
+
+`dFeed`, the driver's live request list. The product: everyone in the
+driver's corridor, ahead of them, stopping at or before where the driver
+stops — arriving without a tap.
+
+### One scoping note, before the rest
+
+**C9's sign-off line says "request on phone A appears on phone B", and phone A
+is C8**, the passenger's request screen, which does not exist yet. So the
+feed is built and testable, and the request comes from
+`supabase/dev/fake-request.sql` rather than from a second phone. That script
+writes a request that looks like real passenger traffic and then prints, per
+online driver, whether they can see it and if not why not — which is the part
+that saves time when a feed looks wrong.
+
+**The Pickup button is C10.** The claim has to be settled by
+`accept_ride_request()` with the losing driver shown "Taken by another
+driver", and the roadmap gives that its own component and its own two-device
+sign-off. The button is there, disabled, saying **Pickup arrives next** — a
+driver who taps a button that silently does nothing concludes the app is
+broken, which is worse than being told what is coming.
+
+### Credentials
+
+**None.**
+
+### How a feed stays live without a read policy
+
+The obvious way to make a feed live is to subscribe to `ride_requests` and let
+Postgres Changes stream the rows in. That cannot work here, and it should not:
+realtime respects RLS, and a driver holds **no read policy on that table at
+all**. They read matches only through `match_requests_for_session()`, scoped
+to their own session, so that a driver can never enumerate who is waiting
+where and for how much.
+
+Making realtime work by granting one would have undone the whole model. So
+the signal and the data are split:
+
+```
+passenger inserts  ->  trigger broadcasts { route_id, vehicle_type, at }
+                   ->  client re-runs match_requests_for_session()
+```
+
+**The live part is a doorbell, not a window.** The nudge carries a route, a
+vehicle type and a timestamp. A SQL assertion pins exactly that:
+
+```
+✓ the payload carries nothing a driver may not read   {at,route_id,vehicle_type}
+✓ no price, no passenger, no destination in the payload
+```
+
+If either ever fails, the doorbell has become a window.
+
+Subscription is a private topic, gated by a policy on `realtime.messages`: a
+driver may listen to a route's feed only while they are online on it, in that
+vehicle. It expires with the session, which is the lifetime the feed has.
+
+```
+✓ a driver sees their own route's topic
+✓ and only that one -- not the other direction's
+✓ an offline driver subscribes to nothing
+✓ a passenger subscribes to nothing
+✓ a signed-out client subscribes to nothing
+```
+
+The topic name is built by `route_feed_topic()` in SQL and
+`SupabaseFeedRepository.topicFor()` in Dart. A mismatch there is a feed that
+is silently never live — never an error, just a screen that stops updating —
+so there is an assertion on each side pinning the format.
+
+### A broken broadcast may cost latency and nothing else
+
+The trigger's whole body is wrapped in an exception handler. A Realtime
+outage, a renamed function, a missing schema — all of them look the same from
+inside a trigger, and none of them may stop a passenger's request being
+written:
+
+```
+✓ a request is still written when the broadcast fails
+✓ and it is really there
+```
+
+That test replaces `realtime.send` with one that raises, which is the only
+honest way to check it. The client polls every 30 seconds alongside the nudge
+for the same reason: that is what recovers from a socket that died in a
+tunnel. Thirty seconds, not three, because every poll is the driver's own
+mobile data.
+
+### The order is the product
+
+`match_requests_for_session` returns nearest-ahead first, and the screen does
+not re-sort. The design is explicit about why — "never by price" — and both
+layers assert it:
+
+```
+✓ nearest ahead first, not the better offer       Shekilango > Kibo
+✓ the server order is kept, without the client sorting it
+```
+
+and in Dart, with the far request offering TSh 5,000 against the near one's
+1,200:
+
+> the better offer is further away, and must stay further down the list
+
+Sorting a shared road by money turns it into an auction at a bus stage.
+
+### A bug in a C3 function, found by writing the dev fixture
+
+`match_requests_for_session` had no clause excluding the caller's own
+requests. A driver is a passenger on their days off, and a request outlives
+the mood — so a driver could be offered **themselves**, and claiming it would
+write a `trip_seats` row whose driver and passenger are the same person. One
+`where` clause, and two assertions.
+
+I found it while writing `fake-request.sql`: the obvious thing was to
+attribute the fixture request to the user's own account, and working out
+whether that would show up in their own feed is what surfaced it.
+
+### When the connection goes
+
+The design says the feed "freezes with a timestamp". The important half is
+what it does *not* do: blank itself. The previous answer is still the best one
+available, so it is kept and labelled —
+
+> No connection · showing what you had at 14:02
+
+— because "three requests" and "three requests, as of 14:02" are different
+claims and only one of them is true after the signal drops. A driver watching
+their feed empty itself in a tunnel would reasonably conclude the work had
+dried up.
+
+A failed *first* read shows no banner at all: there is no "as of" to show, and
+one would be claiming a time it does not have.
+
+### The sound, which the empty state promises
+
+> Nobody heading to Kimara Mwisho yet. **You'll hear a sound when a request
+> comes in.**
+
+That is a promise in the copy, so it has to happen. `SystemSound` and
+`HapticFeedback` rather than an audio package and an asset: no dependency, no
+file to ship, and the device's own alert is already at a volume its owner
+chose. Both fire, and neither is allowed to stop the other — a phone on silent
+still vibrates, and a phone in a noisy bajaj is more likely to be felt than
+heard.
+
+Three rules, each with a test:
+
+| | Why |
+| --- | --- |
+| Once per batch, not once per request | Three arriving together is one event to a driver; three chimes in a second is a malfunction |
+| Silent on the first load | Everything already waiting is "new" on the first read, and a chime per card would fire exactly when they are trying to read them |
+| Silent when a request *leaves* | A card disappearing is not news worth a sound |
+
+### Two bugs in my own test tooling
+
+**A false red, in the SQL runner.** `report()` matched `/FAIL|ERROR/i`, so an
+assertion honestly labelled *"a request is still written when the broadcast
+fails"* turned its own passing NOTICE into a reported failure. It matches the
+shapes psql actually prints now — `ERROR:` and psql's own lowercase `error:`
+— and I checked the fix the only way that means anything, by breaking an
+assertion on purpose and confirming the runner still catches it. This is the
+same function that used to produce a false *green*; it now has guards against
+both directions.
+
+**A pending timer.** The feed's 30-second poll outlived the widget tree and
+tripped `A Timer is still pending even after the widget tree was disposed`.
+The policy was already injectable for exactly this reason — all three test
+harnesses now pass `FeedPollPolicy.manual`, which also means a test that
+means to exercise the *nudge* cannot quietly pass on a poll instead.
+
+### And the gallery nearly disappeared
+
+The component gallery was reachable from the landing screen, which an online
+driver no longer sees — C9 sends them to the feed. Rather than putting a
+development link on the product's hot path, it is parked on the direction
+picker, in `kDebugMode` only. Every driver passes through there, and release
+builds carry nothing.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `supabase/migrations/20261028000100_feed_nudge.sql` | `route_feed_topic`, the nudge trigger, the subscribe policy, `current_driver_session`, and the self-exclusion fix |
+| `supabase/tests/07_feed_nudge_test.sql` | 20 assertions |
+| `supabase/dev/fake-request.sql` | a request by hand, with a per-driver verdict |
+| `supabase/dev/fake-request-cleanup.sql` | removes everything it made |
+| `packages/njiani_core/lib/src/driver/feed_request.dart` | `FeedRequest` |
+| `packages/njiani_core/lib/src/driver/feed_repository.dart` | the match call, the Broadcast subscription, and a fake |
+| `packages/njiani_core/lib/src/driver/feed_controller.dart` | `FeedState`, the nudge listener, the poll |
+| `packages/njiani_core/lib/src/driver/feed_alert.dart` | the sound and the buzz, behind an interface |
+| `packages/njiani_core/lib/src/screens/driver_feed_screen.dart` | `dFeed` |
+| `packages/njiani_core/test/feed_test.dart` | 23 tests |
+
+### Files changed
+
+| File | Change |
+| --- | --- |
+| `packages/njiani_core/lib/src/app/nj_router.dart` | online lands on the feed; the picker stays reachable from it |
+| `packages/njiani_core/lib/src/driver/driver_session.dart` | the resolved place names the route board needs |
+| `packages/njiani_core/lib/src/driver/session_repository.dart` | reads through `current_driver_session()`, one round trip instead of three |
+| `packages/njiani_core/lib/src/screens/driver_direction_screen.dart` | the debug-only gallery link |
+| `supabase/tests/run.sh` | the false-red fix, with a note on both failure modes |
+| `tool/dev-db/supabase-prelude.sql` | the `realtime` schema stub, and what it cannot prove |
+
+### How to test
+
+```sh
+supabase db push
+./tool/check.sh
+cd apps/njiani_driver && flutter run --dart-define-from-file=../../.env.local
+```
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Go online heading to Kimara Mwisho | The feed, not the placeholder. **Nobody heading to Kimara Mwisho yet** — and it says a sound will play |
+| 2 | Check the route board | Where you are on the left, where you said you are heading on the right, **You're online** under it |
+| 3 | Run `supabase/dev/fake-request.sql` in the SQL editor | Its last table should say **SHOULD SEE IT** for your plate |
+| 4 | Look at the phone **without touching it** | A card appears, **and the phone sounds and buzzes** |
+| 5 | Read the card | Pickup stage, distance ahead along the road, the price, the destination |
+| 6 | Run the script twice more, changing the **last digit** of the passenger id and the pickup stage each time | Three cards, nearest first |
+| 7 | Make the furthest one the most expensive and re-run | It stays at the **bottom**. Never by price |
+| 8 | Turn on airplane mode and wait, or pull to refresh | The cards stay, and a red band says **No connection · showing what you had at HH:MM** |
+| 9 | Airplane mode off, pull to refresh | The band goes |
+| 10 | In the SQL editor: `update ride_requests set status='cancelled' where passenger_id::text like '0de00de0-%';` | The cards leave, **with no sound** |
+| 11 | Tap **Change** | The direction picker, with the yellow **You're online** banner |
+| 12 | Go offline, then come back | The picker, not the feed — no heading, nothing to show |
+| 13 | Switch the phone to Kiswahili | **Moja kwa moja · abiria wanaoelekea…** |
+| 14 | When you are done | `supabase/dev/fake-request-cleanup.sql` |
+
+**Step 4 is the sign-off.** Nothing is tapped. If the card only appears when
+you pull, the nudge is not arriving and the 30-second poll is carrying it —
+which is a real difference, and the next section says why I cannot rule it
+out from here.
+
+**Step 7 is the product.** A feed sorted by price is a different, worse
+product.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **371 Flutter tests** (348 core, 14 driver, 9
+rider), **130 SQL assertions**, 11 signature checks. The SQL runner's fix was
+checked by breaking an assertion deliberately and confirming it still fails.
+
+**Not verified, and this component has more of it than the last few:**
+
+- **The Broadcast delivery itself has never run.** The trigger is tested
+  against a local `realtime.send` that records instead of broadcasting, so
+  what is proven is that it calls a real signature with the right topic and a
+  harmless payload. That Realtime *delivers* it, and that it consults
+  `realtime.messages` RLS the way the policy assumes, is step 4 and nothing
+  else.
+- **The client's subscribe path is untested.** `SupabaseFeedRepository.nudges`
+  opens a private channel; every test uses a fake stream. If `private: true`
+  needs something I have not done, the symptom is a feed that updates every
+  30 seconds instead of instantly — which looks like it works.
+- The alert reaches a platform channel, so every test uses a counter. Step 4
+  is the first real sound.
+- `current_driver_session()` and the feed's RPC have not spoken to PostgREST.
+
+### Known gaps — deliberate
+
+| Gap | Why, and what picks it up |
+| --- | --- |
+| **Pickup does nothing** | The atomic claim and the losing driver's "Taken by another driver" are **C10**, with a two-device sign-off. The button says so rather than failing silently |
+| No On board tab | The design's second tab shows claimed passengers, which needs the claim first. **C11** |
+| Nothing calls `report_position` yet | Carried over from C7. A driver who goes online at Ubungo and drives to Kibo keeps a feed computed from Ubungo until they re-enter the screen. Throttling it properly is the next thing I would do, and it belongs here rather than at C14 — I left it out to keep C9 to the feed, but say the word and it is small |
+| `pSearch` and `pNoDriver` | C9's passenger half in the screen map, and both unreachable without C8's request screen. They land with C8 |
+| Today's earnings bar | The design's footer. **C11**, with the earnings tally |

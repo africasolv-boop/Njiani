@@ -57,6 +57,8 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D23 | What a session is built from | **`go_online()` reads the vehicle and the seat count from `drivers`; the client sends only a route and a destination** | `driver_sessions` had a CHECK tying `seats_total` to `vehicle_type` and nothing tying either to the driver's record — so a boda rider could have opened a bajaj session with three seats and been offered three-seat work. The function also enforces the C6 gate, because a gate in the UI is not a gate. `insert` and most of `update` are revoked from `authenticated` on that table; only `last_pos` stays writable. |
 | D24 | Choosing a destination chooses the direction | **No compass, no heading question — just the stage list** | Ubungo→Kimara and Kimara→Ubungo are two route rows over the same tarmac (D-level consequence of the one-row-per-direction decision in §5), so a driver's point sits in both corridors, but any given stage is ahead on exactly one of them. `destinations_ahead()` returns both directions' stages and picking one settles the route. One question instead of two, and the one a driver already knows the answer to. |
 | D25 | Rendering locale | **`NjLocale.of(context)`, never `languageProvider`** | They answer different questions. The provider is the first router gate — has a language been confirmed — and `Localizations.localeOf` is what actually chose the strings on screen. A screen reading the provider has two sources of truth that can disagree, and they did: English chrome around a Kiswahili place name. |
+| D26 | How the feed stays live | **A broadcast nudge carrying no data, answered by re-running the matching function** — never a subscription to `ride_requests` | Realtime respects RLS, and a driver holds no read policy on that table (§8), so there is nothing to subscribe to — and giving them one to make realtime work would undo the whole model. A trigger broadcasts a route, a vehicle type and a timestamp; the client answers by calling `match_requests_for_session()`, which applies the same scoping it always did. The live part is a doorbell, not a window. |
+| D27 | What a broken broadcast may cost | **Latency, and nothing else** | The trigger's whole body is wrapped in an exception handler, so a Realtime outage, a renamed function or a missing schema cannot stop a passenger's request being written. The client polls every 30s alongside the nudge for the same reason. Getting this backwards would mean the notification taking out the thing the app exists to do. |
 | D18 | State management | **Riverpod without code generation** | `NotifierProvider` directly avoids a `build_runner` step in the build, which keeps `./tool/check.sh` the only thing a contributor has to run. |
 | D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
@@ -315,6 +317,11 @@ Every table has RLS enabled. Summary of intent (exact policies land in C3):
   policy; they read matches **only** through `match_requests_for_session()`, which is scoped to
   their own online session. A driver cannot enumerate the request table.
 - `trip_seats` — readable by the passenger on the seat and the driver holding it, nobody else.
+- The feed's realtime signal — a private Broadcast topic per route and vehicle type. The
+  `realtime.messages` policy lets a driver subscribe only while they are online on that route,
+  and the payload carries a route id, a vehicle type and a timestamp: no request, no price, no
+  destination, no passenger (D26). A driver also never sees their own request in their own
+  feed — claiming it would write a seat whose driver and passenger are the same person.
 - `licence_path` files — private `licences` bucket, signed URLs, read by the owner and by
   admins and nobody else. The path is `<uid>/licence.<ext>`, so the owner is the first folder
   segment and the policy can match on it. **No DELETE policy at all** (D21). Storage enforces a
@@ -351,13 +358,13 @@ changes and test steps, and each waits for your local sign-off before the next b
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
 | C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | `pLang` + i18n (EN/SW), `go_router` guard, Riverpod, persistence | ✅ Flip language; restart and it is remembered |
-| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 110 SQL assertions pass |
+| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 130 SQL assertions pass |
 | C4 | `pPhone` + `pOtp` — Supabase phone OTP, Beem delivery | ✅ Log in on your own phone |
 | C5 | Profile + session persistence | ✅ Kill the app, reopen, still logged in |
 | C6 | Driver signup, licence upload, pending screen, approval | ✅ Submit → approve in Studio → screen changes, with nothing tapped |
-| C7 | Driver direction picker, go online, route board, seat bar | 🧪 Pick Kimara, go online |
+| C7 | Driver direction picker, go online, route board, seat bar | ✅ Pick Kimara, go online |
 | C8 | Passenger request — destination, vehicle, price, hint band | Send a request |
-| C9 | **Live matching feed** — the PostGIS query + realtime | Request on phone A appears on phone B |
+| C9 | **Live matching feed** — the PostGIS query + realtime | 🧪 Request appears in the feed without a tap. Phone A is `supabase/dev/fake-request.sql` until C8 |
 | C10 | **Atomic seat claim** | Two devices race one request; one wins, one sees "Taken" |
 | C11 | Trip lifecycle both sides, cancels, earnings tally | A full ride, end to end |
 | C12 | Ratings + trip history | Rate a trip, see it stored |
