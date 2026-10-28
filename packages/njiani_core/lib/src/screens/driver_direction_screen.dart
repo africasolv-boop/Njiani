@@ -1,9 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
-import '../app/nj_routes.dart';
 import '../design/nj_theme.dart';
 import '../design/nj_tokens.dart';
 import '../driver/driver_controller.dart';
@@ -17,6 +15,7 @@ import '../places/place.dart';
 import '../util/redact.dart';
 import '../widgets/nj_button.dart';
 import '../widgets/nj_card.dart';
+import '../widgets/nj_dev_tools.dart';
 import '../widgets/nj_screen_body.dart';
 import '../widgets/nj_sheet.dart';
 import '../widgets/nj_skeleton.dart';
@@ -318,20 +317,10 @@ class _DriverDirectionScreenState extends ConsumerState<DriverDirectionScreen> {
           ),
       ],
 
-      // The component gallery used to be reachable from the landing screen,
-      // which an online driver no longer sees -- C9 sends them to the feed
-      // instead. Parked here, in debug builds only: every driver passes
+      // Language, sign out and the gallery, which lived on the landing
+      // placeholder an online driver no longer sees. Every driver passes
       // through this screen, and it is not the product's hot path.
-      if (kDebugMode) ...[
-        const SizedBox(height: NjSpace.sm),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: TextButton(
-            onPressed: () => context.push(NjRoutes.gallery),
-            child: Text(strings.openComponentGallery),
-          ),
-        ),
-      ],
+      const NjDevTools(),
 
       const SizedBox(height: NjSpace.lg),
       _GoOnlineButton(

@@ -632,5 +632,114 @@
   "dEndOfTheRoadHint": "Choose the stage you'll start from to head back the other way.",
   "@dEndOfTheRoadHint": {
     "description": "dDirection. The way out of the end of a route."
+  },
+  "pRequestTitle": "Where are you going?",
+  "@pRequestTitle": {
+    "description": "pHome heading."
+  },
+  "pPickupLabel": "Pickup, from your location",
+  "@pPickupLabel": {
+    "description": "pHome. Above the stage GPS resolved to."
+  },
+  "pPickupPicked": "Pickup",
+  "@pPickupPicked": {
+    "description": "pHome. Above a stage the passenger named by hand."
+  },
+  "pGoingTo": "Going to",
+  "@pGoingTo": {
+    "description": "pHome. Above the destination list."
+  },
+  "pChoosePickup": "Choose where you are",
+  "@pChoosePickup": {
+    "description": "pHome. Opens the stage list, the no-GPS fallback."
+  },
+  "pChooseDestination": "Choose a destination",
+  "@pChooseDestination": {
+    "description": "pHome. Opens the destination list."
+  },
+  "pPriceLabel": "Your price, per seat",
+  "@pPriceLabel": {
+    "description": "pHome. The price field. 'Per seat' matters: a bajaj carries three, each paying their own fare."
+  },
+  "pBandHint": "Most drivers on this route take TSh {low} to {high}",
+  "@pBandHint": {
+    "description": "pHome. The price band, from price_bands. A hint, never a rule.",
+    "placeholders": {
+      "low": {
+        "type": "String"
+      },
+      "high": {
+        "type": "String"
+      }
+    }
+  },
+  "pBelowBand": "Below what drivers here usually take. You can still send it.",
+  "@pBelowBand": {
+    "description": "pHome. An offer below the band sends with a warning and is never blocked -- the passenger sets the price (ARCHITECTURE §7)."
+  },
+  "pNoBand": "No usual price for this trip yet. Offer what you think is fair.",
+  "@pNoBand": {
+    "description": "pHome. The pair has never been priced. Saying so beats inventing a number a passenger would anchor to."
+  },
+  "pSendRequest": "Send request",
+  "@pSendRequest": {
+    "description": "pHome primary action."
+  },
+  "pSending": "Sending…",
+  "@pSending": {
+    "description": "pHome, while create_ride_request runs."
+  },
+  "pExpiryNote": "Your request expires after 10 minutes if no driver takes it.",
+  "@pExpiryNote": {
+    "description": "pHome. Under the send button. Matches the ten minutes in the schema."
+  },
+  "pWaitingTitle": "Looking for a driver",
+  "@pWaitingTitle": {
+    "description": "pHome, once a request is open."
+  },
+  "pWaitingBody": "Drivers heading your way will see your offer. We'll tell you when one takes it.",
+  "@pWaitingBody": {
+    "description": "pHome, waiting. Says who can see it, which is the question a passenger standing at the road is actually asking."
+  },
+  "pExpiresIn": "Expires in {time}",
+  "@pExpiresIn": {
+    "description": "pHome, waiting. A live countdown, so the ten minutes is visible rather than promised.",
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "pExpired": "Nobody took it this time.",
+  "@pExpired": {
+    "description": "pHome. The request ran out. Not an error -- the road was quiet."
+  },
+  "pCancelRequest": "Cancel request",
+  "@pCancelRequest": {
+    "description": "pHome, waiting. Withdraws it. The row is kept, cancelled."
+  },
+  "pSendAnother": "Ask again",
+  "@pSendAnother": {
+    "description": "pHome, after an expiry. Straight back to the form with the same choices."
+  },
+  "pSeatsBajaj": "Bajaj · 3 seats",
+  "@pSeatsBajaj": {
+    "description": "pHome vehicle option. Same wording as the driver's, deliberately: it is the same vehicle."
+  },
+  "pSeatsBoda": "Boda · 1 seat",
+  "@pSeatsBoda": {
+    "description": "pHome vehicle option."
+  },
+  "errRequestNotATrip": "That trip doesn't work — the destination has to be further along the same road.",
+  "@errRequestNotATrip": {
+    "description": "RequestFailure.notATrip. The server refused a pair that would have saved fine and then matched nothing."
+  },
+  "errAlreadyWaiting": "You already have a request waiting.",
+  "@errAlreadyWaiting": {
+    "description": "RequestFailure.alreadyWaiting. One open request per passenger: two would let one person hold two seats and strand the second driver."
+  },
+  "errRequestFailed": "Couldn't send. Your request was not created.",
+  "@errRequestFailed": {
+    "description": "RequestFailure.unknown and offline. The design is explicit that this must be unambiguous: a silent failure means standing at the road for nothing."
   }
 }

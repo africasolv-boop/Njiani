@@ -462,4 +462,86 @@ class NjStringsEn extends NjStrings {
   @override
   String get dEndOfTheRoadHint =>
       'Choose the stage you\'ll start from to head back the other way.';
+
+  @override
+  String get pRequestTitle => 'Where are you going?';
+
+  @override
+  String get pPickupLabel => 'Pickup, from your location';
+
+  @override
+  String get pPickupPicked => 'Pickup';
+
+  @override
+  String get pGoingTo => 'Going to';
+
+  @override
+  String get pChoosePickup => 'Choose where you are';
+
+  @override
+  String get pChooseDestination => 'Choose a destination';
+
+  @override
+  String get pPriceLabel => 'Your price, per seat';
+
+  @override
+  String pBandHint(String low, String high) {
+    return 'Most drivers on this route take TSh $low to $high';
+  }
+
+  @override
+  String get pBelowBand =>
+      'Below what drivers here usually take. You can still send it.';
+
+  @override
+  String get pNoBand =>
+      'No usual price for this trip yet. Offer what you think is fair.';
+
+  @override
+  String get pSendRequest => 'Send request';
+
+  @override
+  String get pSending => 'Sending…';
+
+  @override
+  String get pExpiryNote =>
+      'Your request expires after 10 minutes if no driver takes it.';
+
+  @override
+  String get pWaitingTitle => 'Looking for a driver';
+
+  @override
+  String get pWaitingBody =>
+      'Drivers heading your way will see your offer. We\'ll tell you when one takes it.';
+
+  @override
+  String pExpiresIn(String time) {
+    return 'Expires in $time';
+  }
+
+  @override
+  String get pExpired => 'Nobody took it this time.';
+
+  @override
+  String get pCancelRequest => 'Cancel request';
+
+  @override
+  String get pSendAnother => 'Ask again';
+
+  @override
+  String get pSeatsBajaj => 'Bajaj · 3 seats';
+
+  @override
+  String get pSeatsBoda => 'Boda · 1 seat';
+
+  @override
+  String get errRequestNotATrip =>
+      'That trip doesn\'t work — the destination has to be further along the same road.';
+
+  @override
+  String get errAlreadyWaiting => 'You already have a request waiting.';
+
+  @override
+  String get errRequestFailed =>
+      'Couldn\'t send. Your request was not created.';
 }

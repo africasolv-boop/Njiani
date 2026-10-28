@@ -59,6 +59,8 @@ Decisions taken during planning, with the reasoning, so we can revisit them know
 | D25 | Rendering locale | **`NjLocale.of(context)`, never `languageProvider`** | They answer different questions. The provider is the first router gate — has a language been confirmed — and `Localizations.localeOf` is what actually chose the strings on screen. A screen reading the provider has two sources of truth that can disagree, and they did: English chrome around a Kiswahili place name. |
 | D26 | How the feed stays live | **A broadcast nudge carrying no data, answered by re-running the matching function** — never a subscription to `ride_requests` | Realtime respects RLS, and a driver holds no read policy on that table (§8), so there is nothing to subscribe to — and giving them one to make realtime work would undo the whole model. A trigger broadcasts a route, a vehicle type and a timestamp; the client answers by calling `match_requests_for_session()`, which applies the same scoping it always did. The live part is a doorbell, not a window. |
 | D27 | What a broken broadcast may cost | **Latency, and nothing else** | The trigger's whole body is wrapped in an exception handler, so a Realtime outage, a renamed function or a missing schema cannot stop a passenger's request being written. The client polls every 30s alongside the nudge for the same reason. Getting this backwards would mean the notification taking out the thing the app exists to do. |
+| D28 | What the client may decide about a request | **The price, the vehicle, and the two stages. Nothing else** | `create_ride_request()` resolves the route from the stage pair and the pickup point from the stage, and refuses a destination that is not further along the same road. The failure it prevents is not an error message — it is a row that saves perfectly and then never appears in any feed, which is the worst kind: everything succeeded and nothing happened. |
+| D29 | A passenger at the driver's own stage is a match | **100 m of tolerance behind the driver, not strictly ahead** | `pickup_t > driver_t` excluded the single most likely match there is — somebody waiting at the stage the driver is pulling out of — over a few metres of GPS noise. 100 m is longer than a bus stage and a GPS error, and short enough never to mean turning round in traffic. |
 | D18 | State management | **Riverpod without code generation** | `NotifierProvider` directly avoids a `build_runner` step in the build, which keeps `./tool/check.sh` the only thing a contributor has to run. |
 | D16 | Screen data during build | **Realistic mock data first**, Supabase wired afterwards | Lets the whole flow be tapped through on a real phone within days, so flow problems surface while they are still cheap. Backend is wired per screen afterwards, with no visual rework. |
 
@@ -358,13 +360,13 @@ changes and test steps, and each waits for your local sign-off before the next b
 | C0 | Monorepo scaffold, both app shells, docs, `.env.example` | ✅ `flutter run` boots both apps on iOS and Android |
 | C1 | Design system — **rebuilt from the design project** (D14), light + dark, shared components | 🔄 Reopened. Gallery renders the real design language |
 | C2 | `pLang` + i18n (EN/SW), `go_router` guard, Riverpod, persistence | ✅ Flip language; restart and it is remembered |
-| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 130 SQL assertions pass |
+| C3 | Supabase schema, PostGIS, RLS, Ubungo→Kimara seed | ✅ Migrations run; 155 SQL assertions pass |
 | C4 | `pPhone` + `pOtp` — Supabase phone OTP, Beem delivery | ✅ Log in on your own phone |
 | C5 | Profile + session persistence | ✅ Kill the app, reopen, still logged in |
 | C6 | Driver signup, licence upload, pending screen, approval | ✅ Submit → approve in Studio → screen changes, with nothing tapped |
 | C7 | Driver direction picker, go online, route board, seat bar | ✅ Pick Kimara, go online |
-| C8 | Passenger request — destination, vehicle, price, hint band | Send a request |
-| C9 | **Live matching feed** — the PostGIS query + realtime | 🧪 Request appears in the feed without a tap. Phone A is `supabase/dev/fake-request.sql` until C8 |
+| C8 | Passenger request — destination, vehicle, price, hint band | 🧪 Send a request, and watch it land in the driver's feed |
+| C9 | **Live matching feed** — the PostGIS query + realtime | 🧪 Request appears in the feed without a tap. Phone A is the rider app from C8 |
 | C10 | **Atomic seat claim** | Two devices race one request; one wins, one sees "Taken" |
 | C11 | Trip lifecycle both sides, cancels, earnings tally | A full ride, end to end |
 | C12 | Ratings + trip history | Rate a trip, see it stored |

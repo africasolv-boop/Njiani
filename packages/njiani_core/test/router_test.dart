@@ -10,6 +10,7 @@ Future<ProviderContainer> pumpApp(
   AuthRepository? auth,
   DriverRepository? driver,
   SessionRepository? session,
+  RequestRepository? request,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -28,6 +29,10 @@ Future<ProviderContainer> pumpApp(
       // exercise the nudge would otherwise be able to pass on a poll.
       feedPollPolicyProvider.overrideWithValue(FeedPollPolicy.manual),
       feedAlertProvider.overrideWithValue(FakeFeedAlert()),
+      requestRepositoryProvider
+          .overrideWithValue(request ?? FakeRequestRepository()),
+      placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
+      driverLocationProvider.overrideWithValue(FakeDriverLocation()),
       // Never the real one: it opens a GPS request, and a widget test that
       // reaches a plugin fails in a way that looks like the screen is broken.
       driverLocationProvider.overrideWithValue(FakeDriverLocation()),
@@ -82,7 +87,7 @@ void main() {
       await container.read(authProvider.notifier).verifyCode(auth.code);
       await tester.pumpAndSettle();
 
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(RequestScreen), findsOneWidget);
       expect(find.byType(OtpScreen), findsNothing);
     });
 
@@ -110,8 +115,11 @@ void main() {
       await tester.pumpAndSettle();
       await container.read(authProvider.notifier).verifyCode(auth.code);
       await tester.pumpAndSettle();
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(RequestScreen), findsOneWidget);
 
+      // Sign out moved to NjDevTools when the real screens replaced the
+      // landing placeholder. Scrolled to, because it sits below the fold.
+      await tester.ensureVisible(find.text('Sign out'));
       await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
 
@@ -128,19 +136,19 @@ void main() {
       await pumpApp(tester, storedLocale: NjLocale.en, auth: auth);
 
       expect(find.byType(PhoneScreen), findsNothing);
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(RequestScreen), findsOneWidget);
     });
   });
 
   group('per-app routing', () {
-    testWidgets('the rider app points at the request screen next',
-        (tester) async {
+    testWidgets('the rider app opens the request screen', (tester) async {
       final auth = FakeAuthRepository();
       addTearDown(auth.dispose);
       await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
       await pumpApp(tester, storedLocale: NjLocale.en, auth: auth);
 
-      expect(find.textContaining('C8'), findsOneWidget);
+      expect(find.byType(RequestScreen), findsOneWidget);
+      expect(find.byType(PlaceholderScreen), findsNothing);
     });
 
     testWidgets('the driver app opens the verification gate, not the app',
@@ -333,7 +341,7 @@ void main() {
       // A passenger with a pending driver row -- which happens, a driver can
       // also be a passenger -- is not held at any gate in this binary, and
       // the binary does not read the table at all.
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(RequestScreen), findsOneWidget);
       expect(container.exists(driverProvider), isFalse);
     });
   });
