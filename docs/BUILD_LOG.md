@@ -19,12 +19,12 @@
 | C1 | Design system (rev. 2, from the design project) | ✅ | 2026-09-21 |
 | C2 | `pLang` — language choice, i18n, routing | ✅ | 2026-09-22 |
 | C3 | Supabase schema + PostGIS + RLS + seed | ✅ | 2026-10-21 |
-| C4 | `pPhone` + `pOtp` — phone and SMS code | 🧪 awaiting your test | |
-| C5 | Profile + `profiles.lang` + session persistence | 🧪 awaiting your test | |
-| C6 | Driver onboarding + verification | 🔜 | |
-| C7 | Driver direction + go online | 🔜 | |
-| C8 | Passenger request | 🔜 | |
-| C9 | Live matching feed | 🔜 | |
+| C4 | `pPhone` + `pOtp` — phone and SMS code | ✅ | |
+| C5 | Profile + `profiles.lang` + session persistence | ✅ | |
+| C6 | Driver onboarding + verification | ✅ | |
+| C7 | Driver direction + go online | ✅ | |
+| C8 | Passenger request | 🧪 awaiting your test | |
+| C9 | Live matching feed | 🧪 awaiting your test | |
 | C10 | Atomic seat claim | 🔜 | |
 | C11 | Trip lifecycle | 🔜 | |
 | C12 | Ratings + history | 🔜 | |
