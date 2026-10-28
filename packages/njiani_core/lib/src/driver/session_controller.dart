@@ -110,6 +110,7 @@ class DirectionOptions {
     this.point,
     this.fromStageId,
     this.problem,
+    this.origin,
   });
 
   /// Everywhere the driver could head for, in route order.
@@ -131,6 +132,23 @@ class DirectionOptions {
   /// Why there is no position, if there isn't one. Not an error: the screen
   /// falls back to picking a starting stage by hand.
   final LocationProblem? problem;
+
+  /// What the server made of the position. Null when there was no position
+  /// to ask about, or when the driver named their stage instead.
+  final Origin? origin;
+
+  /// Why the destination list is empty, when it is.
+  ///
+  /// Three situations produce the same empty list and a driver needs to be
+  /// told which one they are in — "No stages ahead of you on this road" was
+  /// the same sentence for all three, with no way forward from any of them.
+  EmptyReason? get emptyReason {
+    if (destinations.isNotEmpty) return null;
+    if (origin?.noRoutes ?? false) return EmptyReason.noRoutesConfigured;
+    if (origin != null && !origin!.onCorridor) return EmptyReason.offCorridor;
+    if (hasOrigin) return EmptyReason.endOfTheRoad;
+    return null;
+  }
 
   bool get located => point != null;
 
@@ -176,14 +194,30 @@ final directionOptionsProvider =
   }
 
   final point = fix.point!;
-  final (nearest, destinations) = await (
-    places.nearestStage(point),
+  final (origin, destinations) = await (
+    places.whereAmI(point),
     places.destinationsAhead(point),
   ).wait;
 
   return DirectionOptions(
     destinations: destinations,
-    from: nearest,
+    from: origin.stage,
     point: point,
+    origin: origin,
   );
 });
+
+/// Why a destination list came back empty.
+enum EmptyReason {
+  /// The database has no routes at all. A setup problem, not a driver one:
+  /// `db push` applies migrations and `seed.sql` is reference data, so this
+  /// is almost always the seed never having been run.
+  noRoutesConfigured,
+
+  /// The driver is somewhere Njiani does not cover. Real and common — a
+  /// driver at home, before they have driven to the road.
+  offCorridor,
+
+  /// On a road, at the far end of it. Nothing ahead, by definition.
+  endOfTheRoad,
+}

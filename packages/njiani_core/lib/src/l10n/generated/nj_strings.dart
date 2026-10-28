@@ -852,6 +852,42 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'Pickup arrives next'**
   String get dPickupSoon;
+
+  /// dDirection. where_am_i reported zero active routes. A setup problem, not a driver one -- almost always seed.sql never having been run, since db push applies migrations and not reference data.
+  ///
+  /// In en, this message translates to:
+  /// **'Njiani has no roads set up yet.'**
+  String get dNoRoutesConfigured;
+
+  /// dDirection, debug builds only. The exact fix for dNoRoutesConfigured. Never shown to a driver.
+  ///
+  /// In en, this message translates to:
+  /// **'Run supabase/seed.sql against this project. `supabase db push` applies migrations only — the corridor is reference data.'**
+  String get dNoRoutesHint;
+
+  /// dDirection. Located, but outside every route's corridor. The common case for a driver at home, before they drive to the road.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not on a road Njiani covers yet.'**
+  String get dOffCorridor;
+
+  /// dDirection. Names both ways out of being off-corridor.
+  ///
+  /// In en, this message translates to:
+  /// **'Drive to the Ubungo–Kimara road, or choose the stage you\'ll start from.'**
+  String get dOffCorridorHint;
+
+  /// dDirection. On a corridor, with nothing further along it. Turning round is the answer, which the stage picker gives them.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re at the end of this road.'**
+  String get dEndOfTheRoad;
+
+  /// dDirection. The way out of the end of a route.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the stage you\'ll start from to head back the other way.'**
+  String get dEndOfTheRoadHint;
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

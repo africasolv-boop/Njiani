@@ -443,4 +443,26 @@ class NjStringsSw extends NjStrings {
 
   @override
   String get dPickupSoon => 'Kuchukua kunakuja';
+
+  @override
+  String get dNoRoutesConfigured => 'Njiani haina barabara zilizowekwa bado.';
+
+  @override
+  String get dNoRoutesHint =>
+      'Endesha supabase/seed.sql kwenye mradi huu. `supabase db push` inaweka migrations pekee — njia ni data ya marejeo.';
+
+  @override
+  String get dOffCorridor =>
+      'Hauko kwenye barabara ambayo Njiani inahudumia bado.';
+
+  @override
+  String get dOffCorridorHint =>
+      'Nenda kwenye barabara ya Ubungo–Kimara, au chagua kituo utakapoanzia.';
+
+  @override
+  String get dEndOfTheRoad => 'Uko mwisho wa barabara hii.';
+
+  @override
+  String get dEndOfTheRoadHint =>
+      'Chagua kituo utakapoanzia ili urudi upande mwingine.';
 }

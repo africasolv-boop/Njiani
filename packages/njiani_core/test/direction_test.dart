@@ -343,6 +343,64 @@ void main() {
   });
 
   // =========================================================================
+  // Three situations that produce the same empty destination list, and used
+  // to produce the same unhelpful sentence with no way out of any of them.
+  // =========================================================================
+  group('dDirection — when there is nowhere to go', () {
+    testWidgets('an unseeded database says so, and says what to run',
+        (tester) async {
+      // What the first real run on a hosted project looked like: `db push`
+      // applies migrations, `seed.sql` is reference data, and nothing on
+      // screen connected the blank line to the missing seed.
+      places.routesActive = 0;
+      places.onCorridor = false;
+      places.destinations = [];
+      await pumpDirection(tester);
+
+      expect(find.text('Njiani has no roads set up yet.'), findsOneWidget);
+      expect(find.textContaining('seed.sql'), findsOneWidget,
+          reason: 'debug builds get the exact fix');
+      // No stage picker: there are no stages to pick.
+      expect(find.text('Choose where you are'), findsNothing);
+    });
+
+    testWidgets('off the corridor says where to drive, and offers the list',
+        (tester) async {
+      // The common real case: a driver at home, before they have driven to
+      // the road. Also what a desktop build in another country looks like.
+      places.onCorridor = false;
+      places.destinations = [];
+      await pumpDirection(tester);
+
+      expect(
+        find.text("You're not on a road Njiani covers yet."),
+        findsOneWidget,
+      );
+      expect(find.text('Choose where you are'), findsOneWidget);
+    });
+
+    testWidgets('the end of the road offers the way back', (tester) async {
+      places.destinations = [];
+      await pumpDirection(tester);
+
+      expect(find.text("You're at the end of this road."), findsOneWidget);
+      expect(find.text('Choose where you are'), findsOneWidget);
+    });
+
+    testWidgets('a stage far from any road is not claimed as your location',
+        (tester) async {
+      // nearest_stage had no radius, so a point in Amsterdam came back as
+      // Kimara Mwisho, 7,315 km away, printed under "Starting from your
+      // location" as though it were a fact.
+      places.onCorridor = false;
+      places.destinations = [];
+      await pumpDirection(tester);
+
+      final row = tester.widget<NjWhereRow>(find.byType(NjWhereRow));
+      expect(row.fromValue, isEmpty);
+    });
+  });
+
   group('dDirection — refusals from the server', () {
     testWidgets('an unapproved driver is told, not left guessing',
         (tester) async {
