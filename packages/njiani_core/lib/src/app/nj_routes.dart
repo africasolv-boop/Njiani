@@ -37,6 +37,9 @@ abstract final class NjRoutes {
   /// The live request feed. Driver app only, and only while online.
   static const String driverFeed = '/driver/feed';
 
+  /// Request a ride. Rider app only.
+  static const String request = '/request';
+
   /// Development-only component gallery. Removed from release builds at C18.
   static const String gallery = '/gallery';
 

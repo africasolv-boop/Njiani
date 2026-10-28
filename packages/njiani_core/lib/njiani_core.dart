@@ -10,6 +10,7 @@
 ///   src/config/   build configuration and app identity
 ///   src/driver/   the verification gate, the driver's record, the session
 ///   src/places/   routes, stages, and what is ahead on the road
+///   src/rider/    the passenger's request
 ///   src/design/   colour tokens, spacing, typography, theme
 ///   src/widgets/  the design system
 ///   src/util/     formatters and helpers
@@ -58,6 +59,9 @@ export 'src/places/places_repository.dart';
 export 'src/profile/profile.dart';
 export 'src/profile/profile_controller.dart';
 export 'src/profile/profile_repository.dart';
+export 'src/rider/request_controller.dart';
+export 'src/rider/request_repository.dart';
+export 'src/rider/ride_request.dart';
 export 'src/screens/driver_direction_screen.dart';
 export 'src/screens/driver_feed_screen.dart';
 export 'src/screens/driver_pending_screen.dart';
@@ -67,6 +71,7 @@ export 'src/screens/language_screen.dart';
 export 'src/screens/otp_screen.dart';
 export 'src/screens/phone_screen.dart';
 export 'src/screens/placeholder_screen.dart';
+export 'src/screens/request_screen.dart';
 export 'src/util/money.dart';
 export 'src/util/redact.dart';
 export 'src/util/support_call.dart';
@@ -77,6 +82,7 @@ export 'src/widgets/nj_banner.dart';
 export 'src/widgets/nj_button.dart';
 export 'src/widgets/nj_card.dart';
 export 'src/widgets/nj_choice_chips.dart';
+export 'src/widgets/nj_dev_tools.dart';
 export 'src/widgets/nj_empty_state.dart';
 export 'src/widgets/nj_hint.dart';
 export 'src/widgets/nj_live_dot.dart';

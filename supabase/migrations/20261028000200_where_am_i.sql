@@ -25,6 +25,12 @@ set search_path = public, extensions;
 -- and comfortably less than "a different part of the city". Beyond it the
 -- honest answer is no row, which the caller can then say out loud.
 -- ---------------------------------------------------------------------------
+-- The DROP is load-bearing: `create or replace` only replaces a function with
+-- the SAME signature, so adding the radius would otherwise leave the old
+-- one-argument version in place beside it, and `nearest_stage(last_pos)` --
+-- which `current_driver_session` calls -- would fail with "is not unique".
+drop function if exists public.nearest_stage(geography);
+
 create or replace function public.nearest_stage(
   p_point    geography,
   p_within_m integer default 3000

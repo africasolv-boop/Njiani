@@ -888,6 +888,150 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'Choose the stage you\'ll start from to head back the other way.'**
   String get dEndOfTheRoadHint;
+
+  /// pHome heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Where are you going?'**
+  String get pRequestTitle;
+
+  /// pHome. Above the stage GPS resolved to.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup, from your location'**
+  String get pPickupLabel;
+
+  /// pHome. Above a stage the passenger named by hand.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup'**
+  String get pPickupPicked;
+
+  /// pHome. Above the destination list.
+  ///
+  /// In en, this message translates to:
+  /// **'Going to'**
+  String get pGoingTo;
+
+  /// pHome. Opens the stage list, the no-GPS fallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose where you are'**
+  String get pChoosePickup;
+
+  /// pHome. Opens the destination list.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a destination'**
+  String get pChooseDestination;
+
+  /// pHome. The price field. 'Per seat' matters: a bajaj carries three, each paying their own fare.
+  ///
+  /// In en, this message translates to:
+  /// **'Your price, per seat'**
+  String get pPriceLabel;
+
+  /// pHome. The price band, from price_bands. A hint, never a rule.
+  ///
+  /// In en, this message translates to:
+  /// **'Most drivers on this route take TSh {low} to {high}'**
+  String pBandHint(String low, String high);
+
+  /// pHome. An offer below the band sends with a warning and is never blocked -- the passenger sets the price (ARCHITECTURE §7).
+  ///
+  /// In en, this message translates to:
+  /// **'Below what drivers here usually take. You can still send it.'**
+  String get pBelowBand;
+
+  /// pHome. The pair has never been priced. Saying so beats inventing a number a passenger would anchor to.
+  ///
+  /// In en, this message translates to:
+  /// **'No usual price for this trip yet. Offer what you think is fair.'**
+  String get pNoBand;
+
+  /// pHome primary action.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get pSendRequest;
+
+  /// pHome, while create_ride_request runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get pSending;
+
+  /// pHome. Under the send button. Matches the ten minutes in the schema.
+  ///
+  /// In en, this message translates to:
+  /// **'Your request expires after 10 minutes if no driver takes it.'**
+  String get pExpiryNote;
+
+  /// pHome, once a request is open.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for a driver'**
+  String get pWaitingTitle;
+
+  /// pHome, waiting. Says who can see it, which is the question a passenger standing at the road is actually asking.
+  ///
+  /// In en, this message translates to:
+  /// **'Drivers heading your way will see your offer. We\'ll tell you when one takes it.'**
+  String get pWaitingBody;
+
+  /// pHome, waiting. A live countdown, so the ten minutes is visible rather than promised.
+  ///
+  /// In en, this message translates to:
+  /// **'Expires in {time}'**
+  String pExpiresIn(String time);
+
+  /// pHome. The request ran out. Not an error -- the road was quiet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody took it this time.'**
+  String get pExpired;
+
+  /// pHome, waiting. Withdraws it. The row is kept, cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel request'**
+  String get pCancelRequest;
+
+  /// pHome, after an expiry. Straight back to the form with the same choices.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask again'**
+  String get pSendAnother;
+
+  /// pHome vehicle option. Same wording as the driver's, deliberately: it is the same vehicle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bajaj · 3 seats'**
+  String get pSeatsBajaj;
+
+  /// pHome vehicle option.
+  ///
+  /// In en, this message translates to:
+  /// **'Boda · 1 seat'**
+  String get pSeatsBoda;
+
+  /// RequestFailure.notATrip. The server refused a pair that would have saved fine and then matched nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'That trip doesn\'t work — the destination has to be further along the same road.'**
+  String get errRequestNotATrip;
+
+  /// RequestFailure.alreadyWaiting. One open request per passenger: two would let one person hold two seats and strand the second driver.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a request waiting.'**
+  String get errAlreadyWaiting;
+
+  /// RequestFailure.unknown and offline. The design is explicit that this must be unambiguous: a silent failure means standing at the road for nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send. Your request was not created.'**
+  String get errRequestFailed;
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

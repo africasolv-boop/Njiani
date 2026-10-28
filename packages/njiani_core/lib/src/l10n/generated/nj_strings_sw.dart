@@ -465,4 +465,85 @@ class NjStringsSw extends NjStrings {
   @override
   String get dEndOfTheRoadHint =>
       'Chagua kituo utakapoanzia ili urudi upande mwingine.';
+
+  @override
+  String get pRequestTitle => 'Unaenda wapi?';
+
+  @override
+  String get pPickupLabel => 'Unapoanzia, mahali ulipo';
+
+  @override
+  String get pPickupPicked => 'Unapoanzia';
+
+  @override
+  String get pGoingTo => 'Unaenda';
+
+  @override
+  String get pChoosePickup => 'Chagua ulipo';
+
+  @override
+  String get pChooseDestination => 'Chagua unakoenda';
+
+  @override
+  String get pPriceLabel => 'Bei yako, kwa kiti';
+
+  @override
+  String pBandHint(String low, String high) {
+    return 'Madereva wengi wa njia hii wanakubali TSh $low hadi $high';
+  }
+
+  @override
+  String get pBelowBand =>
+      'Chini ya wanachokubali madereva hapa. Bado unaweza kutuma.';
+
+  @override
+  String get pNoBand =>
+      'Hakuna bei ya kawaida ya safari hii bado. Toa unachoona ni sawa.';
+
+  @override
+  String get pSendRequest => 'Tuma ombi';
+
+  @override
+  String get pSending => 'Inatuma…';
+
+  @override
+  String get pExpiryNote =>
+      'Ombi lako litaisha baada ya dakika 10 kama hakuna dereva atakayelichukua.';
+
+  @override
+  String get pWaitingTitle => 'Tunatafuta dereva';
+
+  @override
+  String get pWaitingBody =>
+      'Madereva wanaoelekea upande wako wataona ombi lako. Tutakujulisha mmoja akilichukua.';
+
+  @override
+  String pExpiresIn(String time) {
+    return 'Litaisha baada ya $time';
+  }
+
+  @override
+  String get pExpired => 'Hakuna aliyelichukua safari hii.';
+
+  @override
+  String get pCancelRequest => 'Ghairi ombi';
+
+  @override
+  String get pSendAnother => 'Omba tena';
+
+  @override
+  String get pSeatsBajaj => 'Bajaj · viti 3';
+
+  @override
+  String get pSeatsBoda => 'Boda · kiti 1';
+
+  @override
+  String get errRequestNotATrip =>
+      'Safari hiyo haiwezekani — unakoenda lazima kuwe mbele zaidi kwenye barabara ile ile.';
+
+  @override
+  String get errAlreadyWaiting => 'Tayari una ombi linalosubiri.';
+
+  @override
+  String get errRequestFailed => 'Haikutumwa. Ombi lako halikutengenezwa.';
 }

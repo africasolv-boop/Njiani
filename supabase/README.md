@@ -57,6 +57,8 @@ it in `public`, which is exactly why this bug reached a real project.
 | `20261026000200_driver_review` | `review_driver`, `resubmit_driver_licence`, realtime on `drivers` |
 | `20261027000100_going_online` | `seats_for`, `destinations_ahead`, `go_online`, `go_offline`, `report_position` |
 | `20261028000100_feed_nudge` | the feed's realtime nudge, `current_driver_session`, and a driver no longer seeing their own request |
+| `20261028000200_where_am_i` | a radius on `nearest_stage`, and `where_am_i` |
+| `20261029000100_requesting` | `price_band`, `create_ride_request`, `cancel_ride_request`, `current_ride_request`, and the behind-the-driver tolerance |
 
 ### Storage
 
@@ -169,12 +171,55 @@ Subscription is gated by a policy on `realtime.messages`: a driver may listen
 to a route's topic only while they are online on that route, in that vehicle.
 It expires with the session, which is the lifetime the feed has.
 
+### Asking for a seat (C8)
+
+`create_ride_request(pickup, dest, vehicle, price)` is the only way a request
+is made. The client chooses the price, the vehicle and the two stages;
+everything else is resolved here, because everything else is a way to write a
+row that saves perfectly and then matches nothing:
+
+- the **route** comes from the stage pair, not from the client;
+- the **pickup point** comes from the stage's own geometry, so it cannot
+  drift off the corridor;
+- a destination that is not further along the **same** road is refused, as is
+  a stage pair on two different routes.
+
+`price_band(from, to, vehicle)` is the hint. It returns **no row** for a pair
+nobody has priced, which the screen says out loud — a made-up band is worse
+than none, because a passenger anchors to it. An offer below the band sends
+with a warning and is never blocked (ARCHITECTURE §7).
+
+`cancel_ride_request()` withdraws it, and `current_ride_request()` reads it
+back with its place names. Cancelled, never deleted: an unmatched request
+carries its offer, its destination and its time of day, which is the pricing
+dataset.
+
+### ⚠ Adding a parameter to an existing function
+
+`create or replace function` only replaces a function with the **same
+signature**. Adding a parameter creates a second one beside the first, and
+every existing call then fails:
+
+```
+ERROR: function public.match_requests_for_session(unknown) is not unique
+```
+
+Two migrations did this — the feed's matching function and `nearest_stage` —
+and neither showed up until the database was rebuilt from scratch, because
+applying one migration to an already-migrated database replaces the function
+in place. Both now `drop function if exists` the old signature first, and
+`08_requesting_test.sql` asserts that **no function in `public` is defined
+twice**.
+
+The lesson for the harness: `./tool/dev-db.sh` without `--reset` says so, and
+a green suite is only worth something after a rebuild.
+
 ### Putting something in a feed by hand
 
 `dev/fake-request.sql` writes a request that looks like real passenger
-traffic, and prints why each online driver can or cannot see it. Needed until
-C8 builds the passenger's side, and useful after it for testing a feed
-without a second phone. `dev/fake-request-cleanup.sql` removes everything it
+traffic, and prints why each online driver can or cannot see it. Since C8 the
+rider app does this properly; the script remains useful for filling a feed
+with several cards without several phones. `dev/fake-request-cleanup.sql` removes everything it
 made.
 
 Both are scoped to a `0de00de0-` id prefix, which no migration, seed or test
@@ -359,7 +404,7 @@ be certified as passing.
 Use its connection string from Dashboard → Settings → Database. **Use a dev
 project, never production** — the concurrency test writes and deletes rows.
 
-Expected: **130 assertions passed.**
+Expected: **155 assertions passed.**
 
 | File | Covers |
 | --- | --- |
@@ -370,6 +415,7 @@ Expected: **130 assertions passed.**
 | `05_driver_review_test.sql` | the verification gate: a driver cannot approve themselves, a rejection needs a reason, re-submission keeps the other checks, the column grants, and the bucket's policies |
 | `06_going_online_test.sql` | what is ahead and what is behind, a session built from the driver's record rather than the client's, and a claimed seat surviving a direction change without being sold twice |
 | `07_feed_nudge_test.sql` | the nudge carries nothing a driver may not read, a broken broadcast does not stop a request, who may subscribe, and nearest-ahead ordering beating a better offer |
+| `08_requesting_test.sql` | the four ways a request can be unmatchable, each refused before it is written; the band; one open request per passenger; and that a request made through the function reaches a driver's feed |
 
 Everything except the concurrency test runs in a transaction and rolls back.
 That one needs two separate connections, so it cleans up after itself.

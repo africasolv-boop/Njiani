@@ -2379,3 +2379,203 @@ show Ubungo and eight stages west of it — though only if the device reports a
 position on the corridor. On a Windows desktop build it will report wherever
 that machine is, which is off-corridor, and you will now get the second row of
 that table instead of a blank: the explanation plus the stage list.
+
+---
+
+## C8 — Request a ride · 🧪 awaiting your test
+
+`pHome`, the passenger's whole job in one screen: where they are going, in
+what, for how much. With this the loop closes — a request sent from the rider
+app lands in a driver's feed, which is also C9's sign-off.
+
+### Credentials
+
+**None.**
+
+### The price is the passenger's
+
+A band is a hint and never a rule. An offer below it sends **with a warning
+and is not blocked** — the passenger sets the price, and a rejected offer
+reveals the floor faster than an accepted one does (ARCHITECTURE §7). The
+test says so in its own words:
+
+> the passenger sets the price; a rejected offer tells us more about the floor
+> than an accepted one does
+
+A pair nobody has priced returns **no band**, and the screen says so rather
+than inventing a number:
+
+> No usual price for this trip yet. Offer what you think is fair.
+
+A made-up band would be worse than none, because a passenger anchors to it.
+The chips are low / mid / high with the middle rounded to the nearest hundred
+— nobody offers TSh 1,137 — and a narrow band that rounds to the same number
+twice shows two chips, not three.
+
+### What the client is allowed to decide
+
+Four things, and only four: the price, the vehicle, and the two stages.
+Everything else is resolved by `create_ride_request()`, because everything
+else is a way to write a row that **saves perfectly and then matches
+nothing**:
+
+```
+✓ a trip backwards along the road is refused
+✓ two stages on different routes are refused
+✓ going nowhere is refused
+✓ the pickup point comes from the stage
+✓ the route is resolved from the pair, not supplied
+```
+
+That is the failure mode this whole function exists for. None of those
+produces an error without the check — they produce a request that looks
+perfect in the table and never appears in any feed, which is the worst kind of
+bug: everything succeeded and nothing happened.
+
+### The bug the test found, which is the most likely match there is
+
+The last assertion in the file is the one that matters: *a request made
+through the function reaches a driver feed.* It failed.
+
+`match_requests_for_session` required `pickup_t > driver_t` — strictly ahead.
+A passenger waiting at **the stage the driver is pulling out of** was
+therefore excluded, by a few metres. Exact equality never happens in the
+field; being five metres past the stage does, constantly.
+
+It allows 100 m behind now: longer than a bus stage, longer than a GPS error,
+and short enough that it never means turning round in traffic. `meters_ahead`
+already clamps at zero, so someone just behind reads as "0 m ahead", which is
+what they are. Both ends are pinned:
+
+```
+✓ a passenger just behind the driver is still offered
+✓ but not one a long way behind -- that would mean turning round
+```
+
+I would not have found this from the driver side. It took building the thing
+that makes requests and then asking whether a driver could see one.
+
+### Two migrations that would have broken on your push
+
+`create or replace function` only replaces a function with the **same
+signature**. Adding a parameter creates a *second* function beside the first,
+and every existing call then fails with
+
+```
+ERROR: function public.match_requests_for_session(unknown) is not unique
+```
+
+Two of mine did this: the matching function here, and `nearest_stage` in
+yesterday's C7 fix. **Neither was visible until I rebuilt the database from
+scratch** — applying one migration to an already-migrated database replaces
+the function in place, and I had been dropping the old signatures by hand
+while iterating, which hid it perfectly.
+
+On your project the symptom would have been the driver feed and the session
+read both breaking the moment you pushed.
+
+Both migrations `drop function if exists` the old signature first. The guard
+is schema-wide rather than specific to the two that broke, because nothing
+about it was specific to them:
+
+```
+✓ no function in public is defined twice
+```
+
+And `./tool/dev-db.sh` now says out loud when it has applied migrations on top
+of an existing database, because a green suite there is not worth much.
+
+### Also: sign out and change language nearly disappeared
+
+The landing placeholder carried three things — the component gallery, change
+language, and sign out. C7, C8 and C9 have now replaced that screen in both
+apps, and two of those three are not development features at all: they belong
+on a Settings screen that does not exist yet.
+
+`NjDevTools` is one widget, used by the direction picker and the request
+screen, rendering nothing in release builds. Three copies of a temporary thing
+is how a temporary thing survives.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `supabase/migrations/20261029000100_requesting.sql` | `price_band`, `create_ride_request`, `cancel_ride_request`, `current_ride_request`, and the behind-the-driver tolerance |
+| `supabase/tests/08_requesting_test.sql` | 25 assertions |
+| `packages/njiani_core/lib/src/rider/ride_request.dart` | `RideRequest`, `PriceBand` |
+| `packages/njiani_core/lib/src/rider/request_repository.dart` | the C8 functions, and a fake |
+| `packages/njiani_core/lib/src/rider/request_controller.dart` | the open request, and the band lookup |
+| `packages/njiani_core/lib/src/screens/request_screen.dart` | `pHome`, in its two states |
+| `packages/njiani_core/lib/src/widgets/nj_dev_tools.dart` | gallery, language, sign out — debug only |
+| `packages/njiani_core/test/request_test.dart` | 24 tests |
+
+### Files changed
+
+| File | Change |
+| --- | --- |
+| `packages/njiani_core/lib/src/app/nj_router.dart` | the rider app's landing route |
+| `supabase/migrations/20261028000200_where_am_i.sql` | drops the old `nearest_stage` signature |
+| `packages/njiani_core/lib/src/screens/driver_direction_screen.dart` | uses `NjDevTools` |
+| `tool/dev-db.sh` | says when it applied on top of an existing database |
+| `docs/ARCHITECTURE.md` | D28, D29 |
+
+### How to test
+
+**Two devices, or one device and the SQL editor.** This is the first time the
+two apps talk to each other.
+
+```sh
+supabase db push          # two migrations
+./tool/check.sh
+cd apps/njiani_rider && flutter run --dart-define-from-file=../../.env.local
+```
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Open the **rider** app, signed in | **Where are you going?** with your nearest stage as the pickup |
+| 2 | Off the corridor (a desktop build) | The explanation and **Choose where you are**. Pick Ubungo Mataa |
+| 3 | Tap **Choose a destination** | Stages ahead of you, each with its distance |
+| 4 | Pick Kimara Mwisho | **Most drivers on this route take TSh 1,700 to 2,500** |
+| 5 | Tap the middle chip | 2,100 fills the field, **Send request** enables |
+| 6 | Type 800 instead | The hint turns red: **Below what drivers here usually take. You can still send it.** — and Send is **still enabled** |
+| 7 | Switch to **Boda · 1 seat** | The band re-reads for a boda |
+| 8 | Send | **Looking for a driver**, with what you asked for and a countdown from 9:5x |
+| 9 | On the **driver** app, online heading the same way | The card appears **without a tap**, and the phone sounds |
+| 10 | Back on the rider app, tap **Cancel request** | The form returns. In Supabase the row is `cancelled`, not gone |
+| 11 | Send again and leave it | At 10 minutes: **Nobody took it this time.** and **Ask again** |
+| 12 | Send two requests in a row without cancelling | **You already have a request waiting.** |
+| 13 | Switch the phone to Kiswahili | **Unaenda wapi?**, **Bei yako, kwa kiti** |
+
+**Steps 8 and 9 together are the product.** That is the whole loop: a
+passenger offers a price, and a driver heading the same way sees it arrive.
+
+**Step 6 is the pricing model.** If Send ever greys out below the band, the
+thing that makes this a marketplace rather than a meter is broken.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **399 Flutter tests** (376 core, 14 driver, 9
+rider), **155 SQL assertions**, 11 signature checks. The SQL suite was run
+against a database **rebuilt from scratch**, which is what caught the two
+duplicate functions.
+
+**Not verified:**
+
+- `SupabaseRequestRepository` has never spoken to PostgREST. In particular
+  `create_ride_request` returns a `ride_requests` row type, and the client
+  ignores it and re-reads through `current_ride_request()` — so the one thing
+  that must work is the RPC accepting four named parameters.
+- The ten-minute expiry is enforced by `pg_cron` on the server and by
+  `expires_at > now()` in the read. Step 11 is the first time either has been
+  watched in real time.
+- Everything realtime about C9 remains unverified from here; step 9 is still
+  its first real test.
+
+### Known gaps — deliberate
+
+| Gap | Why, and what picks it up |
+| --- | --- |
+| **No map** | The design's pHome has a map panel. Maps are display-only until **C14** (D6), and a hand-drawn one would be decoration that implies a position we are not yet tracking |
+| `pSearch` proper | The waiting state here says a driver will see the offer; the design's screen names **how many** can see it right now, from `match_requests_for_session`. That count is C9's passenger half and lands with the matched / no-driver transitions |
+| `pMatched`, `pNoDriver` | **C10** and **C9** respectively. Right now a claimed request simply stops being open, and the waiting panel falls back to the form |
+| Saved places (`pPlaces`) | V2. The stage list is the whole address book for now |

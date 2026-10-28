@@ -91,6 +91,13 @@ say "seed"
 psql -q -v ON_ERROR_STOP=1 "$URL" -f supabase/seed.sql
 
 echo ""
+if [ "${1:-}" != "--reset" ]; then
+  echo "NOTE: this applied the migrations on top of what was already here."
+  echo "      Run with --reset before trusting a green suite: a migration"
+  echo "      that ADDS a parameter to an existing function leaves two"
+  echo "      behind, and only a rebuild from scratch shows it."
+  echo ""
+fi
 echo "Ready. The SQL suite runs when DATABASE_URL is set:"
 echo ""
 echo "    export DATABASE_URL=\"$URL\""

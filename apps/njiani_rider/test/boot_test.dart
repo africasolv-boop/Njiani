@@ -18,6 +18,11 @@ Future<ProviderContainer> pumpApp(
       authRepositoryProvider.overrideWithValue(auth ?? FakeAuthRepository()),
       profileLoadPolicyProvider
           .overrideWithValue(ProfileLoadPolicy.immediate),
+      // In-memory, and never a real one: the request screen reads the stage
+      // list and the device's position the moment it builds.
+      requestRepositoryProvider.overrideWithValue(FakeRequestRepository()),
+      placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
+      driverLocationProvider.overrideWithValue(FakeDriverLocation()),
     ],
   );
   addTearDown(container.dispose);
@@ -63,7 +68,9 @@ void main() {
     await container.read(authProvider.notifier).verifyCode(auth.code);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('C8'), findsOneWidget);
+    // The rider binary's own next screen. Asserted on the type rather than
+    // on a component label, which moves with the roadmap.
+    expect(find.byType(RequestScreen), findsOneWidget);
   });
 
   testWidgets('the component gallery stays reachable', (tester) async {
@@ -72,6 +79,9 @@ void main() {
     await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
     await pumpApp(tester, storedLocale: NjLocale.en, auth: auth);
 
+    // In NjDevTools now, below the fold: the landing placeholder that used
+    // to carry it was replaced by the request screen at C8.
+    await tester.ensureVisible(find.text('Component gallery'));
     await tester.tap(find.text('Component gallery'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));

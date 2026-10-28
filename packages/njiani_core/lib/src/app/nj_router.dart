@@ -17,6 +17,7 @@ import '../screens/language_screen.dart';
 import '../screens/otp_screen.dart';
 import '../screens/phone_screen.dart';
 import '../screens/placeholder_screen.dart';
+import '../screens/request_screen.dart';
 import 'nj_routes.dart';
 
 /// Bridges Riverpod providers to [GoRouter.refreshListenable].
@@ -75,7 +76,12 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       // Signed in: onboarding routes are behind the user now.
       if (NjRoutes.onboarding.contains(here)) return NjRoutes.home;
 
-      // 3. Verification, in the driver app only. A passenger has no such gate,
+      // 3. The rider app has one screen so far, and `home` is it. Redirected
+      //    rather than built at `/` so the route is nameable from a push
+      //    notification at C13.
+      if (app.isRider && here == NjRoutes.home) return NjRoutes.request;
+
+      // 4. Verification, in the driver app only. A passenger has no such gate,
       //    and the rider binary never reads the drivers table.
       if (app.isDriver) {
         final gate = driverGateFor(ref.read(driverProvider));
@@ -95,7 +101,7 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
         };
         if (wantedGate != here) return wantedGate;
 
-        // 4. A heading, before any request is seen. The declaration is the
+        // 5. A heading, before any request is seen. The declaration is the
         //    product (ARCHITECTURE §6.1), so an approved driver with no
         //    session lands on the picker rather than on an empty feed.
         //
@@ -171,6 +177,10 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       GoRoute(
         path: NjRoutes.driverRejected,
         builder: (context, state) => const DriverRejectedScreen(),
+      ),
+      GoRoute(
+        path: NjRoutes.request,
+        builder: (context, state) => const RequestScreen(),
       ),
       GoRoute(
         path: NjRoutes.driverDirection,

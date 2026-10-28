@@ -28,6 +28,7 @@ Future<void> pumpScreen(
   FeedRepository? feed,
   FeedPollPolicy? poll,
   FeedAlert? alert,
+  RequestRepository? request,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -55,6 +56,8 @@ Future<void> pumpScreen(
     // on the camera above.
     feedPollPolicyProvider.overrideWithValue(poll ?? FeedPollPolicy.manual),
     feedAlertProvider.overrideWithValue(alert ?? FakeFeedAlert()),
+    requestRepositoryProvider
+        .overrideWithValue(request ?? FakeRequestRepository()),
     ],
   );
   addTearDown(container.dispose);
@@ -114,4 +117,10 @@ SessionController sessionControllerOf(WidgetTester tester, Finder of) {
 FeedController feedControllerOf(WidgetTester tester, Finder of) {
   final element = tester.element(of);
   return ProviderScope.containerOf(element).read(feedProvider.notifier);
+}
+
+/// Reads the request controller out of a pumped tree.
+RequestController requestControllerOf(WidgetTester tester, Finder of) {
+  final element = tester.element(of);
+  return ProviderScope.containerOf(element).read(requestProvider.notifier);
 }
