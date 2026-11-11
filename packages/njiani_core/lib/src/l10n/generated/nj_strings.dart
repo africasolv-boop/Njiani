@@ -1098,6 +1098,144 @@ abstract class NjStrings {
   /// In en, this message translates to:
   /// **'Couldn\'t save that. Try again.'**
   String get pDetailsFailed;
+
+  /// dFeed. Pickup while accept_ride_request is in flight. One tap only: a driver in traffic taps twice when nothing happens, and the second tap would come back already_taken against their own claim.
+  ///
+  /// In en, this message translates to:
+  /// **'Claiming…'**
+  String get dClaiming;
+
+  /// dFeed toast after a won claim. Names the stop, because that is the one thing the driver now has to act on and the card has just left the feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Seat is yours · the passenger is at {stop}'**
+  String dClaimWon(String stop);
+
+  /// dFeed. The band on a lost card, for about two seconds before it leaves. From the design. Two drivers tapping the same passenger in the same second is the expected case on a busy road, not an error.
+  ///
+  /// In en, this message translates to:
+  /// **'Taken by another driver'**
+  String get dClaimTaken;
+
+  /// dFeed toast. The claim failed for a reason that is not a lost race.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t take that seat. Try again.'**
+  String get dClaimFailed;
+
+  /// dFeed toast. The connection dropped mid-claim, which is the one case where nobody knows the answer yet. The feed is re-read straight after, and the seat count is what settles it.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection · checking whether the seat is yours'**
+  String get dClaimChecking;
+
+  /// pMatched headline. Haversine over 18 km/h, per D8 -- never seconds, because a straight line over Dar es Salaam traffic cannot carry that precision.
+  ///
+  /// In en, this message translates to:
+  /// **'Arriving in {min} min'**
+  String pMatchedArriving(int min);
+
+  /// pMatched headline once the driver is at the pickup point. From the design.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {vehicle} is here'**
+  String pMatchedHere(String vehicle);
+
+  /// pMatched headline when the driver has sent no position yet, so there is no distance to divide. Says the true thing rather than inventing a number.
+  ///
+  /// In en, this message translates to:
+  /// **'Your driver is on the way'**
+  String get pMatchedOnTheWay;
+
+  /// pMatched. Where to stand. The design's example is 'Wait at Ubungo Bus Terminal, main gate'; the stage name is what the schema actually holds.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait at {stop}'**
+  String pMatchedWaitAt(String stop);
+
+  /// pMatched. The pickup was a point on the road rather than a named stage, so there is no stop to name.
+  ///
+  /// In en, this message translates to:
+  /// **'Wait where you are'**
+  String get pMatchedWaitHere;
+
+  /// pMatched. The driver's record. From the design.
+  ///
+  /// In en, this message translates to:
+  /// **'{rating} rating · {trips} trips'**
+  String pDriverRating(String rating, int trips);
+
+  /// pMatched. Shown in place of a rating when the driver has never been rated. Not 5.0: a made-up score on a first trip is a lie a passenger acts on.
+  ///
+  /// In en, this message translates to:
+  /// **'New on Njiani'**
+  String get pDriverNew;
+
+  /// pMatched. Colour and vehicle together, next to the colour dot. A separate string because the word order reverses in Kiswahili.
+  ///
+  /// In en, this message translates to:
+  /// **'{colour} {vehicle}'**
+  String pVehicleColour(String colour, String vehicle);
+
+  /// pMatched. Who else is in the vehicle. The whole product is a shared seat, so arriving to find two strangers in the bajaj must not be a surprise.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 other passenger on board.} other{{count} other passengers on board.}}'**
+  String pSharingWith(int count);
+
+  /// pMatched. Precedes the price, which is rendered bold beside it -- the design emphasises the number. A label rather than a string with the amount substituted in: the amount is already formatted by tsh() and the two have different weights.
+  ///
+  /// In en, this message translates to:
+  /// **'Price agreed:'**
+  String get pPriceAgreedLabel;
+
+  /// pMatched. The driver's number is revealed only for a live seat, and only to this seat's two parties.
+  ///
+  /// In en, this message translates to:
+  /// **'Call {name}'**
+  String pCallDriver(String name);
+
+  /// pMatched. The profile carries no phone number. Says so rather than offering a button that dials nothing.
+  ///
+  /// In en, this message translates to:
+  /// **'No number for this driver yet'**
+  String get pNoDriverPhone;
+
+  /// pMatched. Cancelling is free until the driver arrives, and the button says so rather than making the passenger guess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel · no penalty'**
+  String get pCancelFree;
+
+  /// pMatched, while cancel_my_seat runs.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling…'**
+  String get pCancelling;
+
+  /// pMatched. A failed cancel, said plainly rather than letting the screen look cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t cancel. Try again.'**
+  String get pCancelFailed;
+
+  /// pMatched, in the arrived state. The claimed-to-aboard transition and the trip screen are C11, so the button says what it is waiting for rather than silently doing nothing. Cancel is gone by then, deliberately: the design makes cancelling free only until the driver arrives.
+  ///
+  /// In en, this message translates to:
+  /// **'Boarding arrives next'**
+  String get pOnBoardSoon;
+
+  /// The bare vehicle word, for use inside a sentence -- 'Your bajaj is here', 'Blue bajaj'. Separate from dVehicleBajaj, which is a picker option carrying the seat count.
+  ///
+  /// In en, this message translates to:
+  /// **'bajaj'**
+  String get vehicleBajaj;
+
+  /// The bare vehicle word. See vehicleBajaj.
+  ///
+  /// In en, this message translates to:
+  /// **'boda'**
+  String get vehicleBoda;
 }
 
 class _NjStringsDelegate extends LocalizationsDelegate<NjStrings> {

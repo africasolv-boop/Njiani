@@ -5,14 +5,17 @@ import '../config/app_identity.dart';
 import '../design/nj_colors.dart';
 import '../design/nj_theme.dart';
 import '../design/nj_tokens.dart';
+import '../driver/driver.dart';
 import '../util/money.dart';
 import '../widgets/nj_action_tile.dart';
+import '../widgets/nj_approach_band.dart';
 import '../widgets/nj_avatar.dart';
 import '../widgets/nj_badge.dart';
 import '../widgets/nj_banner.dart';
 import '../widgets/nj_button.dart';
 import '../widgets/nj_card.dart';
 import '../widgets/nj_choice_chips.dart';
+import '../widgets/nj_colour_dot.dart';
 import '../widgets/nj_empty_state.dart';
 import '../widgets/nj_hint.dart';
 import '../widgets/nj_live_dot.dart';
@@ -67,6 +70,7 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
   String _triple = 'week';
   int? _price = 1500;
   int _seatsTaken = 1;
+  double _approach = 0.25;
   int _rating = 4;
   bool _otpError = false;
   final _priceController = TextEditingController(text: '1,800');
@@ -298,7 +302,45 @@ class _NjGalleryScreenState extends State<NjGalleryScreen> {
                     NjLiveDot(label: 'Live'),
                   ],
                 ),
+                const SizedBox(height: NjSpace.md),
+                // Every colour the sign-up screen offers, so white on white
+                // and black in dark mode can both be checked at a glance.
+                Wrap(
+                  spacing: NjSpace.md,
+                  runSpacing: NjSpace.sm,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    for (final colour in VehicleColour.values)
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          NjColourDot(colour: colour.code),
+                          const SizedBox(width: NjSpace.xs),
+                          Text(colour.code),
+                        ],
+                      ),
+                  ],
+                ),
               ],
+            ),
+          ),
+
+          _Matrix(
+            title: 'NjApproachBand',
+            spec: 'Not a map. The driver coming along the road, 2 km to 0. '
+                'Tap to move them.',
+            content: (context) => GestureDetector(
+              onTap: () => setState(
+                () => _approach = _approach >= 1 ? 0 : _approach + 0.25,
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(NjRadius.card),
+                child: NjApproachBand(
+                  progress: _approach,
+                  height: 180,
+                  arrived: _approach >= 1,
+                ),
+              ),
             ),
           ),
 

@@ -23,10 +23,23 @@ import 'session_controller.dart';
 /// exercise the nudge is not quietly passing on a poll.
 @immutable
 class FeedPollPolicy {
-  const FeedPollPolicy({this.interval = const Duration(seconds: 30)});
+  const FeedPollPolicy({
+    this.interval = const Duration(seconds: 30),
+    this.lostLinger = const Duration(seconds: 2),
+  });
 
   /// [Duration.zero] turns polling off entirely.
   final Duration interval;
+
+  /// How long a lost card stays on screen under its "Taken by another
+  /// driver" band before leaving.
+  ///
+  /// From the design, which asks for about two seconds. Long enough to read
+  /// and short enough that the feed does not fill with cards nobody can
+  /// take. Removing it instantly would be worse than useless: the driver
+  /// tapped something, it vanished, and they never learn whether they got
+  /// the seat.
+  final Duration lostLinger;
 
   /// No polling. Refreshes happen only when something asks for one.
   static const FeedPollPolicy manual = FeedPollPolicy(interval: Duration.zero);
@@ -54,6 +67,8 @@ class FeedState {
     this.readAt,
     this.stale = false,
     this.loading = false,
+    this.claiming = const {},
+    this.lost = const {},
   });
 
   /// Nearest ahead first, exactly as the server returned them. The screen
@@ -73,19 +88,43 @@ class FeedState {
 
   final bool loading;
 
+  /// Requests with a claim in flight.
+  ///
+  /// One tap only: the button goes to a spinner, because a driver in traffic
+  /// taps twice when nothing happens, and the second tap would come back
+  /// `already_taken` against their own claim.
+  final Set<String> claiming;
+
+  /// Requests another driver got first, still on screen under their band.
+  final Set<String> lost;
+
   bool get isEmpty => requests.isEmpty;
+
+  bool isClaiming(String requestId) => claiming.contains(requestId);
+
+  bool wasLost(String requestId) => lost.contains(requestId);
+
+  /// True while any claim is in flight.
+  ///
+  /// Every other Pickup is held during one, so two seats cannot be claimed
+  /// by two taps a few hundred milliseconds apart in a two-seat vehicle.
+  bool get busy => claiming.isNotEmpty;
 
   FeedState copyWith({
     List<FeedRequest>? requests,
     DateTime? readAt,
     bool? stale,
     bool? loading,
+    Set<String>? claiming,
+    Set<String>? lost,
   }) =>
       FeedState(
         requests: requests ?? this.requests,
         readAt: readAt ?? this.readAt,
         stale: stale ?? this.stale,
         loading: loading ?? this.loading,
+        claiming: claiming ?? this.claiming,
+        lost: lost ?? this.lost,
       );
 }
 
@@ -99,9 +138,13 @@ class FeedController extends AsyncNotifier<FeedState> {
   Timer? _poll;
   StreamSubscription<void>? _nudges;
   Set<String> _seen = const {};
+  bool _gone = false;
 
   @override
   Future<FeedState> build() async {
+    _gone = false;
+    ref.onDispose(() => _gone = true);
+
     final session = ref.watch(sessionProvider).valueOrNull;
 
     if (session == null || !session.online) {
@@ -157,22 +200,131 @@ class FeedController extends AsyncNotifier<FeedState> {
   /// Re-reads the feed. Called by a nudge, by the poll, and by the driver.
   Future<void> refresh() async {
     final current = state.valueOrNull ?? const FeedState();
-    state = AsyncData(current.copyWith(loading: true));
+    _set(current.copyWith(loading: true));
 
     try {
       final next = await _read();
-      state = AsyncData(next);
+      // A lost card is kept through a refresh until its band has been read.
+      // Without this, a nudge arriving in those two seconds would yank it
+      // out from under the driver and they would never learn what happened.
+      _set(next.copyWith(
+        requests: [
+          ...next.requests,
+          for (final r in current.requests)
+            if (current.wasLost(r.id) && !next.requests.contains(r)) r,
+        ],
+        claiming: current.claiming,
+        lost: current.lost,
+      ));
       await _alertIfNew(next.requests);
     } on DriverError catch (error) {
       // The previous answer is still the best one available, so it is kept
       // and marked rather than thrown away. A driver in a tunnel would
       // otherwise watch their feed empty itself.
       debugPrint('[njiani] feed refresh: $error');
-      state = AsyncData(current.copyWith(stale: true, loading: false));
+      _set(current.copyWith(stale: true, loading: false));
     } catch (error) {
       debugPrint('[njiani] feed refresh: $error');
-      state = AsyncData(current.copyWith(stale: true, loading: false));
+      _set(current.copyWith(stale: true, loading: false));
     }
+  }
+
+  /// Takes the seat, and settles what the screen shows either way.
+  ///
+  /// The database decides. `accept_ride_request` is one UPDATE that can only
+  /// move a request off `open` once, so a second driver tapping the same card
+  /// in the same second is told `already_taken` rather than given a seat that
+  /// is not there.
+  ///
+  /// Returns the outcome so the screen can say it out loud. The state changes
+  /// here — the card leaving, the band appearing, the seat count dropping —
+  /// are this method's job; the toast is the screen's.
+  Future<ClaimResult> claim(FeedRequest request) async {
+    final session = ref.read(sessionProvider).valueOrNull;
+    if (session == null || !session.online) {
+      return const ClaimResult(ClaimOutcome.noSession);
+    }
+
+    final before = state.valueOrNull ?? const FeedState();
+    if (before.isClaiming(request.id) || before.wasLost(request.id)) {
+      // Already in flight, or already settled against them. Taps on a card
+      // mid-claim are the driver asking louder, not asking again.
+      return const ClaimResult(ClaimOutcome.unknown);
+    }
+
+    _set(before.copyWith(claiming: {...before.claiming, request.id}));
+
+    final result = await _repository.claim(
+      requestId: request.id,
+      sessionId: session.id,
+    );
+
+    final after = state.valueOrNull ?? const FeedState();
+    final claiming = {...after.claiming}..remove(request.id);
+
+    switch (result.outcome) {
+      case ClaimOutcome.ok:
+        // The seat count and the feed both moved server-side. Re-read both:
+        // the seat bar is a promise about what the driver can still take,
+        // and the claimed card is no longer claimable by anyone.
+        _set(after.copyWith(claiming: claiming));
+        await ref.read(sessionProvider.notifier).refresh();
+        await refresh();
+
+      case ClaimOutcome.alreadyTaken:
+      case ClaimOutcome.gone:
+        // Kept on screen, under its band, then removed. The driver is told
+        // they lost rather than watching a card disappear.
+        _set(after.copyWith(claiming: claiming, lost: {...after.lost, request.id}));
+        await Future<void>.delayed(ref.read(feedPollPolicyProvider).lostLinger);
+        _dropLost(request.id);
+
+      case ClaimOutcome.seatsFull:
+        // Every Pickup becomes "Seats full", which the screen reads off the
+        // session rather than off this result — so it is still right after a
+        // rebuild. Re-read it, because the vehicle filling up underneath the
+        // driver is exactly the case where our count was wrong.
+        _set(after.copyWith(claiming: claiming));
+        await ref.read(sessionProvider.notifier).refresh();
+
+      case ClaimOutcome.noSession:
+        // Gone offline, or changed direction in another window. Re-reading
+        // the session is what moves them off this screen: the router sends a
+        // driver with no session to the picker.
+        _set(after.copyWith(claiming: claiming));
+        await ref.read(sessionProvider.notifier).refresh();
+
+      case ClaimOutcome.offline:
+      case ClaimOutcome.unknown:
+        // The one case where nobody knows. Re-read: the seat is either
+        // theirs, in which case the card is gone and the count has dropped,
+        // or it is not.
+        _set(after.copyWith(claiming: claiming));
+        await refresh();
+    }
+
+    return result;
+  }
+
+  /// Takes a lost card off the feed once its band has been read.
+  void _dropLost(String requestId) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+
+    _set(current.copyWith(
+      requests: [for (final r in current.requests) if (r.id != requestId) r],
+      lost: {...current.lost}..remove(requestId),
+    ));
+  }
+
+  /// Writes state unless this notifier is gone.
+  ///
+  /// A claim outlives the screen: a driver who taps Pickup and immediately
+  /// goes offline disposes this controller while the delay above is still
+  /// running, and writing to a disposed notifier throws.
+  void _set(FeedState next) {
+    if (_gone) return;
+    state = AsyncData(next);
   }
 
   /// Sounds once if anything in [requests] was not there before.

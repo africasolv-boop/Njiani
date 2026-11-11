@@ -11,12 +11,14 @@ import '../driver/session_controller.dart';
 import '../gallery/gallery_screen.dart';
 import '../locale/language_controller.dart';
 import '../profile/profile_controller.dart';
+import '../rider/seat_controller.dart';
 import '../screens/driver_direction_screen.dart';
 import '../screens/driver_feed_screen.dart';
 import '../screens/driver_pending_screen.dart';
 import '../screens/driver_rejected_screen.dart';
 import '../screens/driver_signup_screen.dart';
 import '../screens/language_screen.dart';
+import '../screens/matched_screen.dart';
 import '../screens/otp_screen.dart';
 import '../screens/passenger_details_screen.dart';
 import '../screens/phone_screen.dart';
@@ -44,6 +46,12 @@ class _ProviderRefresh extends ChangeNotifier {
       // when the profile lands, and a passenger would sit on the details
       // screen after saving.
       ref.listen(profileProvider, (_, _) => notifyListeners());
+      // The seat gate. This is the one that makes C10 work at all: the
+      // claim happens on another phone, arrives over realtime, and nothing
+      // on the passenger's screen asked for it. Without this listen the
+      // passenger would sit on the waiting panel with a driver already on
+      // the way.
+      ref.listen(seatProvider, (_, _) => notifyListeners());
     }
   }
 }
@@ -96,6 +104,25 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       //    unnamed passenger, and it is the same mistake the driver gate
       //    made by resting at `home`.
       if (app.isRider) {
+        // A live seat outranks every other rider gate. A driver has
+        // committed to coming, and the plate the passenger will verify at
+        // the kerb is on one screen only.
+        //
+        // Deliberately ahead of the name gate, which is the only other rule
+        // that could fire at the same time. A passenger cannot normally
+        // reach a seat without a name -- the gate below is what stops them
+        // -- but if the two ever disagree, a nicety we failed to collect
+        // must not hide a bajaj that is two minutes away. It can be asked
+        // for after the trip.
+        final seatIsLive = ref.read(seatProvider).valueOrNull?.isLive ?? false;
+        if (seatIsLive) {
+          return here == NjRoutes.matched ? null : NjRoutes.matched;
+        }
+
+        // The seat ended -- cancelled by either side, or the trip is over.
+        // Nobody stays on a screen about a driver who is no longer coming.
+        if (here == NjRoutes.matched) return NjRoutes.request;
+
         final profile = ref.read(profileProvider);
         final needsName =
             profile is AsyncData && !(profile.value?.hasName ?? true);
@@ -180,6 +207,10 @@ GoRouter buildRouter(Ref ref, NjianiApp app) {
       GoRoute(
         path: NjRoutes.request,
         builder: (context, state) => const RequestScreen(),
+      ),
+      GoRoute(
+        path: NjRoutes.matched,
+        builder: (context, state) => const MatchedScreen(),
       ),
       GoRoute(
         path: NjRoutes.driverDirection,

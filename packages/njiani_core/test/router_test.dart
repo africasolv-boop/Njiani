@@ -11,6 +11,8 @@ Future<ProviderContainer> pumpApp(
   DriverRepository? driver,
   SessionRepository? session,
   RequestRepository? request,
+  SeatRepository? seat,
+  ProfileRepository? profile,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -21,6 +23,7 @@ Future<ProviderContainer> pumpApp(
       profileLoadPolicyProvider
           .overrideWithValue(ProfileLoadPolicy.immediate),
       if (driver != null) driverRepositoryProvider.overrideWithValue(driver),
+      if (profile != null) profileRepositoryProvider.overrideWithValue(profile),
       if (session != null)
         sessionRepositoryProvider.overrideWithValue(session),
       licenceCameraProvider.overrideWithValue(FakeLicenceCamera()),
@@ -31,12 +34,15 @@ Future<ProviderContainer> pumpApp(
       feedAlertProvider.overrideWithValue(FakeFeedAlert()),
       requestRepositoryProvider
           .overrideWithValue(request ?? FakeRequestRepository()),
+      if (seat != null) seatRepositoryProvider.overrideWithValue(seat),
+      // The seat poll is the same hazard as the feed poll above, and it
+      // bites every router test rather than only the rider ones: the rider
+      // gate reads seatProvider, which builds it, which starts the timer.
+      seatPollPolicyProvider.overrideWithValue(SeatPollPolicy.manual),
       placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
-      driverLocationProvider.overrideWithValue(FakeDriverLocation()),
       // Never the real one: it opens a GPS request, and a widget test that
       // reaches a plugin fails in a way that looks like the screen is broken.
       driverLocationProvider.overrideWithValue(FakeDriverLocation()),
-      placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
     ],
   );
   addTearDown(container.dispose);
@@ -381,6 +387,141 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.byType(NjGalleryScreen), findsOneWidget);
+    });
+  });
+
+  // =========================================================================
+  group('the rider seat gate', () {
+    TripSeat seat({SeatState state = SeatState.claimed}) => TripSeat(
+          id: 'seat-1',
+          state: state,
+          price: 2000,
+          driverName: 'Juma Mwinyi',
+          driverPhone: '+255754000118',
+          plate: 'T 482 DKT',
+          colour: 'Blue',
+          vehicleType: VehicleType.bajaj,
+          pickupName: 'Ubungo Mataa',
+          pickupNameSw: 'Ubungo Mataa',
+          destName: 'Kimara Mwisho',
+          destNameSw: 'Kimara Mwisho',
+          metresAway: 900,
+        );
+
+    Future<(ProviderContainer, FakeSeatRepository)> pumpRider(
+      WidgetTester tester, {
+      TripSeat? held,
+    }) async {
+      final auth = FakeAuthRepository();
+      addTearDown(auth.dispose);
+      await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+      final seats = FakeSeatRepository(seat: held);
+      addTearDown(seats.dispose);
+
+      final container = await pumpApp(
+        tester,
+        storedLocale: NjLocale.en,
+        auth: auth,
+        seat: seats,
+      );
+      return (container, seats);
+    }
+
+    testWidgets('a live seat lands on the matched screen', (tester) async {
+      await pumpRider(tester, held: seat());
+
+      expect(find.byType(MatchedScreen), findsOneWidget);
+      expect(find.byType(RequestScreen), findsNothing);
+    });
+
+    testWidgets('no seat stays on the request screen', (tester) async {
+      await pumpRider(tester);
+
+      expect(find.byType(RequestScreen), findsOneWidget);
+      expect(find.byType(MatchedScreen), findsNothing);
+    });
+
+    testWidgets('a claim on another phone moves the passenger',
+        (tester) async {
+      // The component in one assertion. Nothing on this phone asked for
+      // this: a driver tapped Pickup, the row changed, realtime delivered
+      // it, and the gate moved the screen.
+      final (_, seats) = await pumpRider(tester);
+      expect(find.byType(RequestScreen), findsOneWidget);
+
+      seats.emit(seat());
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MatchedScreen), findsOneWidget);
+    });
+
+    testWidgets('a seat that ends sends the passenger back to the form',
+        (tester) async {
+      final (_, seats) = await pumpRider(tester, held: seat());
+      expect(find.byType(MatchedScreen), findsOneWidget);
+
+      // The driver cancelled.
+      seats.emit(null);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(RequestScreen), findsOneWidget);
+      expect(find.byType(MatchedScreen), findsNothing);
+    });
+
+    testWidgets('a dropped seat is not a live one', (tester) async {
+      // The trip is over. C12 rates it; nobody stays on a screen about a
+      // driver who has already set them down.
+      await pumpRider(tester, held: seat(state: SeatState.dropped));
+
+      expect(find.byType(RequestScreen), findsOneWidget);
+      expect(find.byType(MatchedScreen), findsNothing);
+    });
+
+    testWidgets('a live seat outranks the name gate', (tester) async {
+      // A passenger cannot normally reach a seat without a name, but if the
+      // two ever disagree, a nicety we failed to collect must not hide a
+      // bajaj that is two minutes away.
+      final auth = FakeAuthRepository();
+      addTearDown(auth.dispose);
+      await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+      final seats = FakeSeatRepository(seat: seat());
+      addTearDown(seats.dispose);
+
+      await pumpApp(
+        tester,
+        storedLocale: NjLocale.en,
+        auth: auth,
+        seat: seats,
+        profile: FakeProfileRepository(),
+      );
+
+      expect(find.byType(MatchedScreen), findsOneWidget);
+      expect(find.byType(PassengerDetailsScreen), findsNothing);
+    });
+
+    testWidgets('the driver app never builds the seat gate', (tester) async {
+      // The rider binary watches trip_seats as a passenger. The driver
+      // binary has no business opening that subscription, and a driver has
+      // no passenger seat to be moved to.
+      final auth = FakeAuthRepository();
+      addTearDown(auth.dispose);
+      await auth.verifyCode(TzPhone.tryParse('712345678')!, auth.code);
+
+      final seats = FakeSeatRepository(seat: seat());
+      addTearDown(seats.dispose);
+
+      final container = await pumpApp(
+        tester,
+        app: NjianiApp.driver,
+        storedLocale: NjLocale.en,
+        auth: auth,
+        seat: seats,
+      );
+
+      expect(container.exists(seatProvider), isFalse);
+      expect(find.byType(MatchedScreen), findsNothing);
     });
   });
 }

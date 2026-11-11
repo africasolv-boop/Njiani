@@ -29,6 +29,7 @@ Future<void> pumpScreen(
   FeedPollPolicy? poll,
   FeedAlert? alert,
   RequestRepository? request,
+  SeatRepository? seat,
 }) async {
   final container = ProviderContainer(
     overrides: [
@@ -58,6 +59,11 @@ Future<void> pumpScreen(
     feedAlertProvider.overrideWithValue(alert ?? FakeFeedAlert()),
     requestRepositoryProvider
         .overrideWithValue(request ?? FakeRequestRepository()),
+    if (seat != null) seatRepositoryProvider.overrideWithValue(seat),
+    // Same reason as the feed's: a real 20s timer outlives the widget tree
+    // and the test fails with "A Timer is still pending", which reads like
+    // the screen is broken rather than the harness.
+    seatPollPolicyProvider.overrideWithValue(SeatPollPolicy.manual),
     ],
   );
   addTearDown(container.dispose);
@@ -123,4 +129,16 @@ FeedController feedControllerOf(WidgetTester tester, Finder of) {
 RequestController requestControllerOf(WidgetTester tester, Finder of) {
   final element = tester.element(of);
   return ProviderScope.containerOf(element).read(requestProvider.notifier);
+}
+
+/// Reads the seat controller out of a pumped tree.
+SeatController seatControllerOf(WidgetTester tester, Finder of) {
+  final element = tester.element(of);
+  return ProviderScope.containerOf(element).read(seatProvider.notifier);
+}
+
+/// Reads the live seat out of a pumped tree.
+AsyncValue<TripSeat?> seatStateOf(WidgetTester tester, Finder of) {
+  final element = tester.element(of);
+  return ProviderScope.containerOf(element).read(seatProvider);
 }

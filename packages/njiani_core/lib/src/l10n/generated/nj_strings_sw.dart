@@ -581,4 +581,95 @@ class NjStringsSw extends NjStrings {
 
   @override
   String get pDetailsFailed => 'Haikuhifadhiwa. Jaribu tena.';
+
+  @override
+  String get dClaiming => 'Inachukua…';
+
+  @override
+  String dClaimWon(String stop) {
+    return 'Siti ni yako · abiria yuko $stop';
+  }
+
+  @override
+  String get dClaimTaken => 'Imechukuliwa na dereva mwingine';
+
+  @override
+  String get dClaimFailed => 'Haikuwezekana kuchukua siti hiyo. Jaribu tena.';
+
+  @override
+  String get dClaimChecking => 'Hakuna mtandao · tunahakiki kama siti ni yako';
+
+  @override
+  String pMatchedArriving(int min) {
+    return 'Anafika baada ya dakika $min';
+  }
+
+  @override
+  String pMatchedHere(String vehicle) {
+    return '$vehicle yako imefika';
+  }
+
+  @override
+  String get pMatchedOnTheWay => 'Dereva wako anakuja';
+
+  @override
+  String pMatchedWaitAt(String stop) {
+    return 'Subiri $stop';
+  }
+
+  @override
+  String get pMatchedWaitHere => 'Subiri hapo ulipo';
+
+  @override
+  String pDriverRating(String rating, int trips) {
+    return 'Alama $rating · safari $trips';
+  }
+
+  @override
+  String get pDriverNew => 'Mpya kwenye Njiani';
+
+  @override
+  String pVehicleColour(String colour, String vehicle) {
+    return '$vehicle $colour';
+  }
+
+  @override
+  String pSharingWith(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Abiria $count wengine wapo ndani.',
+      one: 'Abiria 1 mwingine yupo ndani.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pPriceAgreedLabel => 'Bei iliyokubaliwa:';
+
+  @override
+  String pCallDriver(String name) {
+    return 'Mpigie $name';
+  }
+
+  @override
+  String get pNoDriverPhone => 'Hakuna namba ya dereva huyu bado';
+
+  @override
+  String get pCancelFree => 'Ghairi · hakuna faini';
+
+  @override
+  String get pCancelling => 'Inaghairi…';
+
+  @override
+  String get pCancelFailed => 'Haikuwezekana kughairi. Jaribu tena.';
+
+  @override
+  String get pOnBoardSoon => 'Kupanda kunakuja';
+
+  @override
+  String get vehicleBajaj => 'bajaj';
+
+  @override
+  String get vehicleBoda => 'boda';
 }

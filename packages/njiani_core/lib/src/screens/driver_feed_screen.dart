@@ -7,6 +7,7 @@ import '../design/nj_theme.dart';
 import '../design/nj_tokens.dart';
 import '../driver/driver_session.dart';
 import '../driver/feed_controller.dart';
+import '../driver/feed_repository.dart';
 import '../driver/feed_request.dart';
 import '../driver/session_controller.dart';
 import '../l10n/generated/nj_strings.dart';
@@ -19,6 +20,7 @@ import '../widgets/nj_live_dot.dart';
 import '../widgets/nj_route_board.dart';
 import '../widgets/nj_seat_indicator.dart';
 import '../widgets/nj_skeleton.dart';
+import '../widgets/nj_toast.dart';
 
 /// `dFeed` — live requests. Component C9.
 ///
@@ -36,10 +38,11 @@ import '../widgets/nj_skeleton.dart';
 /// function — the live part is a doorbell, not a window. A slow poll runs
 /// alongside it for the socket that dies in a tunnel.
 ///
-/// **Pickup is C10.** The claim has to be settled by `accept_ride_request()`,
-/// with the losing driver shown "Taken by another driver", and that is its
-/// own component. The button says what it is waiting for rather than
-/// silently doing nothing.
+/// Pickup, from C10, is settled by `accept_ride_request()` — one UPDATE that
+/// can only move a request off `open` once. Two drivers tapping the same
+/// passenger in the same second is the expected case on a busy road, so the
+/// loser is told so rather than handed a seat that is not there. One tap, no
+/// confirm dialog: the driver is in traffic.
 class DriverFeedScreen extends ConsumerStatefulWidget {
   const DriverFeedScreen({super.key});
 
@@ -142,9 +145,11 @@ class _DriverFeedScreenState extends ConsumerState<DriverFeedScreen>
                 onRefresh: () => ref.read(feedProvider.notifier).refresh(),
                 child: _Requests(
                   feed: feed,
+                  session: session,
                   destination: destination,
                   locale: locale,
                   loading: ref.watch(feedProvider).isLoading,
+                  onClaim: _claim,
                 ),
               ),
             ),
@@ -152,6 +157,36 @@ class _DriverFeedScreenState extends ConsumerState<DriverFeedScreen>
         ),
       ),
     );
+  }
+
+  /// Takes the seat, and says out loud how it went.
+  ///
+  /// The controller moves the feed and the seat count; this says the sentence.
+  /// A won claim with no words would leave the driver watching a card vanish
+  /// and no idea whether they have a passenger.
+  Future<void> _claim(FeedRequest request) async {
+    final strings = NjStrings.of(context);
+    final locale = NjLocale.of(context);
+    final stop = request.pickupLabel(locale);
+
+    final result = await ref.read(feedProvider.notifier).claim(request);
+    if (!mounted) return;
+
+    final message = switch (result.outcome) {
+      ClaimOutcome.ok => strings.dClaimWon(stop),
+      // The band on the card has already said this, for two seconds. The
+      // toast would be the same sentence twice.
+      ClaimOutcome.alreadyTaken || ClaimOutcome.gone => null,
+      // The seat bar now reads "Every seat taken" and every Pickup has
+      // become "Seats full", which says it better than a toast.
+      ClaimOutcome.seatsFull => null,
+      // The router is already moving them to the picker.
+      ClaimOutcome.noSession => null,
+      ClaimOutcome.offline => strings.dClaimChecking,
+      ClaimOutcome.unknown => strings.dClaimFailed,
+    };
+
+    if (message != null) await NjToast.show(context, message);
   }
 
   static String _hhmm(DateTime at) =>
@@ -204,15 +239,19 @@ class _SeatBar extends StatelessWidget {
 class _Requests extends StatelessWidget {
   const _Requests({
     required this.feed,
+    required this.session,
     required this.destination,
     required this.locale,
     required this.loading,
+    required this.onClaim,
   });
 
   final FeedState feed;
+  final DriverSession session;
   final String destination;
   final NjLocale locale;
   final bool loading;
+  final ValueChanged<FeedRequest> onClaim;
 
   @override
   Widget build(BuildContext context) {
@@ -269,9 +308,22 @@ class _Requests extends StatelessWidget {
             child: NjLiveDot(label: strings.dFeedLive(destination)),
           );
         }
+        final request = feed.requests[index - 1];
         return _RequestCard(
-          request: feed.requests[index - 1],
+          request: request,
           locale: locale,
+          claiming: feed.isClaiming(request.id),
+          lost: feed.wasLost(request.id),
+          // Full is read off the session, not off the last claim's result:
+          // the session is re-read after a claim, so this stays right
+          // through a rebuild and through a seat freed by a cancellation.
+          seatsFull: session.isFull,
+          // Every other Pickup is held during a claim. Without this, two
+          // taps a few hundred milliseconds apart would both go through in
+          // a vehicle with one seat left, and one of them would come back
+          // seats_full after the passenger had been told they had a ride.
+          busy: feed.busy,
+          onClaim: () => onClaim(request),
         );
       },
     );
@@ -280,10 +332,32 @@ class _Requests extends StatelessWidget {
 
 /// One passenger's offer.
 class _RequestCard extends StatelessWidget {
-  const _RequestCard({required this.request, required this.locale});
+  const _RequestCard({
+    required this.request,
+    required this.locale,
+    required this.claiming,
+    required this.lost,
+    required this.seatsFull,
+    required this.busy,
+    required this.onClaim,
+  });
 
   final FeedRequest request;
   final NjLocale locale;
+
+  /// This card's claim is in flight.
+  final bool claiming;
+
+  /// Another driver got it. Shows the band, then the card leaves.
+  final bool lost;
+
+  /// No seat left in the vehicle.
+  final bool seatsFull;
+
+  /// Some claim is in flight, on this card or another.
+  final bool busy;
+
+  final VoidCallback onClaim;
 
   @override
   Widget build(BuildContext context) {
@@ -295,7 +369,11 @@ class _RequestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: nj.surface,
         borderRadius: BorderRadius.circular(NjRadius.button),
-        border: Border.all(color: nj.line),
+        // The lost card is outlined in the danger colour as well as banded.
+        // Colour alone is never the only signal -- the band carries the
+        // words -- but together they make it unmistakable at a glance from
+        // a driving seat.
+        border: Border.all(color: lost ? nj.danger : nj.line),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -330,15 +408,50 @@ class _RequestCard extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: NjSpace.md - 2),
-          // C10 wires this to accept_ride_request(). Disabled and labelled
-          // rather than present and dead: a driver tapping a button that
-          // does nothing concludes the app is broken, which is worse than
-          // being told what is coming.
-          NjButton(
-            label: strings.dPickupSoon,
-            variant: NjButtonVariant.blocked,
-            onPressed: null,
-          ),
+          if (lost)
+            // In place of the button, not above it. A card nobody can take
+            // must not still be offering a tap.
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: NjSpace.md,
+                vertical: NjSpace.md - 2,
+              ),
+              decoration: BoxDecoration(
+                // dangerSoft exists in the palette for exactly this band --
+                // its doc comment names it. Tinted rather than solid: a
+                // lost race is normal on a busy road, not an alarm.
+                color: nj.dangerSoft,
+                borderRadius: BorderRadius.circular(NjRadius.button),
+              ),
+              child: Text(
+                strings.dClaimTaken,
+                textAlign: TextAlign.center,
+                style: context.njText.bodyLarge?.copyWith(
+                  color: nj.danger,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            )
+          else if (seatsFull)
+            // Filled flat and labelled with the reason, not a dimmed
+            // Pickup. The design asks for both states and they say
+            // different things: "not yet" against "not possible, and here
+            // is why".
+            NjButton(
+              label: strings.dSeatsFull,
+              variant: NjButtonVariant.blocked,
+              onPressed: null,
+            )
+          else
+            NjButton(
+              label: claiming ? strings.dClaiming : strings.dPickup,
+              // Bajaj yellow: this is the moment of commitment, and the
+              // design reserves the colour for exactly that.
+              variant: NjButtonVariant.bajaj,
+              loading: claiming,
+              onPressed: busy ? null : onClaim,
+            ),
         ],
       ),
     );

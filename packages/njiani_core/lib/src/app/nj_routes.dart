@@ -43,6 +43,13 @@ abstract final class NjRoutes {
   /// Request a ride. Rider app only.
   static const String request = '/request';
 
+  /// A driver is coming. Rider app only, and only while the seat is live.
+  ///
+  /// Not a screen the passenger navigates to: a claim lands on the server
+  /// and the seat gate moves them here, which is the whole point of the
+  /// component. They leave it by cancelling, or by the driver cancelling.
+  static const String matched = '/matched';
+
   /// Development-only component gallery. Removed from release builds at C18.
   static const String gallery = '/gallery';
 

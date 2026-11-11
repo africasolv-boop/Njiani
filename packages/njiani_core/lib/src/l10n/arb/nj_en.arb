@@ -785,5 +785,150 @@
   "pDetailsFailed": "Couldn't save that. Try again.",
   "@pDetailsFailed": {
     "description": "pDetails. A failed write, said plainly rather than letting the screen look saved."
+  },
+  "dClaiming": "Claiming…",
+  "@dClaiming": {
+    "description": "dFeed. Pickup while accept_ride_request is in flight. One tap only: a driver in traffic taps twice when nothing happens, and the second tap would come back already_taken against their own claim."
+  },
+  "dClaimWon": "Seat is yours · the passenger is at {stop}",
+  "@dClaimWon": {
+    "description": "dFeed toast after a won claim. Names the stop, because that is the one thing the driver now has to act on and the card has just left the feed.",
+    "placeholders": {
+      "stop": {
+        "type": "String",
+        "example": "Shekilango"
+      }
+    }
+  },
+  "dClaimTaken": "Taken by another driver",
+  "@dClaimTaken": {
+    "description": "dFeed. The band on a lost card, for about two seconds before it leaves. From the design. Two drivers tapping the same passenger in the same second is the expected case on a busy road, not an error."
+  },
+  "dClaimFailed": "Couldn't take that seat. Try again.",
+  "@dClaimFailed": {
+    "description": "dFeed toast. The claim failed for a reason that is not a lost race."
+  },
+  "dClaimChecking": "No connection · checking whether the seat is yours",
+  "@dClaimChecking": {
+    "description": "dFeed toast. The connection dropped mid-claim, which is the one case where nobody knows the answer yet. The feed is re-read straight after, and the seat count is what settles it."
+  },
+  "pMatchedArriving": "Arriving in {min} min",
+  "@pMatchedArriving": {
+    "description": "pMatched headline. Haversine over 18 km/h, per D8 -- never seconds, because a straight line over Dar es Salaam traffic cannot carry that precision.",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "pMatchedHere": "Your {vehicle} is here",
+  "@pMatchedHere": {
+    "description": "pMatched headline once the driver is at the pickup point. From the design.",
+    "placeholders": {
+      "vehicle": {
+        "type": "String",
+        "example": "bajaj"
+      }
+    }
+  },
+  "pMatchedOnTheWay": "Your driver is on the way",
+  "@pMatchedOnTheWay": {
+    "description": "pMatched headline when the driver has sent no position yet, so there is no distance to divide. Says the true thing rather than inventing a number."
+  },
+  "pMatchedWaitAt": "Wait at {stop}",
+  "@pMatchedWaitAt": {
+    "description": "pMatched. Where to stand. The design's example is 'Wait at Ubungo Bus Terminal, main gate'; the stage name is what the schema actually holds.",
+    "placeholders": {
+      "stop": {
+        "type": "String",
+        "example": "Ubungo Mataa"
+      }
+    }
+  },
+  "pMatchedWaitHere": "Wait where you are",
+  "@pMatchedWaitHere": {
+    "description": "pMatched. The pickup was a point on the road rather than a named stage, so there is no stop to name."
+  },
+  "pDriverRating": "{rating} rating · {trips} trips",
+  "@pDriverRating": {
+    "description": "pMatched. The driver's record. From the design.",
+    "placeholders": {
+      "rating": {
+        "type": "String",
+        "example": "4.8"
+      },
+      "trips": {
+        "type": "int"
+      }
+    }
+  },
+  "pDriverNew": "New on Njiani",
+  "@pDriverNew": {
+    "description": "pMatched. Shown in place of a rating when the driver has never been rated. Not 5.0: a made-up score on a first trip is a lie a passenger acts on."
+  },
+  "pVehicleColour": "{colour} {vehicle}",
+  "@pVehicleColour": {
+    "description": "pMatched. Colour and vehicle together, next to the colour dot. A separate string because the word order reverses in Kiswahili.",
+    "placeholders": {
+      "colour": {
+        "type": "String",
+        "example": "Blue"
+      },
+      "vehicle": {
+        "type": "String",
+        "example": "bajaj"
+      }
+    }
+  },
+  "pSharingWith": "{count, plural, =1{1 other passenger on board.} other{{count} other passengers on board.}}",
+  "@pSharingWith": {
+    "description": "pMatched. Who else is in the vehicle. The whole product is a shared seat, so arriving to find two strangers in the bajaj must not be a surprise.",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "pPriceAgreedLabel": "Price agreed:",
+  "@pPriceAgreedLabel": {
+    "description": "pMatched. Precedes the price, which is rendered bold beside it -- the design emphasises the number. A label rather than a string with the amount substituted in: the amount is already formatted by tsh() and the two have different weights."
+  },
+  "pCallDriver": "Call {name}",
+  "@pCallDriver": {
+    "description": "pMatched. The driver's number is revealed only for a live seat, and only to this seat's two parties.",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Juma"
+      }
+    }
+  },
+  "pNoDriverPhone": "No number for this driver yet",
+  "@pNoDriverPhone": {
+    "description": "pMatched. The profile carries no phone number. Says so rather than offering a button that dials nothing."
+  },
+  "pCancelFree": "Cancel · no penalty",
+  "@pCancelFree": {
+    "description": "pMatched. Cancelling is free until the driver arrives, and the button says so rather than making the passenger guess."
+  },
+  "pCancelling": "Cancelling…",
+  "@pCancelling": {
+    "description": "pMatched, while cancel_my_seat runs."
+  },
+  "pCancelFailed": "Couldn't cancel. Try again.",
+  "@pCancelFailed": {
+    "description": "pMatched. A failed cancel, said plainly rather than letting the screen look cancelled."
+  },
+  "pOnBoardSoon": "Boarding arrives next",
+  "@pOnBoardSoon": {
+    "description": "pMatched, in the arrived state. The claimed-to-aboard transition and the trip screen are C11, so the button says what it is waiting for rather than silently doing nothing. Cancel is gone by then, deliberately: the design makes cancelling free only until the driver arrives."
+  },
+  "vehicleBajaj": "bajaj",
+  "@vehicleBajaj": {
+    "description": "The bare vehicle word, for use inside a sentence -- 'Your bajaj is here', 'Blue bajaj'. Separate from dVehicleBajaj, which is a picker option carrying the seat count."
+  },
+  "vehicleBoda": "boda",
+  "@vehicleBoda": {
+    "description": "The bare vehicle word. See vehicleBajaj."
   }
 }

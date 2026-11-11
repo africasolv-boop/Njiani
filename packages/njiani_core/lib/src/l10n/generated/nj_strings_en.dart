@@ -579,4 +579,96 @@ class NjStringsEn extends NjStrings {
 
   @override
   String get pDetailsFailed => 'Couldn\'t save that. Try again.';
+
+  @override
+  String get dClaiming => 'Claiming…';
+
+  @override
+  String dClaimWon(String stop) {
+    return 'Seat is yours · the passenger is at $stop';
+  }
+
+  @override
+  String get dClaimTaken => 'Taken by another driver';
+
+  @override
+  String get dClaimFailed => 'Couldn\'t take that seat. Try again.';
+
+  @override
+  String get dClaimChecking =>
+      'No connection · checking whether the seat is yours';
+
+  @override
+  String pMatchedArriving(int min) {
+    return 'Arriving in $min min';
+  }
+
+  @override
+  String pMatchedHere(String vehicle) {
+    return 'Your $vehicle is here';
+  }
+
+  @override
+  String get pMatchedOnTheWay => 'Your driver is on the way';
+
+  @override
+  String pMatchedWaitAt(String stop) {
+    return 'Wait at $stop';
+  }
+
+  @override
+  String get pMatchedWaitHere => 'Wait where you are';
+
+  @override
+  String pDriverRating(String rating, int trips) {
+    return '$rating rating · $trips trips';
+  }
+
+  @override
+  String get pDriverNew => 'New on Njiani';
+
+  @override
+  String pVehicleColour(String colour, String vehicle) {
+    return '$colour $vehicle';
+  }
+
+  @override
+  String pSharingWith(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count other passengers on board.',
+      one: '1 other passenger on board.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get pPriceAgreedLabel => 'Price agreed:';
+
+  @override
+  String pCallDriver(String name) {
+    return 'Call $name';
+  }
+
+  @override
+  String get pNoDriverPhone => 'No number for this driver yet';
+
+  @override
+  String get pCancelFree => 'Cancel · no penalty';
+
+  @override
+  String get pCancelling => 'Cancelling…';
+
+  @override
+  String get pCancelFailed => 'Couldn\'t cancel. Try again.';
+
+  @override
+  String get pOnBoardSoon => 'Boarding arrives next';
+
+  @override
+  String get vehicleBajaj => 'bajaj';
+
+  @override
+  String get vehicleBoda => 'boda';
 }

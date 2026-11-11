@@ -70,6 +70,17 @@ void main() {
     expect(manifest, isNot(contains('<uses-permission')));
   });
 
+  test('the rider app can reach a dialler', () {
+    // C10 is the first time a passenger dials: Call <driver> on pMatched.
+    // Android 11+ hides other apps' intent filters unless they are declared,
+    // and without this canLaunchUrl reports false for a dialler that is
+    // plainly installed.
+    final manifest =
+        file('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    expect(manifest, contains('android.intent.action.DIAL'));
+    expect(manifest, contains('android:scheme="tel"'));
+  });
+
   test('both languages are declared', () {
     final plist = file('ios/Runner/Info.plist').readAsStringSync();
     expect(plist, contains('CFBundleLocalizations'));

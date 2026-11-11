@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:njiani_core/njiani_core.dart';
@@ -219,17 +221,17 @@ void main() {
       expect(seats.taken, 1);
     });
 
-    testWidgets('Pickup says what it is waiting for, and cannot be tapped',
-        (tester) async {
-      // C10 wires the atomic claim. A button that silently does nothing
-      // teaches a driver the app is broken.
+    testWidgets('Pickup is live, and claims the seat', (tester) async {
       feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
       await pumpFeed(tester);
 
       final button = tester.widget<NjButton>(
-        find.widgetWithText(NjButton, 'Pickup arrives next'),
+        find.widgetWithText(NjButton, 'Pickup'),
       );
-      expect(button.onPressed, isNull);
+      expect(button.onPressed, isNotNull);
+      // The moment of commitment, which the design reserves bajaj yellow
+      // for. Not the same colour as a routine tap.
+      expect(button.variant, NjButtonVariant.bajaj);
     });
 
     testWidgets('renders in Kiswahili', (tester) async {
@@ -409,6 +411,283 @@ void main() {
       expect(stale.readAt, at);
       expect(stale.requests, hasLength(1));
       expect(stale.stale, isTrue);
+    });
+  });
+
+  // =========================================================================
+  group('the claim', () {
+    /// Runs out the timers a claim leaves behind.
+    ///
+    /// Both are `Future.delayed`, which `pumpAndSettle` does not advance: the
+    /// two-second band on a lost card, and the toast that says what happened.
+    /// Three rounds, because the won path chains one after the other.
+    Future<void> drain(WidgetTester tester) async {
+      for (var round = 0; round < 3; round++) {
+        await tester.pump(const Duration(seconds: 3));
+      }
+    }
+
+    testWidgets('one tap takes the seat, with no confirm dialog',
+        (tester) async {
+      // No dialog on purpose: the driver is in traffic, and the design says
+      // so. The undo is Cancel on the other side, not a question at 40 km/h.
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup'));
+      await tester.pumpAndSettle();
+
+      expect(feed.claimed, ['r1']);
+      expect(find.byType(AlertDialog), findsNothing);
+      await drain(tester);
+    });
+
+    testWidgets('a won claim names the stop, and the card leaves',
+        (tester) async {
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup'));
+      await tester.pumpAndSettle();
+
+      // The toast is the only thing that says what just happened: the card
+      // has gone, and a driver watching a card vanish learns nothing.
+      expect(
+        find.textContaining('the passenger is at Shekilango'),
+        findsOneWidget,
+      );
+      expect(find.text('Shekilango · 880 m ahead'), findsNothing);
+      await drain(tester);
+    });
+
+    testWidgets('a lost claim shows the band, then the card leaves',
+        (tester) async {
+      feed.claimResult = const ClaimResult(ClaimOutcome.alreadyTaken);
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup'));
+      // Mid-linger. Not settled yet, so the band is up and the card is
+      // still there.
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('Taken by another driver'), findsOneWidget);
+      expect(find.text('Shekilango · 880 m ahead'), findsOneWidget);
+      // And nothing left to tap on a card nobody can take.
+      expect(find.widgetWithText(NjButton, 'Pickup'), findsNothing);
+
+      await drain(tester);
+      expect(find.text('Taken by another driver'), findsNothing);
+      expect(find.text('Shekilango · 880 m ahead'), findsNothing);
+    });
+
+    testWidgets('a lost card survives a nudge arriving mid-band',
+        (tester) async {
+      // The window is two seconds wide and a nudge inside it is ordinary.
+      // Yanking the card out would leave the driver never knowing.
+      feed.claimResult = const ClaimResult(ClaimOutcome.alreadyTaken);
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup'));
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // The server has already dropped it: it is claimed, by someone else.
+      feed.requests = [];
+      await controller(tester).refresh();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(find.text('Taken by another driver'), findsOneWidget);
+
+      await drain(tester);
+      expect(find.text('Taken by another driver'), findsNothing);
+    });
+
+    testWidgets('no toast on a lost claim — the band already said it',
+        (tester) async {
+      feed.claimResult = const ClaimResult(ClaimOutcome.alreadyTaken);
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup'));
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.textContaining('Try again'), findsNothing);
+      expect(find.text('Taken by another driver'), findsOneWidget);
+      await drain(tester);
+    });
+
+    testWidgets('a full vehicle offers no Pickup, and says why',
+        (tester) async {
+      sessions.session = online(seatsFree: 0);
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      // Filled flat and labelled, not a dimmed Pickup. The design asks for
+      // both and they mean different things: "not yet" against "not
+      // possible, and here is why".
+      final button = tester.widget<NjButton>(
+        find.widgetWithText(NjButton, 'Seats full'),
+      );
+      expect(button.onPressed, isNull);
+      expect(button.variant, NjButtonVariant.blocked);
+      expect(find.widgetWithText(NjButton, 'Pickup'), findsNothing);
+      expect(find.text('Every seat taken'), findsOneWidget);
+    });
+
+    testWidgets('filling the last seat turns every other Pickup off',
+        (tester) async {
+      // The state the design names: "Every Pickup becomes a disabled 'Seats
+      // full'". Read off the session, which the claim re-reads, so it is
+      // still right after a rebuild.
+      sessions.session = online(seatsFree: 1);
+      feed.requests = [
+        request(from: 'Shekilango', price: 1500, metres: 880),
+        request(from: 'Ubungo Mataa', price: 1800, metres: 1200, id: 'r2'),
+      ];
+      await pumpFeed(tester);
+      expect(find.widgetWithText(NjButton, 'Pickup'), findsNWidgets(2));
+
+      // What the server does when the seat is taken.
+      feed.onClaim = () => sessions.session = online(seatsFree: 0);
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup').first);
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(NjButton, 'Pickup'), findsNothing);
+      expect(find.widgetWithText(NjButton, 'Seats full'), findsOneWidget);
+      await drain(tester);
+    });
+
+    testWidgets('seats_full from the server does not claim anything',
+        (tester) async {
+      // Our count said there was room and the server disagreed. The vehicle
+      // filling up underneath the driver is exactly this case.
+      feed.claimResult = const ClaimResult(ClaimOutcome.seatsFull);
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      feed.onClaim = () => sessions.session = online(seatsFree: 0);
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup'));
+      await tester.pumpAndSettle();
+
+      // Still on the feed: nobody else has taken it, there is simply
+      // nowhere to put them.
+      expect(find.text('Shekilango · 880 m ahead'), findsOneWidget);
+      expect(find.widgetWithText(NjButton, 'Seats full'), findsOneWidget);
+    });
+
+    testWidgets('a second tap mid-claim is the driver asking louder',
+        (tester) async {
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      feed.claimGate = Completer<void>();
+      final pending = controller(tester).claim(feed.requests.first);
+      await tester.pump();
+
+      // Held, not queued. Two claims a few hundred milliseconds apart in a
+      // one-seat vehicle would both go through, and one of them would come
+      // back seats_full after the passenger was told they had a ride.
+      expect(
+        tester
+            .widget<NjButton>(find.widgetWithText(NjButton, 'Claiming…'))
+            .onPressed,
+        isNull,
+      );
+
+      feed.claimGate!.complete();
+      await pending;
+      await tester.pumpAndSettle();
+      expect(feed.claimed, ['r1']);
+    });
+
+    testWidgets('every other Pickup is held during a claim', (tester) async {
+      feed.requests = [
+        request(from: 'Shekilango', price: 1500, metres: 880),
+        request(from: 'Ubungo Mataa', price: 1800, metres: 1200, id: 'r2'),
+      ];
+      await pumpFeed(tester);
+
+      feed.claimGate = Completer<void>();
+      final pending = controller(tester).claim(feed.requests.first);
+      await tester.pump();
+
+      for (final label in ['Claiming…', 'Pickup']) {
+        expect(
+          tester
+              .widget<NjButton>(find.widgetWithText(NjButton, label))
+              .onPressed,
+          isNull,
+          reason: '$label should be held while a claim is in flight',
+        );
+      }
+
+      feed.claimGate!.complete();
+      await pending;
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('a dropped connection mid-claim says nobody knows yet',
+        (tester) async {
+      // The one honest "do not know". The feed is re-read straight after,
+      // and the seat count is what settles it.
+      feed.claimResult = const ClaimResult(ClaimOutcome.offline);
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      await tester.tap(find.widgetWithText(NjButton, 'Pickup'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining('checking whether the seat is yours'),
+        findsOneWidget,
+      );
+      await drain(tester);
+    });
+
+    testWidgets('claiming with no session does not reach the server',
+        (tester) async {
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester);
+
+      final feedController = controller(tester);
+      sessions.session = null;
+      await sessionControllerOf(tester, find.byType(DriverFeedScreen))
+          .refresh();
+      await tester.pumpAndSettle();
+
+      final result = await feedController.claim(
+        request(from: 'Shekilango', price: 1500, metres: 880),
+      );
+      expect(result.outcome, ClaimOutcome.noSession);
+      expect(feed.claimed, isEmpty);
+    });
+
+    testWidgets('the band is in Kiswahili', (tester) async {
+      feed.claimResult = const ClaimResult(ClaimOutcome.alreadyTaken);
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester, locale: NjLocale.sw);
+
+      expect(find.widgetWithText(NjButton, 'Chukua'), findsOneWidget);
+      await tester.tap(find.widgetWithText(NjButton, 'Chukua'));
+      await tester.pump(const Duration(milliseconds: 600));
+
+      expect(find.text('Imechukuliwa na dereva mwingine'), findsOneWidget);
+      await drain(tester);
+    });
+
+    testWidgets('a won claim in Kiswahili names the stop', (tester) async {
+      feed.requests = [request(from: 'Shekilango', price: 1500, metres: 880)];
+      await pumpFeed(tester, locale: NjLocale.sw);
+
+      await tester.tap(find.widgetWithText(NjButton, 'Chukua'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Siti ni yako · abiria yuko Shekilango'),
+        findsOneWidget,
+      );
+      await drain(tester);
     });
   });
 }

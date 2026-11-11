@@ -13,7 +13,7 @@ import '../widgets/nj_button.dart';
 import '../widgets/nj_card.dart';
 import '../widgets/nj_plate.dart';
 import '../widgets/nj_screen_body.dart';
-import 'driver_signup_screen.dart';
+import 'vehicle_words.dart';
 
 /// `dPending` — under review. Component C6.
 ///

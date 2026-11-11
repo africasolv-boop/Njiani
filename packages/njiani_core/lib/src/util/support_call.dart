@@ -8,13 +8,21 @@ import '../config/app_config.dart';
 /// Returns false when the number is not configured, or the platform refused.
 /// On a refusal the number is shown instead, because a driver who has just
 /// been told they cannot work should not also be left without it.
-Future<bool> callNjianiSupport(BuildContext context) async {
-  if (!AppConfig.hasSupportPhone) return false;
+Future<bool> callNjianiSupport(BuildContext context) =>
+    dialNumber(context, AppConfig.supportPhone);
 
-  // Strip anything a dialler does not want. A number pasted from a web page
-  // arrives as "+255 712 345 678" often enough to be worth handling.
-  final number = AppConfig.supportPhone.replaceAll(RegExp(r'[^0-9+]'), '');
-  if (number.isEmpty) return false;
+/// Opens the dialler on [number], already typed in.
+///
+/// Dialler, not a call: the user still presses the green button. Nothing in
+/// Njiani places a call on somebody's behalf.
+///
+/// Returns false when there is no number or the platform refused. On a
+/// refusal the number is shown instead — a passenger standing at a stage with
+/// a driver on the way needs the digits far more than they need a working
+/// button, and a dead button that shows nothing leaves them with neither.
+Future<bool> dialNumber(BuildContext context, String? number) async {
+  final dialable = (number ?? '').replaceAll(RegExp(r'[^0-9+]'), '');
+  if (dialable.isEmpty) return false;
 
   final messenger = ScaffoldMessenger.maybeOf(context);
 
@@ -25,7 +33,7 @@ Future<bool> callNjianiSupport(BuildContext context) async {
   // belt that does not depend on them.
   try {
     final opened = await launchUrl(
-      Uri(scheme: 'tel', path: number),
+      Uri(scheme: 'tel', path: dialable),
       mode: LaunchMode.externalApplication,
     );
     if (opened) return true;
@@ -33,6 +41,6 @@ Future<bool> callNjianiSupport(BuildContext context) async {
     // Falls through to showing the number.
   }
 
-  messenger?.showSnackBar(SnackBar(content: Text(AppConfig.supportPhone)));
+  messenger?.showSnackBar(SnackBar(content: Text(number!)));
   return false;
 }

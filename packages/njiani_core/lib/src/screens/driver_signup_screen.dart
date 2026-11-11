@@ -19,6 +19,7 @@ import '../widgets/nj_segmented.dart';
 import '../widgets/nj_sheet.dart';
 import '../widgets/nj_text_field.dart';
 import '../widgets/nj_upload_box.dart';
+import 'vehicle_words.dart';
 
 /// `dSignup` — the verification gate. Component C6.
 ///
@@ -450,7 +451,7 @@ class _ColourField extends StatelessWidget {
                 for (final colour in VehicleColour.values)
                   DropdownMenuItem(
                     value: colour,
-                    child: Text(labelFor(colour, strings)),
+                    child: Text(njVehicleColourLabel(colour, strings)),
                   ),
               ],
             ),
@@ -460,24 +461,4 @@ class _ColourField extends StatelessWidget {
     );
   }
 
-  /// The localised name of a colour. One switch, shared with the pending
-  /// screen, which shows the same value back.
-  static String labelFor(VehicleColour colour, NjStrings strings) =>
-      switch (colour) {
-        VehicleColour.blue => strings.colourBlue,
-        VehicleColour.red => strings.colourRed,
-        VehicleColour.green => strings.colourGreen,
-        VehicleColour.yellow => strings.colourYellow,
-        VehicleColour.black => strings.colourBlack,
-        VehicleColour.white => strings.colourWhite,
-      };
-}
-
-/// The localised name of a stored colour value, or the raw value if it is not
-/// one this build knows.
-String njColourLabel(String? stored, NjStrings strings) {
-  final colour = VehicleColour.tryParse(stored);
-  return colour == null
-      ? (stored ?? '')
-      : _ColourField.labelFor(colour, strings);
 }

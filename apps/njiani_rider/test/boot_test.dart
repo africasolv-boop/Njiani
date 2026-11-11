@@ -26,6 +26,10 @@ Future<ProviderContainer> pumpApp(
         profileRepositoryProvider.overrideWithValue(profile),
       placesRepositoryProvider.overrideWithValue(FakePlacesRepository()),
       driverLocationProvider.overrideWithValue(FakeDriverLocation()),
+      // The rider gate reads seatProvider, which builds it, which starts a
+      // twenty-second poll. A real periodic timer outlives the widget tree
+      // and trips `A Timer is still pending`.
+      seatPollPolicyProvider.overrideWithValue(SeatPollPolicy.manual),
     ],
   );
   addTearDown(container.dispose);

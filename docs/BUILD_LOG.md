@@ -2707,3 +2707,255 @@ against a database rebuilt from scratch.
 
 **On your side:** `supabase db push` picks up one new migration, and it is
 also what clears the duplicate `nearest_stage` that started this.
+
+---
+
+## C10 — The atomic seat claim · 🧪 awaiting your test
+
+`accept_ride_request()` wired to a button, and `pMatched` on the other side of
+it. A driver taps Pickup; one of two drivers wins; the passenger's screen
+changes by itself and shows them the plate of the vehicle coming for them.
+
+With C9 this is the product. Everything before it is plumbing to reach here.
+
+### Credentials
+
+**None.** Nothing new. The `tel:` links need the platform config that has been
+in both manifests since C6 — `NSCameraUsageDescription`'s neighbours on iOS
+and the `ACTION_DIAL` `<queries>` entry on Android.
+
+### The race is settled in the database, and the client only reports it
+
+`accept_ride_request()` has been complete and unchanged since C3. It was
+written before there was a button to call it, and it has exactly five answers:
+
+```
+ok · already_taken · seats_full · no_session · (connection lost)
+```
+
+Every state on the feed is one of those. The client forms no opinion of its
+own, because two drivers tapping the same passenger in the same second is the
+**expected** case on a busy road, and a client that guessed would eventually
+hand out a seat that does not exist. The function locks the session row first —
+always first, so two concurrent claims cannot deadlock against each other —
+and then settles the race with a single
+
+```sql
+update public.ride_requests set status = 'claimed'
+ where id = p_request_id and status = 'open'
+```
+
+Exactly one transaction matches a row. The other is told so. The C3 test that
+proves it is still in the suite and still prints its own evidence:
+
+```
+→ 02_race — two drivers, one passenger
+    driver A: t|ok
+    driver B: f|already_taken
+```
+
+### What the losing driver sees, and why it takes two seconds
+
+The card stays, under a **Taken by another driver** band, for about two
+seconds, and then leaves. Removing it on the spot is indistinguishable from a
+bug: the driver tapped something, it vanished, and they never learn whether
+they have a passenger.
+
+The card is also kept through a refresh arriving **inside** those two seconds,
+which is ordinary rather than rare — a nudge fires the moment the other
+driver's claim lands, and the server has already stopped returning the
+request. Without that the band would be yanked away mid-sentence:
+
+```
+✓ a lost card survives a nudge arriving mid-band
+```
+
+And every other Pickup is held while any claim is in flight. Two taps a few
+hundred milliseconds apart in a one-seat vehicle would otherwise both go
+through, and one would come back `seats_full` **after** its passenger had been
+told they had a ride.
+
+There is no confirm dialog. The driver is in traffic; the design says one tap,
+and the undo lives on the passenger's side.
+
+### Where the phone numbers are revealed, and where they stop being
+
+One function, `current_trip_seat()`, scoped in SQL to a seat in a **live**
+state and to that seat's two parties. There is no read policy that could say
+this instead: neither side can read the other's `profiles` row, and RLS cannot
+protect a single column — which is why `profiles.phone` is held back by a
+column `GRANT` rather than a policy (C3).
+
+The new SQL test's claim is one sentence: *a phone number is readable by the
+other party on a live seat and by nobody else.*
+
+```
+✓ a passenger cannot read the driver's profile directly
+✓ the claim reveals the number, the name, the plate, the colour, the vehicle
+✓ a bystander sees nothing, and cannot cancel somebody else's seat
+✓ a signed-out client sees nothing
+✓ a dropped seat reveals no number
+```
+
+The last one is the reveal ending when the trip does. An unrecognised seat
+state parses as `dropped` in Dart for the same reason — "live" is what puts a
+stranger's number on screen, so a state a future release adds must never be
+mistaken for one by an old binary.
+
+### Cancelling frees the seat and does not reopen the request
+
+`release_trip_seat(seat, p_reopen)` can do either. `cancel_my_seat()` passes
+**false**, deliberately:
+
+```
+✓ cancelling frees the seat
+✓ but does not put the request back on the road
+```
+
+A passenger who no longer wants the trip has not asked to be matched again,
+and reopening would send a second driver to a stage nobody is standing at. The
+seat going back into the vehicle is the part that matters to somebody else,
+and that happens either way. The driver's side of this — a no-show, where
+reopening **is** the right answer — is C11's.
+
+### The ETA: minutes, never seconds, and sometimes no number at all
+
+Haversine over 18 km/h (D8), which is 300 m a minute. The server has already
+done the distance in PostGIS; the client does the division, rounds **up**, and
+clamps to at least one minute while there is still road.
+
+A driver who has sent no position yet gives **no number**, and the screen says
+the true thing instead:
+
+> Your driver is on the way
+
+Inside 80 m — shorter than a stage, longer than a GPS error in a built-up
+street — it stops counting and says **Your bajaj is here**, because at that
+point the passenger should be looking for the vehicle rather than reading an
+estimate.
+
+### Two live mechanisms on the passenger's side, doing different jobs
+
+`trip_seats` **does** carry a read policy for both parties, so unlike the
+driver's feed this is a real subscription rather than a broadcast nudge
+(D26) — the row changing is what catches a driver cancelling or marking
+somebody aboard, within a second.
+
+It cannot move the ETA. The driver's position is written to
+`driver_sessions`, which a passenger holds no read policy on, so the only way
+to learn the vehicle is closer is to ask `current_trip_seat()` again. That is
+a 20-second poll: 100 m at 18 km/h, the smallest movement that can change a
+whole-minute estimate.
+
+### The band above the sheet is not a map
+
+There is no map in Njiani until C14 (D6). What `NjApproachBand` paints is the
+one fact the server gives us — how far the driver still is — as a road, a
+pickup point and a vehicle marker that moves along it. The design project's
+own band is a stylised sketch for the same reason. It is in the gallery, with
+a tap to move the marker, and its doc comment says in its first line that it
+must not be mistaken for a map.
+
+### Files added
+
+| File | What it is |
+| --- | --- |
+| `supabase/migrations/20261111000100_matched.sql` | `current_trip_seat`, `cancel_my_seat`, and `trip_seats` published for realtime |
+| `supabase/tests/10_matched_test.sql` | 21 assertions |
+| `packages/njiani_core/lib/src/rider/trip_seat.dart` | `TripSeat`, `SeatState`, the ETA |
+| `packages/njiani_core/lib/src/rider/seat_repository.dart` | `current_trip_seat` / `cancel_my_seat` / the subscription, and a fake |
+| `packages/njiani_core/lib/src/rider/seat_controller.dart` | the held seat, its poll and its subscription |
+| `packages/njiani_core/lib/src/screens/matched_screen.dart` | `pMatched` |
+| `packages/njiani_core/lib/src/screens/vehicle_words.dart` | localised words for stored vehicle values, shared by four screens |
+| `packages/njiani_core/lib/src/widgets/nj_approach_band.dart` | the approach sketch — **not a map** |
+| `packages/njiani_core/lib/src/widgets/nj_colour_dot.dart` | the vehicle colour, as the colour |
+| `packages/njiani_core/test/matched_test.dart` | 28 tests |
+
+### Files changed
+
+| File | Change |
+| --- | --- |
+| `packages/njiani_core/lib/src/driver/feed_repository.dart` | `claim()`, `ClaimOutcome`, `ClaimResult`, and the fake's gate |
+| `packages/njiani_core/lib/src/driver/feed_controller.dart` | `claim()`, the in-flight and lost sets, the lost-card linger |
+| `packages/njiani_core/lib/src/screens/driver_feed_screen.dart` | Pickup is live; the band, the held buttons, the seats-full state, the toast |
+| `packages/njiani_core/lib/src/app/nj_router.dart` | the rider seat gate, ahead of the name gate |
+| `packages/njiani_core/lib/src/app/nj_routes.dart` | `/matched` |
+| `packages/njiani_core/lib/src/util/support_call.dart` | `dialNumber()`, which `callNjianiSupport` now calls |
+| `packages/njiani_core/lib/src/screens/driver_signup_screen.dart` | colour labels moved to `vehicle_words.dart` |
+| `packages/njiani_core/lib/src/screens/driver_pending_screen.dart` | imports them from there |
+| `packages/njiani_core/lib/src/gallery/gallery_screen.dart` | `NjColourDot` in six colours, `NjApproachBand` |
+| `packages/njiani_core/lib/src/l10n/arb/nj_en.arb`, `nj_sw.arb` | 23 strings, both languages |
+| `packages/njiani_core/test/feed_test.dart` | the claim group — 15 tests |
+| `packages/njiani_core/test/router_test.dart` | the seat gate — 7 tests |
+| `packages/njiani_core/test/support/harness.dart`, `apps/njiani_rider/test/boot_test.dart` | the seat fake and `SeatPollPolicy.manual` |
+| `apps/njiani_rider/test/platform_config_test.dart` | the rider can reach a dialler — C10 is the first time a passenger dials |
+| `docs/ARCHITECTURE.md` | D33–D38 |
+
+### How to test
+
+**Three phones, or two phones and a second driver account.** The whole point
+of this component is two devices racing, and one device cannot show you that.
+
+```sh
+supabase db push          # one migration
+./tool/check.sh
+```
+
+| # | Step | Expected |
+| --- | --- | --- |
+| 1 | Rider: send a request toward Kimara | **Looking for a driver**, counting down |
+| 2 | Driver: online, heading the same way | The card arrives on its own, with a sound |
+| 3 | Driver: tap **Pickup** | Toast: **Seat is yours · the passenger is at Ubungo Mataa**. Card gone, seat bar drops to 2 of 3 |
+| 4 | Rider, without touching anything | The screen **changes by itself** to the driver panel |
+| 5 | Read the rider's panel | Plate **larger than the name**, a colour dot, **Price agreed: TSh …**, and an ETA in whole minutes |
+| 6 | Rider: tap **Call …** | Your dialler opens with the driver's real number already typed |
+| 7 | Driver: look for the passenger's number | Not here. The driver's half of the reveal is C11's **On board** tab; the row already carries the name and the number |
+| 8 | Rider: tap **Cancel · no penalty** | Straight back to the form. Driver's seat bar returns to 3 of 3; in Supabase the request is `cancelled`, **not** `open` |
+| 9 | **Two drivers**, both online, same direction, one request | Both see the card |
+| 10 | Both tap **Pickup** at the same time | One gets the toast. The other gets a red **Taken by another driver** band for about two seconds, then the card leaves |
+| 11 | Fill a bajaj: claim three requests | After the third, every Pickup reads **Seats full** and cannot be tapped, and the bar says **Every seat taken** |
+| 12 | Driver: go offline, then tap Pickup from a stale screen | You land on the direction picker rather than claiming anything |
+| 13 | Rider: turn the phone to flight mode on the matched screen | The plate **stays on screen**. The ETA stops moving |
+| 14 | Both apps in Kiswahili | **Chukua**, **Imechukuliwa na dereva mwingine**, **Anafika baada ya dakika 3**, **Ghairi · hakuna faini** |
+
+**Step 10 is the component.** If both drivers ever win, or if the loser's card
+simply vanishes, this is not done.
+
+**Step 4 is the other half.** If the rider has to pull to refresh, the
+subscription is not working, and then check that `trip_seats` is in the
+`supabase_realtime` publication — the migration adds it, and the SQL suite
+asserts it.
+
+### What I verified, and what I could not
+
+**Verified** — analyze clean, **480 Flutter tests** (453 core, 14 driver, 13
+rider), **189 SQL assertions**. The SQL suite was run against a database
+**rebuilt from scratch with `--reset`**, which is the only way the duplicate
+signature class of bug shows up.
+
+**Not verified:**
+
+- **The race itself, between two real devices.** It is proven in SQL, in one
+  transaction, by the C3 test. It has never been two phones.
+- The realtime subscription to `trip_seats` has never run against the hosted
+  project. This is the first client code in Njiani that subscribes to a table
+  rather than a broadcast channel, so it is the first real test of the
+  publication, the RLS filter on the stream, and the private-channel path.
+- `SupabaseSeatRepository` has never spoken to PostgREST. `current_trip_seat`
+  takes no parameters and returns a table, so the shape of the call is the
+  risk.
+- `dialNumber()` has never opened a dialler. The `tel:` path is the same one
+  C6's rejection screen uses, which is also untested on a device.
+- `metres_away` has never been computed from a **moving** driver. Every test
+  sets a fixed distance.
+
+### Known gaps — deliberate
+
+| Gap | Why, and what picks it up |
+| --- | --- |
+| **Safety button** | The design's pMatched has a 64 px **Safety** button beside Call. `pSafety` is **C15**. I left it out rather than shipping a dead one: a disabled narrow button with no room to say why reads as broken, and unlike C9's On board tab its absence changes nothing structural |
+| **I'm on board** | Shown in the arrived state as **Boarding arrives next**. The `claimed` → `aboard` transition and `pTrip` are **C11**, and a working button with nowhere to go would be worse. Note that Cancel is correctly *gone* by then — the design makes cancelling free only until the driver arrives |
+| **The driver's half of the reveal** | The driver gets the passenger's name and number from the same function on the **On board** tab, which is **C11**. The row already carries both |
+| **No map** | C14 (D6). `NjApproachBand` is a sketch and says so |
+| **"Your driver cancelled"** | A seat that disappears sends the passenger back to the form with no explanation. Saying which of the two happened needs the previous seat's state compared against the new one, and the driver's cancel path is **C11** |
+| **A dropped seat goes nowhere** | `dropped` is not live, so the passenger lands on the request form. `pRate` is **C12** |

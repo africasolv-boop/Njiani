@@ -1,10 +1,59 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'driver.dart';
 import 'driver_repository.dart';
 import 'feed_request.dart';
+
+/// How a tap on Pickup came out.
+///
+/// From `accept_ride_request`, which settles the race in one UPDATE that can
+/// only move a request off `open` once. Every value here is the database's
+/// word: the UI never decides who won.
+enum ClaimOutcome {
+  /// The seat is yours.
+  ok,
+
+  /// Another driver got there first. Normal, not an error — two drivers
+  /// tapping the same passenger in the same second is the expected case on a
+  /// busy road.
+  alreadyTaken,
+
+  /// No seat left in the vehicle.
+  seatsFull,
+
+  /// The session ended underneath the screen — gone offline, or changed
+  /// direction in another window.
+  noSession,
+
+  /// The request expired between the feed being read and the tap.
+  gone,
+
+  offline,
+  unknown,
+}
+
+/// The outcome, and the seat if there is one.
+@immutable
+class ClaimResult {
+  const ClaimResult(this.outcome, {this.seatId});
+
+  final ClaimOutcome outcome;
+  final String? seatId;
+
+  bool get won => outcome == ClaimOutcome.ok;
+
+  /// True when the card should leave the feed either way: somebody has it.
+  bool get settled =>
+      outcome == ClaimOutcome.ok ||
+      outcome == ClaimOutcome.alreadyTaken ||
+      outcome == ClaimOutcome.gone;
+
+  @override
+  String toString() => 'ClaimResult(${outcome.name})';
+}
 
 /// Reading the feed, and being told when to read it again.
 abstract interface class FeedRepository {
@@ -14,6 +63,16 @@ abstract interface class FeedRepository {
   /// road, and the design is explicit that it is never by price — sorting a
   /// shared road by money turns it into an auction.
   Future<List<FeedRequest>> requestsFor(String sessionId);
+
+  /// Takes the seat.
+  ///
+  /// One tap, no confirm dialog: the driver is in traffic, and the design is
+  /// explicit that undo is Cancel on the On board tab rather than a question
+  /// asked at 40 km/h.
+  Future<ClaimResult> claim({
+    required String requestId,
+    required String sessionId,
+  });
 
   /// Fires when something on this route changed.
   ///
@@ -60,6 +119,43 @@ class SupabaseFeedRepository implements FeedRepository {
       // A socket that died mid-request, a DNS failure, a captive portal.
       // Reported as offline because that is what the driver can act on.
       throw DriverError(DriverFailure.offline, detail: '$error');
+    }
+  }
+
+  @override
+  Future<ClaimResult> claim({
+    required String requestId,
+    required String sessionId,
+  }) async {
+    try {
+      final rows = await _client.rpc<List<dynamic>>(
+        'accept_ride_request',
+        params: {'p_request_id': requestId, 'p_session_id': sessionId},
+      );
+      if (rows.isEmpty) return const ClaimResult(ClaimOutcome.unknown);
+
+      final row = rows.first as Map<String, dynamic>;
+      final reason = row['reason'] as String?;
+
+      return ClaimResult(
+        switch (reason) {
+          'ok' => ClaimOutcome.ok,
+          'already_taken' => ClaimOutcome.alreadyTaken,
+          'seats_full' => ClaimOutcome.seatsFull,
+          'no_session' => ClaimOutcome.noSession,
+          _ => ClaimOutcome.unknown,
+        },
+        seatId: row['seat_id'] as String?,
+      );
+    } on PostgrestException catch (error) {
+      debugPrint('[njiani] claim: ${error.message}');
+      return const ClaimResult(ClaimOutcome.unknown);
+    } catch (error) {
+      // A dropped connection mid-claim is the one case where the driver
+      // genuinely does not know. Reported as offline rather than lost: the
+      // feed re-reads, and the seat is either theirs or it is not.
+      debugPrint('[njiani] claim: $error');
+      return const ClaimResult(ClaimOutcome.offline);
     }
   }
 
@@ -131,12 +227,44 @@ class FakeFeedRepository implements FeedRepository {
   /// their own route and not to everything.
   final List<String> topics = [];
 
+  /// What the next claim returns. The default is a win.
+  ClaimResult claimResult = const ClaimResult(ClaimOutcome.ok, seatId: 'seat-1');
+
+  /// Requests a claim was attempted on, in order.
+  final List<String> claimed = [];
+
+  /// Run on a won claim, to model what the server did to everything else —
+  /// most usefully the seat count on the session.
+  void Function()? onClaim;
+
+  /// When set, a claim waits on this before answering.
+  ///
+  /// Without it the in-flight state is over within a microtask, so a test
+  /// cannot see the held buttons — and "every other Pickup is held during a
+  /// claim" is the rule that stops two taps filling one seat twice.
+  Completer<void>? claimGate;
+
   @override
   Future<List<FeedRequest>> requestsFor(String sessionId) async {
     reads++;
     readFor.add(sessionId);
     if (failure != null) throw failure!;
     return List.unmodifiable(requests);
+  }
+
+  @override
+  Future<ClaimResult> claim({
+    required String requestId,
+    required String sessionId,
+  }) async {
+    claimed.add(requestId);
+    if (claimGate != null) await claimGate!.future;
+    if (claimResult.won) {
+      // What the server would do: the request leaves the feed.
+      requests = [for (final r in requests) if (r.id != requestId) r];
+    }
+    onClaim?.call();
+    return claimResult;
   }
 
   @override
